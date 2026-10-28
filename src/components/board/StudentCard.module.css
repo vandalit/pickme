@@ -1,0 +1,209 @@
+/* StudentCard.module.css */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem 1rem;
+  border-radius: 1.25rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: default;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px) scale(0.94);
+  transition:
+    opacity 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 300ms ease,
+    background 300ms ease;
+  transition-delay: var(--card-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.card.animating {
+  animation: cardPop 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Status variants ──────────── */
+.card.status_waiting {
+  border-color: rgba(59,130,246,0.2);
+  background: rgba(59,130,246,0.05);
+}
+
+.card.status_in_process {
+  border-color: rgba(245,158,11,0.35);
+  background: rgba(245,158,11,0.07);
+  animation: pulseAmber 2s ease infinite;
+}
+
+.card.status_picked_up {
+  border-color: rgba(16,185,129,0.3);
+  background: rgba(16,185,129,0.06);
+  opacity: 0.75;
+}
+
+/* ── Glow ───────────────────── */
+.glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--card-color-glow, rgba(108,99,255,0.15)) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.card.status_picked_up .glow {
+  opacity: 0.5;
+}
+
+/* ── Emoji ───────────────────── */
+.emojiWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: var(--card-color-dim, rgba(108,99,255,0.12));
+  border: 2px solid var(--card-color, rgba(108,99,255,0.4));
+  transition: transform 300ms ease;
+}
+
+.card.status_in_process .emojiWrapper {
+  animation: floatEmoji 2.5s ease-in-out infinite;
+}
+
+.card.status_picked_up .emojiWrapper {
+  background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.5);
+}
+
+.emoji {
+  font-size: 2.25rem;
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 2px 8px var(--card-color-glow, rgba(0,0,0,0.4)));
+}
+
+.checkmark {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #10B981;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-bg, #0D0D14);
+  animation: checkmarkPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Color dot ───────────────── */
+.colorDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  opacity: 0.9;
+  margin-top: -0.25rem;
+}
+
+/* ── Status badge ────────────── */
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid;
+}
+
+.statusDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.statusWaiting {
+  color: #60A5FA;
+  border-color: rgba(59,130,246,0.3);
+  background: rgba(59,130,246,0.1);
+}
+
+.statusInProcess {
+  color: #FCD34D;
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.12);
+}
+
+.statusInProcess .statusDot {
+  animation: pulseDot 1s ease infinite;
+}
+
+.statusPickedUp {
+  color: #34D399;
+  border-color: rgba(16,185,129,0.4);
+  background: rgba(16,185,129,0.1);
+}
+
+/* ── Grade label ─────────────── */
+.grade {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.625rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+
+/* ── Keyframes ───────────────── */
+@keyframes cardPop {
+  0%   { transform: scale(0.95); }
+  50%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulseAmber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0.08); }
+}
+
+@keyframes floatEmoji {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes checkmarkPop {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
