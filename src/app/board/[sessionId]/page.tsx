@@ -32,8 +32,10 @@ export default function BoardPage({ params }: BoardPageProps) {
   }, []);
 
   // --- Session data (mock until Pusher + DB are wired) ---
-  // TODO: replace with usePusher hook that receives real-time updates
-  const session = { ...MOCK_SESSION, id: sessionId || MOCK_SESSION.id };
+  const session = useMemo(
+    () => ({ ...MOCK_SESSION, id: sessionId || MOCK_SESSION.id }),
+    [sessionId]
+  );
 
   // --- Group students by classroom ---
   const classrooms = useMemo(() => {
@@ -44,14 +46,14 @@ export default function BoardPage({ params }: BoardPageProps) {
       map.set(student.grade, group);
     }
     return map;
-  }, [session.students]);
+  }, [session]);
 
   // --- Status counts for header pills ---
   const counts = useMemo((): Record<StudentStatus, number> => {
     const c = { waiting: 0, in_process: 0, picked_up: 0 };
     for (const s of session.students) c[s.status]++;
     return c;
-  }, [session.students]);
+  }, [session]);
 
   if (!session.isActive) {
     return (

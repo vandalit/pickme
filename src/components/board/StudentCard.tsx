@@ -33,12 +33,15 @@ export function StudentCard({ student, index }: StudentCardProps) {
 
   useEffect(() => {
     if (student.status !== prevStatus) {
-      setAnimating(true);
-      const t = setTimeout(() => {
+      const animId = setTimeout(() => setAnimating(true), 0);
+      const resetId = setTimeout(() => {
         setPrevStatus(student.status);
         setAnimating(false);
       }, 400);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(animId);
+        clearTimeout(resetId);
+      };
     }
   }, [student.status, prevStatus]);
 
