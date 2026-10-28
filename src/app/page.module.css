@@ -1,150 +1,194 @@
+/* page.module.css — PickMe Home/Landing */
+
 .page {
-  --background: #fafafa;
-  --foreground: #fff;
-
-  --text-primary: #000;
-  --text-secondary: #666;
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
+  min-height: 100vh;
   display: flex;
-  flex: 1;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+  background: var(--color-bg, #0D0D14);
+  position: relative;
+  overflow: hidden;
 }
 
+/* ── Ambient blobs ──────────────────────────── */
+.ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.blob:nth-child(1) {
+  width: 50vw; height: 50vw;
+  background: #6C63FF;
+  opacity: 0.07;
+  top: -15vw; left: -10vw;
+}
+.blob:nth-child(2) {
+  width: 35vw; height: 35vw;
+  background: #3B82F6;
+  opacity: 0.06;
+  bottom: -10vw; right: 0;
+}
+.blob:nth-child(3) {
+  width: 25vw; height: 25vw;
+  background: #10B981;
+  opacity: 0.05;
+  bottom: 10vw; left: 30vw;
+}
+
+/* ── Main card ──────────────────────────────── */
 .main {
-  display: flex;
-  flex: 1;
-  width: 100%;
-  max-width: 800px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
-}
-
-.intro {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
-}
-
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.ctas a {
-  display: flex;
-  justify-content: center;
   align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 500;
+  gap: 1.5rem;
+  text-align: center;
+  padding: 3rem 2rem;
+  max-width: 560px;
+  width: 100%;
 }
 
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
-  gap: 8px;
+/* ── Logo ───────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-a.secondary {
-  border-color: var(--button-secondary-border);
+.logoIcon {
+  font-size: 3rem;
+  filter: drop-shadow(0 0 24px rgba(108, 99, 255, 0.5));
+  animation: float 4s ease-in-out infinite;
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
+.logoText {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #F2F2FF;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
-@media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
-  }
-
-  .intro {
-    gap: 16px;
-  }
-
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
+.logoAccent {
+  color: #6C63FF;
 }
 
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
-
-  .page {
-    --background: #000;
-    --foreground: #000;
-
-    --text-primary: #ededed;
-    --text-secondary: #999;
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
-  }
+/* ── Text ───────────────────────────────────── */
+.tagline {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: -0.5rem;
 }
 
-.code {
-  font-family: var(--font-geist-mono);
-  font-size: 0.9em;
-  background: color-mix(in srgb, currentColor 8%, transparent);
-  padding: 0.1em 0.4em;
-  border-radius: 6px;
+.description {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.7;
+  max-width: 400px;
+}
+
+/* ── CTA ─────────────────────────────────────── */
+.actions {
+  margin-top: 0.5rem;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #6C63FF, #4C45CC);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  box-shadow: 0 0 0 0 rgba(108,99,255,0.4);
+  transition: all 250ms ease;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(108,99,255,0.5);
+}
+
+.btnPrimary:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* ── Role cards ─────────────────────────────── */
+.roles {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.roleCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.1rem 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 1rem;
+  transition: all 200ms ease;
+}
+
+.roleCard:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-2px);
+}
+
+.roleIcon {
+  font-size: 1.75rem;
+}
+
+.roleLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+}
+
+.roleDesc {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ── Footer ─────────────────────────────────── */
+.version {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.2);
+  margin-top: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── Animations ─────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.3); }
+  50%       { box-shadow: 0 0 32px 4px rgba(108,99,255,0.2); }
 }
