@@ -23,36 +23,36 @@
 .ambientBlob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.08;
+  filter: blur(140px);
+  opacity: 0.09;
 }
 
 .ambientBlob:nth-child(1) {
-  width: 60vw;
-  height: 60vw;
+  width: 55vw;
+  height: 55vw;
   background: #6C63FF;
-  top: -20vw;
+  top: -15vw;
   left: -10vw;
 }
 
 .ambientBlob:nth-child(2) {
-  width: 40vw;
-  height: 40vw;
+  width: 45vw;
+  height: 45vw;
   background: #3B82F6;
   bottom: -10vw;
   right: 5vw;
 }
 
 .ambientBlob:nth-child(3) {
-  width: 30vw;
-  height: 30vw;
+  width: 35vw;
+  height: 35vw;
   background: #10B981;
   bottom: 5vw;
   left: 20vw;
   opacity: 0.05;
 }
 
-/* ── Body (below header) ─────────────────────── */
+/* ── Body ────────────────────────────────────── */
 .body {
   display: flex;
   flex: 1;
@@ -61,103 +61,324 @@
   z-index: 1;
 }
 
-/* ── Student grid area ────────────────────────── */
-.gridArea {
+.mainContent {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
-  gap: 1rem;
   overflow: hidden;
 }
 
-/* ── Classroom group ─────────────────────────── */
-.classroomSection {
+/* ── Filter Bar ──────────────────────────────── */
+.filterBar {
   display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  flex: 1;
-  min-height: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem 1.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 5;
 }
 
-.classroomLabel {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.25);
-  padding-left: 0.25rem;
+.filterGroup {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.classroomLabel::after {
-  content: '';
+.filterLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pillsList {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.filterPill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.filterPillActive {
+  background: rgba(108, 99, 255, 0.25);
+  border-color: #6C63FF;
+  color: #F2F2FF;
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.35);
+}
+
+.pillBadge {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.filterPillActive .pillBadge {
+  background: rgba(108, 99, 255, 0.4);
+  color: #fff;
+}
+
+/* Status variants for pills */
+.pillWaiting.filterPillActive {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #3B82F6;
+  color: #93C5FD;
+}
+.pillProcess.filterPillActive {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #F59E0B;
+  color: #FCD34D;
+}
+.pillDone.filterPillActive {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10B981;
+  color: #6EE7B7;
+}
+
+/* ── Extra controls (Search + Sim) ──────────── */
+.extraControls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.6rem;
+  font-size: 0.75rem;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.searchInput {
+  padding: 0.3rem 1.6rem 0.3rem 1.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-family: inherit;
+  width: 170px;
+  transition: all 200ms ease;
+  outline: none;
+}
+
+.searchInput:focus {
+  width: 220px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(108, 99, 255, 0.6);
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.25);
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.clearSearch {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.simBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(76, 69, 204, 0.3));
+  border: 1px solid rgba(108, 99, 255, 0.4);
+  color: #C4C0FF;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 200ms ease;
+  white-space: nowrap;
+}
+
+.simBtn:hover {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.4), rgba(76, 69, 204, 0.5));
+  border-color: #8B85FF;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ── Grid Area ───────────────────────────────── */
+.gridArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem 1.75rem;
+  gap: 1.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.gridArea::-webkit-scrollbar {
+  width: 6px;
+}
+.gridArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+.gridArea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+/* ── Classroom Grouping ──────────────────────── */
+.classroomSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.classroomHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.classroomTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.gradeTag {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.2rem 0.65rem;
+  border-radius: 0.5rem;
+}
+
+.studentCount {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.classroomDivider {
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, transparent 100%);
 }
 
-/* ── Student grid ────────────────────────────── */
+/* ── Responsive grids ───────────────────────── */
 .studentGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 0.625rem;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
 }
 
-/* ── Standby screen (no active session) ──────── */
-.standby {
+.singleGradeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+/* ── Empty State ────────────────────────────── */
+.emptyState {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 1rem;
+  padding: 3rem;
   text-align: center;
-  padding: 2rem;
-  position: relative;
-  z-index: 1;
 }
 
-.standbyIcon {
-  font-size: 5rem;
-  filter: drop-shadow(0 0 40px rgba(108, 99, 255, 0.3));
-  animation: float 4s ease-in-out infinite;
+.emptyIcon {
+  font-size: 3rem;
+  opacity: 0.4;
 }
 
-.standbyTitle {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--color-text-primary, #F2F2FF);
-  letter-spacing: -0.02em;
-}
-
-.standbySubtitle {
+.emptyTitle {
   font-size: 1rem;
-  color: var(--color-text-secondary, #8888AA);
-  max-width: 400px;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 320px;
 }
 
-/* ── Clock (top right of body, optional overlay) */
-.clock {
-  position: absolute;
-  top: 1.25rem;
-  right: calc(300px + 2.5rem); /* offset to avoid QR panel */
+.resetFiltersBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.35);
+  color: #9A95FF;
   font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.resetFiltersBtn:hover {
+  background: rgba(108, 99, 255, 0.3);
+  color: #fff;
+}
+
+/* ── Floating Clock Overlay ──────────────────── */
+.clockOverlay {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 2rem;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.2);
-  letter-spacing: 0.04em;
-  z-index: 2;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
+  background: rgba(15, 15, 25, 0.6);
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   pointer-events: none;
+  backdrop-filter: blur(8px);
 }
-
-/* ── Keyframes ───────────────────────────────── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
-}
-

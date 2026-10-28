@@ -1,0 +1,246 @@
+/* StudentModal.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 16, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 200ms ease-out;
+}
+
+.modal {
+  position: relative;
+  background: #151522;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem;
+  width: 100%;
+  max-width: 520px;
+  padding: 2rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(108, 99, 255, 0.15);
+  animation: modalScaleUp 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 150ms ease;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.08);
+}
+
+/* ── Header ──────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.avatarRing {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emoji {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.titleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.gradeBadge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  color: #c4c4dc;
+}
+
+.publicName {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #F2F2FF;
+  letter-spacing: -0.01em;
+}
+
+.subtext {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Section & Buttons ──────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.statusButtons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.statusBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.btnDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.statusBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.btnWaiting.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3B82F6;
+  color: #93C5FD;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
+}
+.btnWaiting .btnDot { background: #3B82F6; }
+
+.btnProcess.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #F59E0B;
+  color: #FCD34D;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+}
+.btnProcess .btnDot { background: #F59E0B; }
+
+.btnPicked.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+  color: #6EE7B7;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
+}
+.btnPicked .btnDot { background: #10B981; }
+
+/* ── Custody Card ───────────────────────────── */
+.custodyCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.custodyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.rowTitle {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.rowValue {
+  color: #E2E2F0;
+  font-weight: 500;
+}
+
+.codeHighlight {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #6C63FF;
+  background: rgba(108, 99, 255, 0.12);
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.4rem;
+}
+
+.rowValueOk {
+  color: #34D399;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+/* ── Footer ─────────────────────────────────── */
+.footer {
+  margin-top: 0.25rem;
+}
+
+.securityNote {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ── Keyframes ───────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleUp {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
