@@ -76,18 +76,25 @@ V3 (Fase 4)      → Multi-escuela, analytics, integraciones externas
 - [ ] Input de handover code para cerrar el traspaso
 - [ ] Historial de retiros de la sesión activa
 
-### Módulo 1.7 — Notificaciones WhatsApp
+### Módulo 1.7 — Notificaciones WhatsApp y Enlace Mágico GPS
 
-- [ ] Notificación a apoderado cuando picker llega y pide al alumno
-- [ ] Notificación de retiro completado con handover code cerrado
-- [ ] Mensaje de confirmación de llegada con botones de respuesta rápida
-- [ ] Alerta si apoderado no confirma en 30 minutos
+- [ ] Integración transaccional con Twilio / WhatsApp Cloud API (1 a 1)
+- [ ] Notificación al apoderado cuando el picker llega al colegio y pide al alumno
+- [ ] Notificación de retiro completado tras validar el Handover Code de 6 dígitos
+- [ ] Generación de Enlace Mágico Web (`/viaje?token=...`) para el Picker/Chofer:
+  - [ ] Captura periódica de coordenadas mediante HTML5 Geolocation (`watchPosition`)
+  - [ ] Cero descargas de apps nativas para el chofer o apoderado
+- [ ] Mensaje interactivo al apoderado con mapa de seguimiento y botones de confirmación:
+  - [ ] Botón "Llegó bien ✓" (Cierre de custodia legal)
+  - [ ] Botón "Reportar anomalía ⚠️"
+- [ ] Protocolo de alerta automática si pasan 30 minutos sin confirmación de llegada
 
-### Módulo 1.8 — Cadena de Custodia
+### Módulo 1.8 — Cadena de Custodia Activa (4 Estados)
 
-- [ ] Registro inmutable de cada PickupEvent con timeline completa
+- [ ] Modelo de 4 estados: `WAITING` (Escuela) ➔ `HANDOVER` (Puerta) ➔ `IN_TRANSIT` (Picker/Ruta) ➔ `ARRIVED` (Hogar)
+- [ ] Registro inmutable de cada PickupEvent con timeline completa y coordenadas GPS de ruta
 - [ ] Vista de auditoría en panel Admin
-- [ ] Exportación de logs por sesión (CSV)
+- [ ] Exportación de logs legales por sesión (CSV / PDF)
 
 ---
 

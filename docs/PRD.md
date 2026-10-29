@@ -189,22 +189,42 @@ PASO 4 — Confirmación del Staff
   "Autorizado por [Apoderado]. Vigente hasta [fecha]"
   → Staff confirma visualmente que la persona coincide con quien aparece
 
-PASO 5 — Handover Code
+PASO 5 — Handover Code y Traspaso Físico
   Sistema genera código de 6 dígitos
   → Picker lo ve en su teléfono
   → Staff lo ingresa en su tablet para confirmar el traspaso físico
   → Evento queda registrado: staff + picker + alumno + timestamp
+  → Alumno pasa de FASE 2 (HANDOVER) a FASE 3 (IN_TRANSIT / En Proceso de Custodia)
 
-PASO 6 — Notificación al Apoderado
-  WhatsApp al apoderado:
-  "[Nombre] fue retirado por [Picker] a las [HH:MM]. 
-  ¿Confirmás que llegó bien? [Sí ✓] [Hay un problema ⚠️]"
+PASO 6 — Activación de Ruta y Tracking GPS (Sin descargar apps)
+  1. WhatsApp envía enlace mágico al Picker/Chofer:
+     "Retiro confirmado. Inicia viaje aquí: pickme.app/viaje?t=[token]"
+  2. El Picker abre el enlace en su navegador móvil (Chrome/Safari).
+     → Otorga permiso nativo de ubicación (1 tap).
+     → HTML5 Geolocation (`navigator.geolocation.watchPosition`) transmite coordenadas periódicas al backend.
+     → [Técnica]: Se supera la limitación de Meta WhatsApp API (que no permite streaming de Live Location en bots) sin exigir descarga de apps nativas.
+  3. WhatsApp notifica al Apoderado:
+     "📍 [Nombre Alumno] fue retirado por [Picker] a las [HH:MM]. Va en camino a casa.
+      Puedes seguir la ruta aquí: pickme.app/seguimiento?t=[token]
+      ¿Confirmas que llegó bien? [Sí, llegó ✓] [Reportar incidente ⚠️]"
 
-PASO 7 — Confirmación de llegada
-  Si apoderado confirma → PickupEvent status = ARRIVED ✓
-  Si no confirma en 30 min → Alerta a Admin
-  [V2: GPS tracking activo hasta confirmación]
+PASO 7 — Confirmación de llegada y Cierre de Custodia (FASE 4: ARRIVED)
+  → Si el apoderado confirma por WhatsApp o la geocerca de destino detecta llegada:
+     - El alumno pasa a ARRIVED (Luz Verde Definitiva).
+     - Se desactiva el streaming de ubicación.
+     - Queda sellada la cadena de custodia completa en base de datos.
+  → Si transcurren 30 min sin confirmación o se detecta desvío fuera de ruta:
+     - Alerta roja automática a Sofía (Staff) y al Apoderado vía WhatsApp.
 ```
+
+### 5.6 Ciclo de Vida de Custodia Activa (4 Estados)
+
+| Estado | Ubicación | Responsable Legal | Canal / Tecnología |
+|---|---|---|---|
+| **1. En Espera (`WAITING`)** | Salón / Patio escolar | Escuela / Docentes | Smart TV Board (Capa 0) |
+| **2. En Entrega (`HANDOVER`)** | Portón de salida | Staff en puerta | Tablet Staff + Handover Code 6 dígitos |
+| **3. En Proceso / Tránsito (`IN_TRANSIT`)** | En camino al hogar | Picker / Transporte | Enlace Mágico Web (HTML5 Geolocation) |
+| **4. En Casa / Confirmado (`ARRIVED`)** | Domicilio | Apoderado titular | Bot WhatsApp (Cierre legal de custodia) |
 
 ### 5.6 Protocolo de Alerta
 

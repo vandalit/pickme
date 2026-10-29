@@ -470,9 +470,10 @@ RESOLVED       → Alerta marcada como resuelta por Admin
 ### Student.pickupStatus (durante sesión)
 
 ```
-WAITING        → Esperando ser retirado
-IN_PROCESS     → Picker validado, staff confirmando
-PICKED_UP      → Retirado, traspaso completado
+WAITING        → Esperando ser retirado (Custodia: Escuela)
+HANDOVER       → Picker validado en portón, staff realizando traspaso con Handover Code
+IN_TRANSIT     → Retirado de la escuela, en viaje hacia el hogar con Enlace Mágico GPS (Custodia: Picker)
+ARRIVED        → En casa, recepción confirmada por el apoderado vía WhatsApp (Custodia: Hogar)
 ```
 
 ### Authorization.status
