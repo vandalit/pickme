@@ -12,3 +12,4 @@ El prototipo inicial mezcló responsabilidades del **display público de portón
 La nueva arquitectura separa limpiamente:
 1. **El Producto Real**: Display pasivo de Smart TV, flujo web del Picker (`/retirar`) y consola de entrega del Staff (`/staff`).
 2. **El Dashboard de Sofía (Admin)**: Gestión escolar y entorno privado de simulación y validación de sesiones.
+

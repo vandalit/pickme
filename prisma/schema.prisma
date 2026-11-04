@@ -1,0 +1,245 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ── ROLES Y ESTADOS ────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPERADMIN
+  SCHOOL_ADMIN
+  STAFF
+}
+
+enum AuthorizationType {
+  PERMANENT
+  SINGLE_DAY
+  DATE_RANGE
+  EMERGENCY
+}
+
+enum AuthorizationStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum SessionStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum CustodyStatus {
+  WAITING       // Alumno esperando en patio/aula
+  IN_PROCESS    // Picker validado en portón, personal preparando entrega
+  HANDOVER      // Handover Code de 6 dígitos generado, traspaso en curso
+  IN_TRANSIT    // Traspaso completado por staff, en viaje hacia hogar
+  ARRIVED       // Apoderado confirmó llegada (Custodia cerrada)
+  ALERT         // Retardo severo, intento denegado o problema reportado
+}
+
+// ── ESCUELAS Y USUARIOS ADMINISTRATIVOS ────────────────────────────────────
+
+model School {
+  id             String          @id @default(uuid())
+  name           String
+  address        String?
+  emergencyPhone String?
+  qrRefreshSecs  Int             @default(300) // 5 minutos por defecto
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  users          User[]
+  classrooms     Classroom[]
+  sessions       PickupSession[]
+
+  @@map("schools")
+}
+
+model User {
+  id            String       @id @default(uuid())
+  schoolId      String
+  email         String       @unique
+  name          String
+  role          UserRole     @default(STAFF)
+  googleId      String?      @unique
+  avatarUrl     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  verifiedEvents PickupEvent[] @relation("StaffEvents")
+
+  @@index([schoolId])
+  @@map("users")
+}
+
+// ── ALUMNOS Y SALONES ──────────────────────────────────────────────────────
+
+model Classroom {
+  id        String    @id @default(uuid())
+  schoolId  String
+  grade     String    // Ej: "1° Básico"
+  section   String    // Ej: "A"
+  createdAt DateTime  @default(now())
+
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students  Student[]
+
+  @@unique([schoolId, grade, section])
+  @@map("classrooms")
+}
+
+model Student {
+  id             String          @id @default(uuid())
+  classroomId    String
+  fullName       String          // Solo visible en Layer 2 (Admin)
+  initials       String          // Ej: "S.M." para Layer 1 (Staff)
+  animalId       String          // Ej: "cocodrilo"
+  colorId        String          // Ej: "amarillo"
+  avatarConfig   Json?           // Opciones de avatar humanizado si aplica
+  homeAddress    String?         // Dirección de entrega
+  homeLatitude   Float?
+  homeLongitude  Float?
+  createdAt      DateTime        @default(now())
+
+  classroom      Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  guardians      StudentGuardian[]
+  authorizations Authorization[]
+  events         PickupEvent[]
+
+  @@unique([classroomId, animalId, colorId]) // Garantiza combinación única por salón
+  @@index([classroomId])
+  @@map("students")
+}
+
+// ── APODERADOS, PICKERS Y AUTORIZACIONES ───────────────────────────────────
+
+model Guardian {
+  id             String            @id @default(uuid())
+  whatsappNumber String            @unique
+  fullName       String
+  idDocumentHash String?
+  createdAt      DateTime          @default(now())
+
+  students       StudentGuardian[]
+  authorizations Authorization[]
+
+  @@map("guardians")
+}
+
+model StudentGuardian {
+  studentId  String
+  guardianId String
+  isPrimary  Boolean  @default(false)
+
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian   Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, guardianId])
+  @@map("student_guardians")
+}
+
+model Picker {
+  id             String          @id @default(uuid())
+  whatsappNumber String          @unique
+  fullName       String
+  relationship   String          // "Tío", "Chofer Transporte", "Vecina"
+  idDocumentHash String?
+  createdAt      DateTime        @default(now())
+
+  authorizations Authorization[]
+  events         PickupEvent[]
+
+  @@map("pickers")
+}
+
+model Authorization {
+  id          String              @id @default(uuid())
+  studentId   String
+  pickerId    String
+  guardianId  String
+  type        AuthorizationType   @default(PERMANENT)
+  status      AuthorizationStatus @default(ACTIVE)
+  validFrom   DateTime            @default(now())
+  validUntil  DateTime?
+  legalProof  Json?               // { method: "BUTTON" | "VIDEO", ip: "...", signature: "..." }
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  student     Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  picker      Picker              @relation(fields: [pickerId], references: [id], onDelete: Cascade)
+  guardian    Guardian            @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, pickerId, status])
+  @@map("authorizations")
+}
+
+// ── SESIONES Y EVENTOS DE CUSTODIA (AUDITORÍA) ─────────────────────────────
+
+model PickupSession {
+  id             String         @id @default(uuid())
+  schoolId       String
+  sessionCode    String         // Código alfanumérico visible: "K7-4X2"
+  status         SessionStatus  @default(DRAFT)
+  startedAt      DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime       @default(now())
+
+  school         School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  events         PickupEvent[]
+
+  @@index([schoolId, status])
+  @@map("pickup_sessions")
+}
+
+model PickupEvent {
+  id             String         @id @default(uuid())
+  sessionId      String
+  studentId      String
+  pickerId       String?
+  staffId        String?
+  status         CustodyStatus  @default(WAITING)
+  handoverCode   String?        // Código de 6 dígitos generado
+  handoverExpiry DateTime?
+
+  // Timeline inmutable
+  pickerScannedAt   DateTime?
+  staffConfirmedAt  DateTime?
+  inTransitAt       DateTime?
+  arrivedAt         DateTime?
+  alertTriggeredAt  DateTime?
+
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  session        PickupSession  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  picker         Picker?        @relation(fields: [pickerId], references: [id], onDelete: SetNull)
+  staff          User?          @relation("StaffEvents", fields: [staffId], references: [id], onDelete: SetNull)
+  incidents      Incident[]
+
+  @@index([sessionId, status])
+  @@index([studentId])
+  @@map("pickup_events")
+}
+
+model Incident {
+  id             String       @id @default(uuid())
+  eventId        String
+  type           String       // "UNAUTHORIZED_ATTEMPT" | "DELAY_WARNING" | "GUARDIAN_REPORTED"
+  description    String
+  resolvedAt     DateTime?
+  resolutionNote String?
+  createdAt      DateTime     @default(now())
+
+  event          PickupEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("incidents")
+}

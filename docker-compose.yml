@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pickme-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pickme_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pickme_password}
+      POSTGRES_DB: ${POSTGRES_DB:-pickme_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pickme_user} -d ${POSTGRES_DB:-pickme_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pickme_net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pickme-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-pickme_user}:${POSTGRES_PASSWORD:-pickme_password}@db:5432/${POSTGRES_DB:-pickme_db}?schema=public
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-pickme_super_secret_session_token_32_chars}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_PUSHER_KEY=${NEXT_PUBLIC_PUSHER_KEY:-mock_pusher_key}
+      - NEXT_PUBLIC_PUSHER_CLUSTER=${NEXT_PUBLIC_PUSHER_CLUSTER:-us2}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pickme_net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pickme_net:
+    driver: bridge
