@@ -52,3 +52,4 @@ export function getPublicLabel(animalId: AnimalId, colorId: ColorId): string {
   const color  = getColor(colorId);
   return `${animal.name} ${color.name}`;
 }
+
