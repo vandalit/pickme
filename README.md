@@ -58,4 +58,14 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 * Para entender la lógica de negocio y el caso de Sofía: [`docs/PRD.md`](docs/PRD.md).
 * Para especificaciones de API, contratos, criptografía y base de datos: [`docs/SDD.md`](docs/SDD.md).
+* Para arquitectura de información y UX: [`docs/INFORMATION_ARCHITECTURE.md`](docs/INFORMATION_ARCHITECTURE.md).
 * Para el avance por hitos: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+---
+
+## 🤖 Ecosistema de Agentes
+
+* **Agente AI de Desarrollo**: [Antigravity](https://deepmind.google/technologies/gemini/) (Google DeepMind)
+* **Entorno de Memoria y Traza Contextual**: `~/.gemini/antigravity/brain/`
+* **Directrices y Reglas de Agente**: [`AGENTS.md`](AGENTS.md)
+
