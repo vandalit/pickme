@@ -1,121 +1,61 @@
-# 🏫 PickMe
+# 🏫 PickMe — Digital School Pickup & Custody
 
-> Sistema digital de gestión de salida escolar con cadena de custodia auditable.
-
-PickMe reemplaza el caos del portón escolar con un flujo verificado y anónimo de entrega de alumnos — sin que los padres instalen ninguna app nueva.
-
----
-
-## ¿Qué resuelve?
-
-| Problema | Solución PickMe |
-|---|---|
-| No se sabe quién viene a buscar a los niños | Registro de pickers autorizados por apoderado |
-| Las maestras no saben qué hacer con personas desconocidas | Validación en tiempo real con confirmación del apoderado |
-| Datos de alumnos expuestos en display público | Sistema de anonymización: Animal + Color en la TV |
-| Sin registro de quién retiró a quién | Cadena de custodia auditable con handover code |
-| Autorizaciones de papel que se pierden | Autorización digital con confirmación de apoderado (con validez legal) |
+> Sistema digital de gestión de salida escolar con anonimato público y cadena de custodia verificada.  
+> **Cero descargas de apps para padres · Layer 0 en Smart TV · Handover Code de 6 dígitos**.
 
 ---
 
-## Actores del sistema
+## 🎯 ¿Qué es PickMe?
 
-```
-Admin (Sofía)   → gestiona escuela, alumnos, sesiones
-Apoderado       → autoriza pickers, confirma llegada, aprobación legal
-Picker          → recoge al alumno (chofer, nana, familiar)
-Staff           → entrega físicamente al alumno en el portón
-Smart TV Board  → display público en el portón de salida
-```
+PickMe digitaliza y asegura el horario de retiro escolar en escuelas primarias. Reemplaza las listas de papel y el caos en el portón exterior mediante:
+1. **Anonimato en Pantalla Pública (Layer 0)**: Un Smart TV en el portón exhibe a los alumnos esperando utilizando una identidad visual única por curso (*Animal + Color*), sin exponer nombres ni fotos a la vía pública.
+2. **Cero Instalaciones para Familias**: Los apoderados y pickers (familiares, choferes) operan 100% desde el navegador web móvil mediante enlaces mágicos y códigos QR.
+3. **Traspaso Físico Verificado**: El personal de portón (Staff) solo autoriza la salida física al ingresar un *Handover Code* de 6 dígitos generado en el celular del picker.
+4. **Cadena de Custodia Inmutable**: Cada entrega queda sellada con timestamps, IDs de los actores intervinientes y confirmación digital del apoderado.
 
 ---
 
-## Stack
-
-| Capa | Tecnología |
-|---|---|
-| Frontend | Next.js 15 (App Router) |
-| Estilos | CSS custom con design tokens |
-| Backend | Next.js API Routes + tRPC |
-| Base de datos | PostgreSQL + Prisma ORM |
-| Auth | NextAuth.js (magic link) |
-| WhatsApp | Twilio / Meta Cloud API |
-| Real-time | Pusher (WebSocket managed) |
-| QR | qrcode.js |
-| Hosting | Vercel + Supabase |
-
-Ver detalles completos → [`docs/STACK.md`](docs/STACK.md)
-
----
-
-## Documentación
-
-| Documento | Descripción |
-|---|---|
-| [`docs/PRD.md`](docs/PRD.md) | Product Requirements Document — qué construimos y por qué |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Hoja de ruta: MVP → V2 → V3 |
-| [`docs/STACK.md`](docs/STACK.md) | Stack técnico detallado con justificaciones |
-| [`docs/TASKFLOWS.md`](docs/TASKFLOWS.md) | Flujos funcionales de cada actor del sistema |
-
----
-
-## Estructura del proyecto
+## 🏛️ Estructura del Repositorio
 
 ```
 pickme/
-├── README.md
-├── docs/
-│   ├── PRD.md
-│   ├── ROADMAP.md
-│   ├── STACK.md
-│   └── TASKFLOWS.md
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── (board)/            # Vista pública Smart TV
-│   │   ├── (staff)/            # Vista staff autenticado
-│   │   ├── (admin)/            # Panel de administración
-│   │   ├── (picker)/           # Flujo de retiro (sin auth)
-│   │   └── api/                # API Routes + webhooks
-│   ├── components/
-│   ├── lib/
-│   └── styles/
-├── prisma/
+├── docs/                       # Especificaciones maestras de ingeniería y producto
+│   ├── PRD.md                  # Requerimientos de producto y reglas de negocio
+│   ├── SDD.md                  # System Design Document y arquitectura técnica
+│   └── ROADMAP.md              # Hoja de ruta por fases e hitos
+├── POC/                        # Prototipo visual inicial (Archivado para consulta y reuso)
+│   ├── README.md
+│   └── src/                    # Componentes visuales y tokens del spike inicial
+├── prisma/                     # Modelo relacional y migraciones PostgreSQL
 │   └── schema.prisma
-└── package.json
+├── src/                        # Nueva arquitectura modular (Next.js 16 App Router)
+├── docker-compose.yml          # Entorno multicontenedor local (App + PostgreSQL)
+├── Dockerfile                  # Imagen standalone optimizada de producción
+└── README.md
 ```
 
 ---
 
-## Cómo correr localmente
+## 🚀 Puesta en Marcha Rápida (Docker)
 
 ```bash
-# Instalar dependencias
-npm install
+# 1. Clonar el repositorio
+git clone <repo-url>
+cd pickme
 
-# Configurar variables de entorno
-cp .env.example .env.local
+# 2. Configurar variables de entorno
+cp .env.example .env
 
-# Migrar base de datos
-npx prisma migrate dev
-
-# Correr dev server
-npm run dev
+# 3. Levantar la aplicación y la base de datos PostgreSQL
+docker compose up --build
 ```
 
-Abre [http://localhost:3000](http://localhost:3000)
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---
 
-## MVP testeable
+## 📚 Documentación de Referencia
 
-El MVP cubre el flujo completo de retiro:
-
-1. Admin carga alumnos y abre sesión de salida
-2. Board muestra QR + alumnos con código Animal+Color
-3. Picker escanea QR, se identifica, indica a quién busca
-4. Staff recibe validación en su tablet, confirma la entrega
-5. Se genera handover code que el staff ingresa para cerrar el traspaso
-6. Apoderado recibe notificación y confirma (o graba micro-video de confirmación)
-7. Evento queda registrado y auditado
-
-> GPS tracking y bot conversacional de WhatsApp se integran en V2.
+* Para entender la lógica de negocio y el caso de Sofía: [`docs/PRD.md`](docs/PRD.md).
+* Para especificaciones de API, contratos, criptografía y base de datos: [`docs/SDD.md`](docs/SDD.md).
+* Para el avance por hitos: [`docs/ROADMAP.md`](docs/ROADMAP.md).
