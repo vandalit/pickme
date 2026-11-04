@@ -48,3 +48,4 @@ volumes:
 networks:
   pickme_net:
     driver: bridge
+
