@@ -59,3 +59,4 @@ El repositorio ya cuenta con las configuraciones necesarias:
 * `package.json` incluye `"postinstall": "prisma generate"` para compilar el cliente Prisma automáticamente en los servidores de Vercel.
 * `src/lib/db.ts` cuenta con límites de conexión configurados para funciones serverless (`max: 5` en producción) para evitar saturar el pool de PostgreSQL.
 * `src/middleware.ts` protege las rutas `/admin/*` y redirige a `/auth/login`.
+
