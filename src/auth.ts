@@ -38,6 +38,9 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
+      // El simulador sandbox es abierto para evaluación rápida de portafolio
+      if (nextUrl.pathname.startsWith("/admin/simulador")) return true
+
       const isLoggedIn = !!auth?.user
       const isAdminPath = nextUrl.pathname.startsWith("/admin")
 

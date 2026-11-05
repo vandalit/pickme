@@ -1,51 +1,116 @@
 import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { auth, signOut } from '@/auth';
 import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  // Consultar datos reales de PostgreSQL
-  const school = await prisma.school.findFirst();
-  const totalStudents = await prisma.student.count();
-  const totalClassrooms = await prisma.classroom.count();
-  const activeSession = await prisma.pickupSession.findFirst({
-    where: { status: 'OPEN' },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      events: true,
-    },
-  });
+  const session = await auth();
+  const userName = session?.user?.name || 'Sofía Valenzuela';
+  const userInitial = userName.charAt(0).toUpperCase();
 
-  const inProcessCount =
-    activeSession?.events.filter((e) => e.status === 'IN_PROCESS').length || 0;
-  const completedCount =
-    activeSession?.events.filter(
-      (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED'
-    ).length || 0;
+  // Consultar datos de PostgreSQL con fallback resiliente para modo offline/demo
+  let schoolName = 'Colegio San Martín';
+  let totalStudents = 6;
+  let totalClassrooms = 2;
+  let activeSessionCode = 'SAN-1024';
+  let inProcessCount = 1;
+  let completedCount = 2;
+  let isLiveDb = false;
+
+  try {
+    const school = await prisma.school.findFirst();
+    if (school) {
+      schoolName = school.name;
+      totalStudents = await prisma.student.count();
+      totalClassrooms = await prisma.classroom.count();
+
+      const activeSession = await prisma.pickupSession.findFirst({
+        where: { status: 'OPEN' },
+        orderBy: { createdAt: 'desc' },
+        include: { events: true },
+      });
+
+      if (activeSession) {
+        activeSessionCode = activeSession.sessionCode;
+        inProcessCount = activeSession.events.filter(
+          (e) => e.status === 'IN_PROCESS'
+        ).length;
+        completedCount = activeSession.events.filter(
+          (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED'
+        ).length;
+      }
+      isLiveDb = true;
+    }
+  } catch (error) {
+    console.warn(
+      '[AdminDashboard] Base de datos no disponible de forma síncrona, usando datos del seed en caché:',
+      error instanceof Error ? error.message : error
+    );
+  }
 
   return (
     <div className={styles.container}>
       {/* ── Top Header ── */}
       <header className={styles.header}>
         <div className={styles.userArea}>
-          <div className={styles.avatar}>S</div>
+          <div className={styles.avatar}>{userInitial}</div>
           <div className={styles.meta}>
-            <span className={styles.name}>Sofía Valenzuela</span>
+            <span className={styles.name}>{userName}</span>
             <span className={styles.institution}>
-              Directora · {school?.name || 'Colegio San Martín'}
+              Directora · {schoolName}
             </span>
           </div>
         </div>
 
-        <div className={styles.statusPill}>
-          <span className={styles.dot} />
-          <span>
-            {activeSession
-              ? `Sesión Activa: ${activeSession.sessionCode}`
-              : 'Sin sesión abierta'}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className={styles.statusPill}>
+            <span className={styles.dot} />
+            <span>
+              {activeSessionCode
+                ? `Sesión Activa: ${activeSessionCode}`
+                : 'Sin sesión abierta'}
+            </span>
+            {!isLiveDb && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  opacity: 0.7,
+                  marginLeft: '0.5rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+              >
+                Demo Cache
+              </span>
+            )}
+          </div>
+
+          <form
+            action={async () => {
+              'use server';
+              await signOut({ redirectTo: '/auth/login' });
+            }}
+          >
+            <button
+              type="submit"
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#f87171',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              Cerrar Sesión
+            </button>
+          </form>
         </div>
       </header>
 
@@ -67,10 +132,10 @@ export default async function AdminDashboardPage() {
             padding: '0.85rem 1.5rem',
             borderRadius: '0.75rem',
             background: 'var(--color-brand)',
-            color: '#FFFFFF',
+            color: '#0b1528',
             fontWeight: 700,
             textDecoration: 'none',
-            boxShadow: '0 4px 14px rgba(108, 99, 255, 0.4)',
+            boxShadow: '0 4px 14px rgba(74, 222, 128, 0.4)',
           }}
         >
           Iniciar Simulador Interactivo ➔
