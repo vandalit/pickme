@@ -66,3 +66,4 @@ export function StudentGrid({ students }: StudentGridProps) {
     </main>
   );
 }
+

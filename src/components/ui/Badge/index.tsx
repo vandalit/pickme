@@ -71,3 +71,4 @@ export function Badge({
     </span>
   );
 }
+
