@@ -1,0 +1,133 @@
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.status_in_process {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.12);
+}
+
+.status_completed {
+  opacity: 0.8;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ── Left Details ────────────────────────────── */
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-full);
+  font-size: 2rem;
+  flex-shrink: 0;
+  border: 2px solid var(--card-color, #6C63FF);
+  background: var(--card-color-dim, rgba(108, 99, 255, 0.15));
+  box-shadow: 0 0 16px var(--card-color-glow, rgba(108, 99, 255, 0.2));
+}
+
+.studentMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.studentName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.initialsTag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+}
+
+.classroomTag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-brand-light);
+}
+
+.pickerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.pickerHighlight {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.timeTag {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Right Actions ───────────────────────────── */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.completedCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #6EE7B7;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .rightSection {
+    justify-content: space-between;
+  }
+}
