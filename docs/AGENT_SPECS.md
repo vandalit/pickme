@@ -30,3 +30,4 @@ Para garantizar coherencia de arquitectura y diseño sin pérdida de memoria ent
 - **Commits Locales Únicamente**: Realizar commits frecuentes siguiendo *Conventional Commits* (`feat:`, `chore:`, `style:`, `docs:`) tras cada hito validado.
 - **Prohibición Estricta de Push**: Jamás ejecutar `git push` hacia repositorios remotos salvo indicación manual explícita del usuario.
 - **Verificación Pre-Commit**: Todo commit debe estar respaldado por `tsc --noEmit` con 0 errores y compilación `npm run build` exitosa.
+
