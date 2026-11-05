@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/banner.png" alt="PickMe — Smart School Pickup & Digital Custody" width="100%" />
+</p>
+
 # 🏫 PickMe — Digital School Pickup & Custody
 
 > Sistema digital de gestión de salida escolar con anonimato público y cadena de custodia verificada.  

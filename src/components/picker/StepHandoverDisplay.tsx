@@ -162,3 +162,4 @@ export function StepHandoverDisplay({
     </div>
   );
 }
+
