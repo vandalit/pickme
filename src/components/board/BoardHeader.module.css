@@ -1,0 +1,195 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  height: 76px;
+  flex-shrink: 0;
+  background: rgba(13, 13, 20, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Brand / School ──────────────────────────── */
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logoIcon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 10px rgba(108, 99, 255, 0.7));
+}
+
+.logoText {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+}
+
+.logoAccent {
+  color: var(--color-brand);
+}
+
+.schoolInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-left: 1px solid var(--color-border);
+  padding-left: 1.25rem;
+}
+
+.schoolName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Clock Center ────────────────────────────── */
+.clockSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+}
+
+.liveIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-picked-up);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  animation: liveBlink 2s ease-in-out infinite;
+}
+
+.clockText {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Stats Pills ─────────────────────────────── */
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.pillDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.pillCount {
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pillLabel {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  text-transform: lowercase;
+}
+
+.pillWaiting {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #93C5FD;
+}
+.pillWaiting .pillDot {
+  background: var(--color-waiting);
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+}
+
+.pillProcess {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #FCD34D;
+}
+.pillProcess .pillDot {
+  background: var(--color-in-process);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+  animation: liveBlink 1.5s ease-in-out infinite;
+}
+
+.pillDone {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6EE7B7;
+}
+.pillDone .pillDot {
+  background: var(--color-picked-up);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.pillTotal {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+@keyframes liveBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+@media (max-width: 900px) {
+  .header {
+    height: auto;
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .leftSection {
+    gap: 1rem;
+  }
+}

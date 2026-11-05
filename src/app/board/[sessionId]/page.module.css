@@ -1,0 +1,30 @@
+.boardContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  user-select: none;
+}
+
+.bodySection {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .boardContainer {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .bodySection {
+    flex-direction: column-reverse;
+  }
+}

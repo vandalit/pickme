@@ -1,0 +1,121 @@
+.panel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem;
+  background: rgba(21, 21, 31, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid var(--color-border);
+  gap: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* ── Live Badge ──────────────────────────────── */
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6EE7B7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-picked-up);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* ── Instruction ─────────────────────────────── */
+.instruction {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.instructionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.instructionDesc {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+/* ── Session Code Box ────────────────────────── */
+.codeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border-bright);
+  width: 100%;
+}
+
+.codeLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.codeValue {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-brand-light);
+  letter-spacing: 0.1em;
+}
+
+.urlFootnote {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.urlHighlight {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+@media (max-width: 1024px) {
+  .panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+}

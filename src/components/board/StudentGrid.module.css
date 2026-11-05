@@ -1,0 +1,51 @@
+.container {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (min-width: 1600px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* ── Empty State ─────────────────────────────── */
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 400px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.3));
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.emptySubtitle {
+  font-size: 0.95rem;
+  max-width: 380px;
+}

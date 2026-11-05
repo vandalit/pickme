@@ -1,0 +1,186 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem 0.85rem;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  user-select: none;
+  animation: cardEntrance 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--card-delay, 0ms);
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    background var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+/* ── Glow Overlay ────────────────────────────── */
+.glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--card-color-glow, rgba(108, 99, 255, 0.15)) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ── Classroom / Grade Tag ────────────────────── */
+.classroomTag {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary);
+}
+
+/* ── Emoji Avatar ────────────────────────────── */
+.avatarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: var(--radius-full);
+  background: var(--card-color-dim, rgba(108, 99, 255, 0.12));
+  border: 2px solid var(--card-color, rgba(108, 99, 255, 0.4));
+  margin-top: 0.25rem;
+}
+
+.emoji {
+  font-size: 2.25rem;
+  line-height: 1;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+
+.checkmark {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: var(--radius-full);
+  background: var(--color-picked-up);
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: checkPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Anonymous Public Label ──────────────────── */
+.labelWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0 0.25rem;
+}
+
+.publicName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+/* ── Status Variants ─────────────────────────── */
+.status_waiting {
+  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.status_in_process {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+  animation: pulseInProcess 2.5s ease-in-out infinite;
+}
+
+.status_in_process .avatarWrapper {
+  animation: floatEmoji 2.5s ease-in-out infinite;
+}
+
+.status_picked_up {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.04);
+  opacity: 0.75;
+}
+
+.status_alert {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Keyframes ───────────────────────────────── */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floatEmoji {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulseInProcess {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 24px 3px rgba(245, 158, 11, 0.2);
+  }
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .status_in_process,
+  .status_in_process .avatarWrapper,
+  .checkmark {
+    animation: none;
+  }
+}

@@ -1,0 +1,152 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+  outline: none;
+  text-decoration: none;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  transition:
+    transform var(--transition-spring),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-brand-light);
+  outline-offset: 3px;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* ── Variants ─────────────────────────────────── */
+.variant_primary {
+  background: var(--color-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.variant_primary:hover:not(:disabled) {
+  background: var(--color-brand-light);
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.5);
+}
+
+.variant_secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-bright);
+  backdrop-filter: blur(8px);
+}
+
+.variant_secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.variant_alert {
+  background: var(--color-alert);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.variant_alert:hover:not(:disabled) {
+  background: #DC2626;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+}
+
+.variant_ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+
+.variant_ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+}
+
+/* ── Sizes ────────────────────────────────────── */
+.size_sm {
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.85rem;
+}
+
+.size_md {
+  min-height: 48px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+}
+
+.size_lg {
+  min-height: 56px;
+  padding: 0.875rem 1.75rem;
+  font-size: 1.05rem;
+}
+
+/* ── Block (Full Width) ───────────────────────── */
+.fullWidth {
+  width: 100%;
+}
+
+/* ── Loading State ────────────────────────────── */
+.loading {
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #FFFFFF;
+  border-radius: var(--radius-full);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button:hover,
+  .button:active {
+    transition: none;
+    transform: none;
+  }
+}
