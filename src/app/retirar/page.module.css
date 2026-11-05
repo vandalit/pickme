@@ -1,0 +1,41 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background: radial-gradient(circle at 50% 20%, rgba(108, 99, 255, 0.08) 0%, var(--color-bg) 70%);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  user-select: none;
+}
+
+.logoIcon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 10px rgba(108, 99, 255, 0.6));
+}
+
+.logoText {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.logoAccent {
+  color: var(--color-brand);
+}
+
+.footer {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

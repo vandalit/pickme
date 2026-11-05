@@ -1,0 +1,142 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-xl);
+  background: rgba(21, 21, 31, 0.9);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  align-items: center;
+}
+
+/* ── Status Pill ─────────────────────────────── */
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.schoolLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ── Student Hero ────────────────────────────── */
+.studentHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  font-size: 2.75rem;
+  background: var(--card-color-dim, rgba(108, 99, 255, 0.15));
+  border: 3px solid var(--card-color, var(--color-brand));
+  box-shadow: 0 0 20px var(--card-color-glow, rgba(108, 99, 255, 0.3));
+}
+
+.studentLabel {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.studentMeta {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Handover Code Display Box ───────────────── */
+.codeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, rgba(108, 99, 255, 0.12) 0%, rgba(30, 30, 46, 0.6) 100%);
+  border: 2px solid var(--color-brand);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.25);
+  width: 100%;
+}
+
+.codeInstruction {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-brand-light);
+}
+
+.codeDigits {
+  font-family: monospace;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: #FFFFFF;
+  text-shadow: 0 0 12px rgba(108, 99, 255, 0.8);
+  margin-left: 0.25em; /* Compensate for letter spacing */
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #FCD34D;
+  font-weight: 600;
+}
+
+/* ── Instructions Footer ─────────────────────── */
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  width: 100%;
+}
+
+/* ── Completed Success State ─────────────────── */
+.successCard {
+  border-color: var(--color-picked-up);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+.successIcon {
+  font-size: 3.5rem;
+  color: var(--color-picked-up);
+}
+
+.successTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #6EE7B7;
+}
+
+.successDesc {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
