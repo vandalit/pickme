@@ -11,7 +11,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({
+    connectionString,
+    max: process.env.NODE_ENV === 'production' ? 5 : 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,

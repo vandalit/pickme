@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsc prisma/seed.ts --module commonjs --target es2022 --skipLibCheck --outDir prisma/dist && node prisma/dist/prisma/seed.js"
