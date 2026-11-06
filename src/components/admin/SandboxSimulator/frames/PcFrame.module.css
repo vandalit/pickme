@@ -1,0 +1,124 @@
+.frameContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 580px;
+  min-width: 420px;
+  gap: 0.875rem;
+}
+
+.deviceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.deviceTitle {
+  font-size: 0.875rem;
+  font-weight: 750;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.layerBadge {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── PC MONITOR HARDWARE CHASSIS ── */
+.monitorChassis {
+  background: #141824;
+  border: 5px solid #1e2436;
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.monitorTopBezel {
+  background: #141824;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cameraDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #2a334a;
+}
+
+.monitorScreen {
+  background: #0b0f19;
+  min-height: 460px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.monitorChin {
+  background: #1a2030;
+  height: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitorLogo {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monitorNeck {
+  width: 44px;
+  height: 24px;
+  background: linear-gradient(180deg, #1e2436 0%, #141824 100%);
+  margin: 0 auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.monitorStandBase {
+  width: 160px;
+  height: 8px;
+  background: linear-gradient(180deg, #2a334a 0%, #141824 100%);
+  margin: 0 auto;
+  border-radius: 4px 4px 2px 2px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── FOOTNOTE EXPLICATIVA ── */
+.deviceFootnote {
+  background: rgba(18, 26, 47, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.775rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.footnoteHighlight {
+  color: #c084fc;
+  font-weight: 600;
+}

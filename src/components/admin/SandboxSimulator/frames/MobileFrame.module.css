@@ -1,0 +1,117 @@
+.frameContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 380px;
+  min-width: 320px;
+  gap: 0.875rem;
+}
+
+.deviceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.deviceTitle {
+  font-size: 0.875rem;
+  font-weight: 750;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.layerBadge {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── SMARTPHONE HARDWARE CHASSIS ── */
+.mobileChassis {
+  background: #141824;
+  border: 8px solid #1e2436;
+  border-radius: 38px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+.notchBar {
+  background: #0b0f19;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0 1rem;
+}
+
+.dynamicIsland {
+  width: 90px;
+  height: 14px;
+  background: #000000;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+
+.cameraLens {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1e2436;
+}
+
+.mobileScreen {
+  background: #0b0f19;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+}
+
+.homeIndicatorBar {
+  background: #0b0f19;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.homeIndicator {
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── FOOTNOTE EXPLICATIVA ── */
+.deviceFootnote {
+  background: rgba(18, 26, 47, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.775rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.footnoteHighlight {
+  color: #4ade80;
+  font-weight: 600;
+}

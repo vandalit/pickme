@@ -1,0 +1,89 @@
+.frameContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  min-width: 360px;
+  gap: 0.875rem;
+}
+
+.deviceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.deviceTitle {
+  font-size: 0.875rem;
+  font-weight: 750;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.layerBadge {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── TABLET HARDWARE CHASSIS ── */
+.tabletChassis {
+  background: #141824;
+  border: 7px solid #1e2436;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+.tabletTopBezel {
+  background: #141824;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webcamDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2a334a;
+}
+
+.tabletScreen {
+  background: #0b0f19;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+/* ── FOOTNOTE EXPLICATIVA ── */
+.deviceFootnote {
+  background: rgba(18, 26, 47, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.775rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.footnoteHighlight {
+  color: #fbbf24;
+  font-weight: 600;
+}
