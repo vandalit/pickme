@@ -150,6 +150,18 @@ function RetirarContent() {
     }
   };
 
+  // Polling automático mientras el código esté activo (detecta validación de portón al instante)
+  useEffect(() => {
+    if (step !== 'handover' || !handoverData) return;
+    if (handoverData.status === 'IN_TRANSIT' || handoverData.status === 'ARRIVED') return;
+
+    const interval = setInterval(() => {
+      handleRefreshStatus();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [step, handoverData?.status, phone, sessionCode, activeStudent]);
+
   return (
     <main className={styles.container}>
       <header className={styles.topBar}>

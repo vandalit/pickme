@@ -238,3 +238,4 @@ export async function simulateArrivalForEventAction(
     return { success: false, error: 'Error al simular llegada del alumno.' };
   }
 }
+

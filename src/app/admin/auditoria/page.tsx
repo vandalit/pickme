@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { auth, signOut } from '@/auth';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { resolveUserSchool } from '@/lib/userSchool';
+import { AuditoriaTable, AuditRecord } from './AuditoriaTable';
 import styles from '../page.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -17,29 +18,26 @@ export default async function AdminAuditoriaPage() {
 
   // 1. Resolver el colegio asociado a la cuenta
   const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
-  if (needsOnboarding) {
+  if (needsOnboarding || !resolvedSchool) {
     redirect('/admin/onboarding');
   }
 
   const userName = session.user.name || 'Director(a)';
-  let schoolName = resolvedSchool?.name || 'Colegio San Martín';
+  const schoolName = resolvedSchool.name;
   let activeSessionCode = 'SAN-1024';
 
-  type AuditLog = {
-    id: string;
-    timestamp: string;
-    studentName: string;
-    classroom: string;
-    pickerName: string;
-    staffName: string;
-    handoverCode: string;
-    status: string;
-    hashSha256: string;
+  let metrics = {
+    totalSessions: 1,
+    totalEvents: 3,
+    completedHandover: 2,
+    inProcess: 1,
+    alerts: 0,
   };
 
-  let auditLogs: AuditLog[] = [
+  let auditLogs: AuditRecord[] = [
     {
       id: 'a1',
+      sessionCode: 'SAN-1024',
       timestamp: '2026-11-05 14:32:15 UTC',
       studentName: 'Vicente Toro Morales',
       classroom: '1° Básico A',
@@ -51,6 +49,7 @@ export default async function AdminAuditoriaPage() {
     },
     {
       id: 'a2',
+      sessionCode: 'SAN-1024',
       timestamp: '2026-11-05 14:28:44 UTC',
       studentName: 'Valentina Soto Miranda',
       classroom: '2° Básico B',
@@ -62,6 +61,7 @@ export default async function AdminAuditoriaPage() {
     },
     {
       id: 'a3',
+      sessionCode: 'SAN-1024',
       timestamp: '2026-11-05 14:25:02 UTC',
       studentName: 'Lucas Castro Ruiz',
       classroom: '2° Básico B',
@@ -74,48 +74,72 @@ export default async function AdminAuditoriaPage() {
   ];
 
   try {
-    const school = await prisma.school.findFirst({
-      where: resolvedSchool?.id ? { id: resolvedSchool.id } : undefined,
-      include: {
-        sessions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          include: {
-            events: {
-              include: {
-                student: { include: { classroom: true } },
-                picker: true,
-                staff: true,
-              },
-              orderBy: { updatedAt: 'desc' },
-            },
-          },
+    const [totalSessions, openSession, events] = await Promise.all([
+      prisma.pickupSession.count({
+        where: { schoolId: resolvedSchool.id },
+      }),
+      prisma.pickupSession.findFirst({
+        where: { schoolId: resolvedSchool.id, status: 'OPEN' },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.pickupEvent.findMany({
+        where: { session: { schoolId: resolvedSchool.id } },
+        include: {
+          session: true,
+          student: { include: { classroom: true } },
+          picker: true,
+          staff: true,
         },
-      },
-    });
+        orderBy: { updatedAt: 'desc' },
+        take: 200,
+      }),
+    ]);
 
-    if (school) {
-      schoolName = school.name;
-      const currentSession = school.sessions[0];
-      if (currentSession) {
-        activeSessionCode = currentSession.sessionCode;
-        if (currentSession.events.length > 0) {
-          auditLogs = currentSession.events.map((e) => {
-            const timeStr = (e.updatedAt || e.createdAt).toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-            return {
-              id: e.id,
-              timestamp: timeStr,
-              studentName: e.student.fullName,
-              classroom: `${e.student.classroom.grade} ${e.student.classroom.section}`,
-              pickerName: e.picker ? `${e.picker.fullName} (${e.picker.relationship})` : 'Por anunciar',
-              staffName: e.staff?.name || 'Carlos Mendoza',
-              handoverCode: e.handoverCode ? `${e.handoverCode.slice(0, 3)}-${e.handoverCode.slice(3)}` : 'Pendiente',
-              status: e.status,
-              hashSha256: `sha256-${e.id.replace(/-/g, '').slice(0, 16)}...`,
-            };
-          });
-        }
-      }
+    if (openSession) {
+      activeSessionCode = openSession.sessionCode;
+    }
+
+    if (events.length > 0) {
+      const completedCount = events.filter(
+        (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED'
+      ).length;
+      const inProcessCount = events.filter((e) => e.status === 'IN_PROCESS').length;
+      const alertCount = events.filter((e) => e.status === 'ALERT').length;
+
+      metrics = {
+        totalSessions,
+        totalEvents: events.length,
+        completedHandover: completedCount,
+        inProcess: inProcessCount,
+        alerts: alertCount,
+      };
+
+      auditLogs = events.map((e) => {
+        const timeStr =
+          (e.updatedAt || e.createdAt).toISOString().replace('T', ' ').substring(0, 19) +
+          ' UTC';
+
+        const codeFormatted = e.handoverCode
+          ? e.handoverCode.length === 6
+            ? `${e.handoverCode.slice(0, 3)}-${e.handoverCode.slice(3)}`
+            : e.handoverCode
+          : 'Pendiente';
+
+        return {
+          id: e.id,
+          sessionCode: e.session.sessionCode,
+          timestamp: timeStr,
+          studentName: e.student.fullName,
+          classroom: `${e.student.classroom.grade} ${e.student.classroom.section}`,
+          pickerName: e.picker
+            ? `${e.picker.fullName} (${e.picker.relationship})`
+            : 'Por anunciar',
+          staffName: e.staff?.name || 'Personal Portón',
+          handoverCode: codeFormatted,
+          status: e.status,
+          hashSha256: `sha256-${e.id.replace(/-/g, '').slice(0, 16)}...`,
+        };
+      });
     }
   } catch (error) {
     console.warn('[AdminAuditoria] Usando logs resilientes de respaldo:', error);
@@ -140,79 +164,14 @@ export default async function AdminAuditoriaPage() {
           <div className={styles.sectionHeader}>
             <h1 className={styles.sectionTitle}>Libro de Auditoría Forense y Cadena de Custodia</h1>
             <p className={styles.sectionDesc}>
-              Bitácora cronológica inmutable respaldada en PostgreSQL con trazabilidad completa de traspasos e incidentes.
+              Bitácora cronológica inmutable respaldada en PostgreSQL con trazabilidad completa de
+              traspasos físicos, códigos verificados e integridad de custodia.
             </p>
           </div>
 
-          <div className={styles.tableCard}>
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Sello Temporal UTC</th>
-                    <th>Alumno & Salón</th>
-                    <th>Retirador Autorizado</th>
-                    <th>Funcionario Portón</th>
-                    <th>Código Handover</th>
-                    <th>Estado</th>
-                    <th>Integridad Criptográfica</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditLogs.map((log) => (
-                    <tr key={log.id}>
-                      <td style={{ color: '#94a3b8', fontVariantNumeric: 'tabular-nums', fontSize: '0.8125rem' }}>
-                        {log.timestamp}
-                      </td>
-                      <td>
-                        <div className={styles.studentNameArea}>
-                          <span className={styles.studentFullName}>{log.studentName}</span>
-                          <span className={styles.studentMeta}>{log.classroom}</span>
-                        </div>
-                      </td>
-                      <td>{log.pickerName}</td>
-                      <td>{log.staffName}</td>
-                      <td>
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            letterSpacing: '0.08em',
-                            color: '#4ade80',
-                            background: 'rgba(74, 222, 128, 0.1)',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          {log.handoverCode}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-                          {log.status}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontSize: '0.725rem',
-                            color: '#64748b',
-                          }}
-                          title={log.hashSha256}
-                        >
-                          {log.hashSha256.slice(0, 18)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AuditoriaTable metrics={metrics} logs={auditLogs} />
         </section>
       </main>
     </div>
   );
 }
-

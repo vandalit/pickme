@@ -200,7 +200,7 @@ export function CursosManager({
     startTransition(async () => {
       const res = await importStudentsCsvAction(csvText);
       if (res.success) {
-        setCsvFeedback(`✓ Se importaron exitosamente ${res.importedCount} alumnos.`);
+        setCsvFeedback(`Se importaron exitosamente ${res.importedCount} alumnos.`);
         setTimeout(() => {
           setIsCsvModalOpen(false);
           setCsvText('');

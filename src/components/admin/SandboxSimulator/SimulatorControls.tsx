@@ -64,7 +64,16 @@ export function SimulatorControls({
               }`}
             >
               <span className={styles.stepNumber}>
-                {isDone ? '✓ Completado' : `Fase 0${st.num}`}
+                {isDone ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Completado
+                  </span>
+                ) : (
+                  `Fase 0${st.num}`
+                )}
               </span>
               <span className={styles.stepLabel}>{st.label}</span>
             </button>

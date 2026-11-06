@@ -47,7 +47,12 @@ export function WhatsAppMockup({
           </div>
           <div className={styles.details}>
             <span className={styles.senderName}>
-              PickMe Colegio <span className={styles.verifiedBadge}>✓</span>
+              PickMe Colegio{' '}
+              <span className={styles.verifiedBadge}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
             </span>
             <span className={styles.statusText}>Cuenta de servicio verificada</span>
           </div>
@@ -81,12 +86,17 @@ export function WhatsAppMockup({
             }`}
             onClick={handleConfirm}
           >
-            {confirmedLocal ? '✓ Llegada confirmada a las 16:48' : '¿Llegó a casa? Confirmar aquí ✓'}
+            {confirmedLocal ? 'Llegada confirmada a las 16:48' : '¿Llegó a casa? Confirmar aquí'}
           </button>
 
           <div className={styles.metaRow}>
             <span>{timeString}</span>
-            <span className={styles.checkmarks}>✓✓</span>
+            <span className={styles.checkmarks} aria-label="Entregado y leído">
+              <svg width="16" height="12" viewBox="0 0 20 12" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M1 6l4 4L13 2" />
+                <path d="M6 6l4 4L18 2" />
+              </svg>
+            </span>
           </div>
         </div>
       </div>

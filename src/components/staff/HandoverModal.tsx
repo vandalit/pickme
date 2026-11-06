@@ -86,7 +86,9 @@ export function HandoverModal({
       {isSuccess ? (
         <div className={styles.successScreen} role="status">
           <span className={styles.successIcon} aria-hidden="true">
-            ✓
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </span>
           <h3 className={styles.successTitle}>¡Traspaso Confirmado!</h3>
           <p className={styles.successDesc}>
@@ -97,9 +99,10 @@ export function HandoverModal({
         <div className={styles.container}>
           <div className={styles.summaryCard} style={avatarStyle}>
             <div className={styles.avatar}>
-              <span role="img" aria-label={animal.name}>
-                {animal.emoji}
-              </span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
             </div>
             <div className={styles.summaryInfo}>
               <span className={styles.studentName}>
