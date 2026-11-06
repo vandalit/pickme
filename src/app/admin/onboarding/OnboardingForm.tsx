@@ -123,3 +123,4 @@ export function OnboardingForm({ initialAdminName, userEmail }: OnboardingFormPr
     </form>
   );
 }
+

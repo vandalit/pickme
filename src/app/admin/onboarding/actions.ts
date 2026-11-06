@@ -78,3 +78,4 @@ export async function completeOnboardingAction(
   // Redirigir a la gestión de cursos con el nuevo colegio configurado
   redirect('/admin/cursos?onboarded=1');
 }
+
