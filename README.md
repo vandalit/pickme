@@ -220,6 +220,7 @@ Para evaluar el sistema en local o en Vercel, utiliza las siguientes cuentas ins
 
 ## 📚 Documentación y Especificaciones
 
+* [`docs/PLAN_MVP_FUNCIONAL.md`](docs/PLAN_MVP_FUNCIONAL.md): **Plan Maestro de Ingeniería MVP**: Gobernanza real de cursos, onboarding institucional, importador masivo Excel/CSV y cadena de entrega end-to-end.
 * [`docs/PRD.md`](docs/PRD.md): Requerimientos de producto detallados, personas y reglas de negocio.
 * [`docs/SDD.md`](docs/SDD.md): Especificación formal de arquitectura de sistemas, launchpad y contratos criptográficos.
 * [`docs/INFORMATION_ARCHITECTURE.md`](docs/INFORMATION_ARCHITECTURE.md): Mapa integral de navegación, taxonomía y touchpoints UX.

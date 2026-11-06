@@ -43,6 +43,12 @@ enum CustodyStatus {
   ALERT         // Retardo severo, intento denegado o problema reportado
 }
 
+enum StudentStatus {
+  ACTIVE        // Matriculado activo para la jornada de salida
+  ABSENT        // Ausente hoy (licencia / inasistencia: no proyecta en TV ni genera alertas)
+  WITHDRAWN     // Retirado de la institución / dado de baja
+}
+
 // ── ESCUELAS Y USUARIOS ADMINISTRATIVOS ────────────────────────────────────
 
 model School {
@@ -102,6 +108,7 @@ model Student {
   initials       String          // Ej: "S.M." para Layer 1 (Staff)
   animalId       String          // Ej: "cocodrilo"
   colorId        String          // Ej: "amarillo"
+  status         StudentStatus   @default(ACTIVE) // ACTIVE, ABSENT, WITHDRAWN
   avatarConfig   Json?           // Opciones de avatar humanizado si aplica
   homeAddress    String?         // Dirección de entrega
   homeLatitude   Float?

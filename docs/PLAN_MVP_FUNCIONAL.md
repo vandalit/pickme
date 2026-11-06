@@ -108,3 +108,4 @@ Para asegurar que el sistema sea 100% go-live sin costos mensuales ni tarjetas d
 
 Comenzaremos por el núcleo de datos: **FASE 1 (Onboarding de cuenta) y FASE 2 (CRUD de Cursos, Alumnos y Asignador de Avatares en `/admin/cursos`)**.
 Con esto, cualquier usuario que entre al sistema podrá dar de alta su colegio, armar sus cursos y poblar su nómina con avatares reales.
+
