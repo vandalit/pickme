@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { auth, signOut } from '@/auth';
+import { AdminNav } from '@/components/admin/AdminNav';
+import { revalidatePath } from 'next/cache';
 import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -9,205 +11,456 @@ export const dynamic = 'force-dynamic';
 export default async function AdminDashboardPage() {
   const session = await auth();
   const userName = session?.user?.name || 'Sofía Valenzuela';
-  const userInitial = userName.charAt(0).toUpperCase();
 
-  // Consultar datos de PostgreSQL con fallback resiliente para modo offline/demo
+  // Datos resilientes desde PostgreSQL (Neon)
   let schoolName = 'Colegio San Martín';
-  let totalStudents = 6;
-  let totalClassrooms = 2;
   let activeSessionCode = 'SAN-1024';
+  let isSessionOpen = true;
+
+  // Embudo en vivo
+  let waitingCount = 3;
   let inProcessCount = 1;
   let completedCount = 2;
-  let isLiveDb = false;
+  let alertCount = 0;
+
+  // Lista de eventos/alumnos en vivo
+  type RosterItem = {
+    id: string;
+    studentName: string;
+    classroom: string;
+    animalId: string;
+    colorId: string;
+    pickerName: string;
+    relationship: string;
+    status: 'WAITING' | 'IN_PROCESS' | 'IN_TRANSIT' | 'ARRIVED' | 'ALERT';
+    timeFormatted: string;
+  };
+
+  let activeRoster: RosterItem[] = [
+    {
+      id: 'e1',
+      studentName: 'Vicente Toro Morales',
+      classroom: '1° Básico A',
+      animalId: 'cocodrilo',
+      colorId: 'amarillo',
+      pickerName: 'Ignacio Herrera',
+      relationship: 'Tío',
+      status: 'IN_PROCESS',
+      timeFormatted: '14:32',
+    },
+    {
+      id: 'e2',
+      studentName: 'Matías Silva Gómez',
+      classroom: '1° Básico A',
+      animalId: 'lobo',
+      colorId: 'azul',
+      pickerName: 'Carolina Herrera',
+      relationship: 'Mamá Titular',
+      status: 'WAITING',
+      timeFormatted: '14:30',
+    },
+    {
+      id: 'e3',
+      studentName: 'Sofía Morales Paz',
+      classroom: '1° Básico A',
+      animalId: 'panda',
+      colorId: 'verde',
+      pickerName: 'Don Pedro Transporte',
+      relationship: 'Furgón Escolar',
+      status: 'WAITING',
+      timeFormatted: '14:30',
+    },
+    {
+      id: 'e4',
+      studentName: 'Lucas Castro Ruiz',
+      classroom: '2° Básico B',
+      animalId: 'zorro',
+      colorId: 'naranja',
+      pickerName: 'Ignacio Herrera',
+      relationship: 'Tío',
+      status: 'ARRIVED',
+      timeFormatted: '14:25',
+    },
+    {
+      id: 'e5',
+      studentName: 'Valentina Soto Miranda',
+      classroom: '2° Básico B',
+      animalId: 'delfín',
+      colorId: 'celeste',
+      pickerName: 'Don Pedro Transporte',
+      relationship: 'Furgón Escolar',
+      status: 'IN_TRANSIT',
+      timeFormatted: '14:28',
+    },
+    {
+      id: 'e6',
+      studentName: 'Camila Rojas Benítez',
+      classroom: '2° Básico B',
+      animalId: 'león',
+      colorId: 'rojo',
+      pickerName: 'Carolina Herrera',
+      relationship: 'Mamá Titular',
+      status: 'WAITING',
+      timeFormatted: '14:30',
+    },
+  ];
 
   try {
-    const school = await prisma.school.findFirst();
+    const school = await prisma.school.findFirst({
+      include: {
+        sessions: {
+          where: { status: 'OPEN' },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            events: {
+              include: {
+                student: { include: { classroom: true } },
+                picker: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
     if (school) {
       schoolName = school.name;
-      totalStudents = await prisma.student.count();
-      totalClassrooms = await prisma.classroom.count();
+      const currentSession = school.sessions[0];
+      if (currentSession) {
+        activeSessionCode = currentSession.sessionCode;
+        isSessionOpen = currentSession.status === 'OPEN';
 
-      const activeSession = await prisma.pickupSession.findFirst({
-        where: { status: 'OPEN' },
-        orderBy: { createdAt: 'desc' },
-        include: { events: true },
-      });
+        if (currentSession.events.length > 0) {
+          waitingCount = currentSession.events.filter((e) => e.status === 'WAITING').length;
+          inProcessCount = currentSession.events.filter((e) => e.status === 'IN_PROCESS').length;
+          completedCount = currentSession.events.filter(
+            (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED'
+          ).length;
+          alertCount = currentSession.events.filter((e) => e.status === 'ALERT').length;
 
-      if (activeSession) {
-        activeSessionCode = activeSession.sessionCode;
-        inProcessCount = activeSession.events.filter(
-          (e) => e.status === 'IN_PROCESS'
-        ).length;
-        completedCount = activeSession.events.filter(
-          (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED'
-        ).length;
+          activeRoster = currentSession.events.map((e) => {
+            const date = e.updatedAt || e.createdAt;
+            const hours = date.getHours().toString().padStart(2, '0');
+            const mins = date.getMinutes().toString().padStart(2, '0');
+
+            return {
+              id: e.id,
+              studentName: e.student.fullName,
+              classroom: `${e.student.classroom.grade} ${e.student.classroom.section}`,
+              animalId: e.student.animalId,
+              colorId: e.student.colorId,
+              pickerName: e.picker?.fullName || 'Por confirmar',
+              relationship: e.picker?.relationship || 'Apoderado',
+              status: e.status as RosterItem['status'],
+              timeFormatted: `${hours}:${mins}`,
+            };
+          });
+        }
       }
-      isLiveDb = true;
     }
   } catch (error) {
-    console.warn(
-      '[AdminDashboard] Base de datos no disponible de forma síncrona, usando datos del seed en caché:',
-      error instanceof Error ? error.message : error
-    );
+    console.warn('[Admin] Cargando con datos resilientes de respaldo:', error);
+  }
+
+  // Server Action: Simular llegada de picker (Test de conexión)
+  async function simularArriboAction() {
+    'use server';
+    try {
+      // Buscar el primer alumno en espera y pasarlo a IN_PROCESS
+      const waitingEvent = await prisma.pickupEvent.findFirst({
+        where: { status: 'WAITING' },
+      });
+      if (waitingEvent) {
+        await prisma.pickupEvent.update({
+          where: { id: waitingEvent.id },
+          data: {
+            status: 'IN_PROCESS',
+            handoverCode: '582914',
+            pickerScannedAt: new Date(),
+          },
+        });
+      }
+    } catch {
+      // Si corre offline ignora el fallo
+    }
+    revalidatePath('/admin');
+  }
+
+  // Server Action: Cerrar sesión de usuario
+  async function handleSignOut() {
+    'use server';
+    await signOut({ redirectTo: '/auth/login' });
   }
 
   return (
     <div className={styles.container}>
-      {/* ── Top Header ── */}
-      <header className={styles.header}>
-        <div className={styles.userArea}>
-          <div className={styles.avatar}>{userInitial}</div>
-          <div className={styles.meta}>
-            <span className={styles.name}>{userName}</span>
-            <span className={styles.institution}>
-              Directora · {schoolName}
-            </span>
-          </div>
-        </div>
+      <AdminNav
+        userName={userName}
+        schoolName={schoolName}
+        activeSessionCode={activeSessionCode}
+        onSignOut={handleSignOut}
+      />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className={styles.statusPill}>
-            <span className={styles.dot} />
-            <span>
-              {activeSessionCode
-                ? `Sesión Activa: ${activeSessionCode}`
-                : 'Sin sesión abierta'}
-            </span>
-            {!isLiveDb && (
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  opacity: 0.7,
-                  marginLeft: '0.5rem',
-                  background: 'rgba(255,255,255,0.1)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }}
+      <main className={styles.main}>
+        {/* ── BARRA DE CONTROL DE JORNADA ── */}
+        <section className={styles.controlBar} aria-label="Control de Jornada">
+          <div className={styles.controlInfo}>
+            <div className={styles.controlTitleArea}>
+              <h1 className={styles.controlTitle}>Jornada de Salida — {activeSessionCode}</h1>
+              {isSessionOpen && (
+                <span className={styles.liveBadge}>
+                  <span className={styles.liveDot} />
+                  En Curso (14:30 hrs)
+                </span>
+              )}
+            </div>
+            <p className={styles.controlSubtitle}>
+              Sede Central · Puerta Principal · 6 Alumnos Convocados
+            </p>
+          </div>
+
+          <div className={styles.controlActions}>
+            <form action={simularArriboAction}>
+              <button
+                type="submit"
+                className={styles.simularBtn}
+                title="Prueba la reacción inmediata de Smart TV y Portón simulando el arribo de un apoderado"
               >
-                Demo Cache
-              </span>
-            )}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+                <span>Test de Conexión (Simular Arribo)</span>
+              </button>
+            </form>
+
+            <button
+              type="button"
+              className={styles.closeSessionBtn}
+              title="Cierra formalmente las rejas y genera el acta de custodia del día"
+            >
+              <span>Cerrar Jornada Escolar</span>
+            </button>
+          </div>
+        </section>
+
+        {/* ── LAUNCHPAD DE PANTALLAS (DESPACHO MULTI-DISPOSITIVO) ── */}
+        <section className={styles.sectionBlock} aria-label="Centro de Despacho">
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Centro de Despacho (Launchpad de Pantallas)</h2>
+            <p className={styles.sectionDesc}>
+              Abre o distribuye las terminales de salida según el rol y la ubicación física en el colegio.
+            </p>
           </div>
 
-          <form
-            action={async () => {
-              'use server';
-              await signOut({ redirectTo: '/auth/login' });
-            }}
-          >
-            <button
-              type="submit"
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#f87171',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              Cerrar Sesión
-            </button>
-          </form>
-        </div>
-      </header>
+          <div className={styles.launchpadGrid}>
+            {/* Terminal 1: Smart TV Patio */}
+            <article className={styles.launchCard}>
+              <div className={styles.launchCardTop}>
+                <div className={`${styles.launchIconWrapper} ${styles.launchIconTv}`}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <div className={styles.launchCardMeta}>
+                  <span className={styles.launchCardBadge}>Capa 0 · Patio Escolar</span>
+                  <h3 className={styles.launchCardTitle}>Smart TV Mural</h3>
+                  <p className={styles.launchCardDesc}>
+                    Proyección anónima en pantalla gigante. Llama a los alumnos por Animal + Color.
+                  </p>
+                </div>
+              </div>
+              <div className={styles.launchCardActions}>
+                <Link
+                  href={`/board/${activeSessionCode}`}
+                  target="_blank"
+                  className={styles.launchPrimaryBtn}
+                >
+                  <span>Lanzar en Pantalla Completa ↗</span>
+                </Link>
+              </div>
+            </article>
 
-      {/* ── Highlight Banner: Sandbox Simulator ── */}
-      <section className={styles.sandboxBanner} aria-label="Simulador de Validación">
-        <div className={styles.sandboxInfo}>
-          <span className={styles.sandboxBadge}>Criterio CA-5 · Onboarding</span>
-          <h2 className={styles.sandboxTitle}>
-            Sandbox Simulator: Valida el ciclo escolar en 3 minutos
-          </h2>
-          <p className={styles.sandboxDesc}>
-            Prueba cómo interactúa el Smart TV del portón con el celular del picker y la tablet de Carlos sin afectar los registros de los alumnos. Simula llegadas, rotación de QR y traspasos con código de 6 dígitos.
-          </p>
-        </div>
+            {/* Terminal 2: Consola Portón Staff */}
+            <article className={styles.launchCard}>
+              <div className={styles.launchCardTop}>
+                <div className={`${styles.launchIconWrapper} ${styles.launchIconStaff}`}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2" />
+                    <line x1="8" y1="7" x2="16" y2="7" />
+                    <line x1="8" y1="11" x2="16" y2="11" />
+                  </svg>
+                </div>
+                <div className={styles.launchCardMeta}>
+                  <span className={styles.launchCardBadge}>Capa 1 · Personal Portería</span>
+                  <h3 className={styles.launchCardTitle}>Tablet Portón (Carlos)</h3>
+                  <p className={styles.launchCardDesc}>
+                    Cola viva de entrega con teclado táctil de 64px para digitar el Handover Code.
+                  </p>
+                </div>
+              </div>
+              <div className={styles.launchCardActions}>
+                <Link
+                  href="/staff"
+                  target="_blank"
+                  className={styles.launchPrimaryBtn}
+                >
+                  <span>Abrir Consola Portón ↗</span>
+                </Link>
+              </div>
+            </article>
 
-        <Link
-          href="/admin/simulador"
-          style={{
-            padding: '0.85rem 1.5rem',
-            borderRadius: '0.75rem',
-            background: 'var(--color-brand)',
-            color: '#0b1528',
-            fontWeight: 700,
-            textDecoration: 'none',
-            boxShadow: '0 4px 14px rgba(74, 222, 128, 0.4)',
-          }}
-        >
-          Iniciar Simulador Interactivo ➔
-        </Link>
-      </section>
+            {/* Terminal 3: Afiche QR Pickers */}
+            <article className={styles.launchCard}>
+              <div className={styles.launchCardTop}>
+                <div className={`${styles.launchIconWrapper} ${styles.launchIconPicker}`}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <path d="M12 18h.01" />
+                  </svg>
+                </div>
+                <div className={styles.launchCardMeta}>
+                  <span className={styles.launchCardBadge}>Capa 1 · Apoderados & Pickers</span>
+                  <h3 className={styles.launchCardTitle}>Punto de Llegada Móvil</h3>
+                  <p className={styles.launchCardDesc}>
+                    Enlace directo que escanean los apoderados en portería sin descargar apps.
+                  </p>
+                </div>
+              </div>
+              <div className={styles.launchCardActions}>
+                <Link
+                  href={`/retirar?session=${activeSessionCode}`}
+                  target="_blank"
+                  className={styles.launchPrimaryBtn}
+                >
+                  <span>Simular Retiro Picker ↗</span>
+                </Link>
+              </div>
+            </article>
+          </div>
+        </section>
 
-      {/* ── Metrics Grid ── */}
-      <section className={styles.metricsGrid} aria-label="Métricas del día">
-        <div className={styles.metricCard}>
-          <span className={styles.metricLabel}>Alumnos Registrados</span>
-          <span className={styles.metricValue}>{totalStudents}</span>
-        </div>
+        {/* ── EMBUDO DE SALIDA EN VIVO ── */}
+        <section className={styles.sectionBlock} aria-label="Métricas en Tiempo Real">
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Embudo Operativo de Salida</h2>
+            <p className={styles.sectionDesc}>
+              Distribución en vivo de los alumnos convocados para la sesión de hoy.
+            </p>
+          </div>
 
-        <div className={styles.metricCard}>
-          <span className={styles.metricLabel}>Cursos Activos</span>
-          <span className={styles.metricValue}>{totalClassrooms}</span>
-        </div>
+          <div className={styles.funnelGrid}>
+            <div className={styles.funnelCard}>
+              <span className={styles.funnelLabel}>
+                <span style={{ color: '#38bdf8' }}>●</span> En Aula / Esperando
+              </span>
+              <span className={styles.funnelValue} style={{ color: '#38bdf8' }}>
+                {waitingCount}
+              </span>
+            </div>
 
-        <div className={styles.metricCard}>
-          <span className={styles.metricLabel}>En Portón Ahora</span>
-          <span className={styles.metricValue} style={{ color: '#FCD34D' }}>
-            {inProcessCount}
-          </span>
-        </div>
+            <div className={styles.funnelCard}>
+              <span className={styles.funnelLabel}>
+                <span style={{ color: '#fbbf24' }}>●</span> En Portón / Traspaso
+              </span>
+              <span className={styles.funnelValue} style={{ color: '#fbbf24' }}>
+                {inProcessCount}
+              </span>
+            </div>
 
-        <div className={styles.metricCard}>
-          <span className={styles.metricLabel}>Retiros Completados</span>
-          <span className={styles.metricValue} style={{ color: '#6EE7B7' }}>
-            {completedCount}
-          </span>
-        </div>
-      </section>
+            <div className={styles.funnelCard}>
+              <span className={styles.funnelLabel}>
+                <span style={{ color: '#4ade80' }}>●</span> Retirados con Éxito
+              </span>
+              <span className={styles.funnelValue} style={{ color: '#4ade80' }}>
+                {completedCount}
+              </span>
+            </div>
 
-      {/* ── Navigation Hub ── */}
-      <h3 className={styles.sectionTitle}>Puntos de Contacto y Vistas Operativas</h3>
-      <section className={styles.navGrid}>
-        <Link
-          href="/board/SAN-1024"
-          target="_blank"
-          className={styles.navCard}
-        >
-          <span className={styles.navCardIcon}>📺</span>
-          <span className={styles.navCardTitle}>Smart TV Portón (Layer 0) ↗</span>
-          <span className={styles.navCardDesc}>
-            Pantalla pasiva con códigos anónimos Animal + Color y código QR visible para apoderados.
-          </span>
-        </Link>
+            <div className={styles.funnelCard}>
+              <span className={styles.funnelLabel}>
+                <span style={{ color: '#f87171' }}>●</span> Alertas / Retardos
+              </span>
+              <span className={styles.funnelValue} style={{ color: '#f87171' }}>
+                {alertCount}
+              </span>
+            </div>
+          </div>
+        </section>
 
-        <Link
-          href="/staff"
-          target="_blank"
-          className={styles.navCard}
-        >
-          <span className={styles.navCardIcon}>📋</span>
-          <span className={styles.navCardTitle}>Portal de Portón Staff (Layer 1) ↗</span>
-          <span className={styles.navCardDesc}>
-            Tablet para el auxiliar con cola de llamados y validación con teclado táctil de 6 dígitos.
-          </span>
-        </Link>
+        {/* ── MONITOR EN VIVO DE ALUMNOS (CAPA 2) ── */}
+        <section className={styles.sectionBlock} aria-label="Monitor de Alumnos">
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Monitor en Tiempo Real (Nivel de Auditoría Capa 2)</h2>
+            <p className={styles.sectionDesc}>
+              Visibilidad total de identidades: nombres completos, identificador anónimo de patio y estado de custodia.
+            </p>
+          </div>
 
-        <Link
-          href="/retirar?session=SAN-1024"
-          target="_blank"
-          className={styles.navCard}
-        >
-          <span className={styles.navCardIcon}>📱</span>
-          <span className={styles.navCardTitle}>Móvil del Picker (/retirar) ↗</span>
-          <span className={styles.navCardDesc}>
-            Experiencia web sin descarga de app para que apoderados y choferes anuncien su llegada.
-          </span>
-        </Link>
-      </section>
+          <div className={styles.tableCard}>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Identificador Patio (Capa 0)</th>
+                    <th>Alumno (Capa 2)</th>
+                    <th>Curso</th>
+                    <th>Retirador Convocado</th>
+                    <th>Estado de Custodia</th>
+                    <th>Hora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeRoster.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <span className={styles.animalBadge}>
+                          <span>🐾</span>
+                          <span>{item.animalId} {item.colorId}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <div className={styles.studentNameArea}>
+                          <span className={styles.studentFullName}>{item.studentName}</span>
+                        </div>
+                      </td>
+                      <td>{item.classroom}</td>
+                      <td>
+                        <div className={styles.pickerCell}>
+                          <span className={styles.pickerName}>{item.pickerName}</span>
+                          <span className={styles.pickerRelation}>{item.relationship}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {item.status === 'WAITING' && (
+                          <span className={styles.statusWaiting}>
+                            <span>●</span> En Aula
+                          </span>
+                        )}
+                        {item.status === 'IN_PROCESS' && (
+                          <span className={styles.statusInProcess}>
+                            <span>●</span> En Portón
+                          </span>
+                        )}
+                        {(item.status === 'IN_TRANSIT' || item.status === 'ARRIVED') && (
+                          <span className={styles.statusInTransit}>
+                            <span>✓</span> Entregado
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
+                        {item.timeFormatted} hrs
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

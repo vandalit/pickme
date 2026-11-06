@@ -2,209 +2,428 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-bg);
+  background-color: var(--color-bg-base);
   color: var(--color-text-primary);
-  padding: 1.5rem 2rem;
-  gap: 1.75rem;
-  max-width: 1280px;
+}
+
+.main {
+  max-width: 1360px;
+  width: 100%;
   margin: 0 auto;
-}
-
-/* ── Top Bar ─────────────────────────────────── */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.userArea {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  background: var(--color-brand);
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 1.25rem;
-}
-
-.meta {
+  padding: 2rem 1.5rem 4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 2.5rem;
 }
 
-.name {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
+/* ── SESSION CONTROL BAR ────────────────────────────────────── */
+.controlBar {
+  background: rgba(18, 26, 47, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.institution {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
+.controlInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.statusPill {
+.controlTitleArea {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.controlTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.liveBadge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #6EE7B7;
-  font-size: 0.8rem;
-  font-weight: 700;
+  gap: 0.375rem;
+  padding: 0.2rem 0.625rem;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #4ade80;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.dot {
+.liveDot {
   width: 6px;
   height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--color-picked-up);
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
 }
 
-/* ── Metrics Row ─────────────────────────────── */
-.metricsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-.metricCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 1.25rem;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-}
-
-.metricLabel {
-  font-size: 0.8rem;
-  font-weight: 600;
+.controlSubtitle {
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-.metricValue {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Sandbox Highlight Banner ────────────────── */
-.sandboxBanner {
+.controlActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.5rem 1.75rem;
-  border-radius: var(--radius-xl);
-  background: linear-gradient(145deg, rgba(108, 99, 255, 0.15) 0%, rgba(30, 30, 46, 0.6) 100%);
-  border: 1.5px solid var(--color-brand);
-  box-shadow: 0 10px 30px rgba(108, 99, 255, 0.2);
+  gap: 0.875rem;
   flex-wrap: wrap;
 }
 
-.sandboxInfo {
+.simularBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.125rem;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.simularBtn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+.closeSessionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.125rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeSessionBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+/* ── LAUNCHPAD SECTION ──────────────────────────────────────── */
+.sectionBlock {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  max-width: 600px;
+  gap: 1.25rem;
 }
 
-.sandboxBadge {
-  align-self: flex-start;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-full);
-  background: rgba(108, 99, 255, 0.3);
-  color: #FFF;
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.sandboxTitle {
+.sectionTitle {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #FFF;
+  color: #ffffff;
+  letter-spacing: -0.015em;
 }
 
-.sandboxDesc {
-  font-size: 0.88rem;
-  color: #D1D5DB;
-  line-height: 1.4;
+.sectionDesc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
 }
 
-/* ── Navigation Cards Grid ───────────────────── */
-.sectionTitle {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.navGrid {
+.launchpadGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.launchCard {
+  background: rgba(18, 26, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.launchCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.launchCardTop {
+  display: flex;
+  align-items: flex-start;
   gap: 1rem;
 }
 
-.navCard {
+.launchIconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.launchIconTv {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.launchIconStaff {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.launchIconPicker {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.launchCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.launchCardBadge {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.launchCardTitle {
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: #ffffff;
+}
+
+.launchCardDesc {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.launchCardActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.launchPrimaryBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.launchPrimaryBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── LIVE FUNNEL METRICS ─────────────────────────────────────── */
+.funnelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.funnelCard {
+  background: rgba(18, 26, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.25rem;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid var(--color-border);
-  text-decoration: none;
-  transition: all var(--transition-fast);
 }
 
-.navCard:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
-}
-
-.navCardIcon {
-  font-size: 1.75rem;
-}
-
-.navCardTitle {
-  font-size: 1rem;
+.funnelLabel {
+  font-size: 0.775rem;
   font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.navCardDesc {
-  font-size: 0.82rem;
   color: var(--color-text-secondary);
-  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-@media (max-width: 900px) {
-  .metricsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .navGrid {
-    grid-template-columns: 1fr;
-  }
+.funnelValue {
+  font-size: 2.25rem;
+  font-weight: 850;
+  line-height: 1;
+  color: #ffffff;
 }
 
+/* ── ROSTER TABLE ───────────────────────────────────────────── */
+.tableCard {
+  background: rgba(18, 26, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.table th {
+  background: rgba(11, 17, 33, 0.8);
+  padding: 1rem 1.25rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.studentIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.animalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-transform: capitalize;
+}
+
+.studentNameArea {
+  display: flex;
+  flex-direction: column;
+}
+
+.studentFullName {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.studentMeta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pickerCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.pickerName {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.pickerRelation {
+  font-size: 0.75rem;
+  color: #38bdf8;
+}
+
+.statusWaiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
+
+.statusInProcess {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
+
+.statusInTransit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #4ade80;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
