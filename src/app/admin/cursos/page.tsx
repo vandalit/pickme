@@ -1,16 +1,28 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { auth, signOut } from '@/auth';
 import { AdminNav } from '@/components/admin/AdminNav';
+import { resolveUserSchool } from '@/lib/userSchool';
 import styles from '../page.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCursosPage() {
   const session = await auth();
-  const userName = session?.user?.name || 'Sofía Valenzuela';
 
-  let schoolName = 'Colegio San Martín';
+  if (!session?.user?.email) {
+    redirect('/auth/login');
+  }
+
+  // 1. Resolver el colegio asociado a la cuenta
+  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
+  if (needsOnboarding) {
+    redirect('/admin/onboarding');
+  }
+
+  const userName = session.user.name || 'Director(a)';
+  let schoolName = resolvedSchool?.name || 'Colegio San Martín';
   let activeSessionCode = 'SAN-1024';
 
   type StudentRecord = {
@@ -96,6 +108,7 @@ export default async function AdminCursosPage() {
 
   try {
     const school = await prisma.school.findFirst({
+      where: resolvedSchool?.id ? { id: resolvedSchool.id } : undefined,
       include: {
         classrooms: {
           include: {

@@ -41,3 +41,4 @@ export function assignNextAvailableAvatar(
     publicLabel: `${ANIMALS[0].name} ${COLORS[0].name}`,
   };
 }
+
