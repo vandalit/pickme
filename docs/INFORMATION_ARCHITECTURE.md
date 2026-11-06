@@ -1,103 +1,78 @@
 # PickMe — Arquitectura de Información y Mapa de Navegación UX
 
-**Versión**: 1.0  
+**Versión**: 2.0  
 **Fecha**: Noviembre 2026  
-**Enfoque**: Modularidad de Componentes, Privacy by Design y Product-Led Onboarding  
+**Propósito**: Taxonomía de navegación, jerarquía visual y distribución de componentes por nivel de exposición de datos.
 
 ---
 
 ## 1. Visión General de la Taxonomía
 
-PickMe divide la experiencia de usuario en **tres zonas estrictamente delimitadas**:
-
 ```
-                                  PICKME
-                                     │
-      ┌──────────────────────────────┼──────────────────────────────┐
-      │                              │                              │
-      ▼                              ▼                              ▼
-  ZONA PÚBLICA                 ZONA PORTÓN                   ZONA ADMINISTRACIÓN
-(Sin autenticación)         (Personal escolar)             (Sofía / Google Auth)
-      │                              │                              │
-      ├── / (Landing)                └── /staff                     ├── /admin (Dashboard)
-      ├── /board/[sessionId] (TV)        • Lista en tiempo real     ├── /admin/colegio (Sedes/Horarios)
-      ├── /retirar (Picker móvil)        • Handover Keypad          ├── /admin/cursos (Salones y Alumnos)
-      └── /apoderado (Magic link)        • Layer 1 (Iniciales)      ├── /admin/sesiones (En vivo)
-                                                                    ├── /admin/simulador (Sandbox Demo)
-                                                                    └── /admin/auditoria (Historial)
+                                      PICKME (Ecosistema Global)
+                                                  │
+         ┌────────────────────────────────────────┼────────────────────────────────────────┐
+         │                                        │                                        │
+         ▼                                        ▼                                        ▼
+   ZONA PÚBLICA / MÓVIL                     ZONA DE PORTÓN                          ZONA DE GESTIÓN
+(Cero Barrera de Entrada)               (Personal de Portería)                  (Directora Sofía / Auth)
+         │                                        │                                        │
+         ├── / (Landing Showcase)                 └── /staff (Tablet de Entrega)           ├── /auth/login (Login Institucional)
+         ├── /board/[sessionId] (TV Patio)             • Cola viva de retiro               ├── /admin (Jornada & Launchpad)
+         │    • Animal + Color único                   • Teclado Keypad 64px               ├── /admin/cursos (Nómina Alumnos)
+         └── /retirar (Picker Móvil)                   • Capa 1: Iniciales                 ├── /admin/auditoria (Bitácora Legal)
+              • Búsqueda por teléfono                                                      └── /admin/simulador (Sandbox Demo)
+              • Generación Handover Code
 ```
 
 ---
 
 ## 2. Matriz de Rutas y Especificación de Pantallas
 
-### 2.1 Zona Pública (Cero Barreras de Acceso)
-
-| Ruta | Actor Principal | Dispositivo Target | Nivel de Privacidad | Comportamiento UX |
+| Ruta | Actor Principal | Dispositivo Óptimo | Nivel de Privacidad | Propósito y Capacidades Clave |
 |---|---|---|---|---|
-| **`/`** | Directores, Padres, Visitantes | Desktop / Móvil | Público | Landing institucional con propuesta de valor, botón "Iniciar con Google" para colegios y acceso rápido a demostración. |
-| **`/board/[sessionId]`** | Transeúntes, Choferes, Niños | Smart TV (55"+) | **Layer 0 (Máximo Anonimato)** | Pantalla 100% pasiva y no interactiva. Grid de alumnos por curso usando únicamente código *Animal + Color*. Código QR firmado con rotación cada 5 min y código alfanumérico visible. Cero interacción táctil. |
-| **`/retirar`** | Picker (Familiar / Chofer) | Smartphone (Web) | Layer 1 (Restringido) | Se abre tras escanear el QR o tipear `pickme.app/retirar`. Formulario minimalista: celular + búsqueda de alumno. Pantalla de espera reactiva y display del *Handover Code* de 6 dígitos. |
-| **`/apoderado`** | Tutor Legal | Smartphone (Web) | Layer 2 (Verificado) | Acceso por Magic Link temporal. Gestión de personas autorizadas (permanente o temporal) y botón interactivo para confirmar llegada segura del alumno. |
-
-### 2.2 Zona de Portón (Personal Escolar)
-
-| Ruta | Actor Principal | Dispositivo Target | Nivel de Privacidad | Comportamiento UX |
-|---|---|---|---|---|
-| **`/staff`** | Maestra / Auxiliar de portón | Tablet / Smartphone | **Layer 1 (Operativo)** | Vista autenticada optimizada para uso con una sola mano bajo luz solar. Lista de llamados entrantes en tiempo real (Pusher) mostrando Avatar + Iniciales del menor + Nombre del Picker. Teclado numérico táctil (*Keypad*) para ingresar el código de traspaso físico. |
-
-### 2.3 Zona de Administración (Sofía)
-
-| Ruta | Actor Principal | Dispositivo Target | Nivel de Privacidad | Comportamiento UX |
-|---|---|---|---|---|
-| **`/admin`** | Sofía (Directora) | Desktop / Tablet | **Layer 2 (Auditoría Total)** | Vista general de la institución: métricas del día (alumnos esperando, en proceso y entregados), accesos rápidos y sesiones activas. |
-| **`/admin/colegio`** | Sofía | Desktop | Layer 2 | Configuración del colegio: sedes, turnos de salida (mañana, tarde), tolerancia de horarios y parámetros de rotación de QR. |
-| **`/admin/cursos`** | Sofía | Desktop | Layer 2 | Jerarquía de salones (1°A, 2°B). Carga de nómina de alumnos (manual o CSV) y asignación automática del identificador único *Animal + Color* por aula. |
-| **`/admin/sesiones`** | Sofía / Staff | Desktop / Tablet | Layer 2 | Apertura, supervisión y cierre formal de sesiones de salida escolar en tiempo real. |
-| **`/admin/simulador`** | Sofía | Desktop | **Sandbox Privado** | **El Sandbox de Validación**: pantalla dividida interactiva que permite a Sofía simular una sesión completa con datos mock para validar conexiones, tokens, QR, fechas operativas y tracking antes de operar en vivo. |
-| **`/admin/auditoria`** | Sofía | Desktop | Layer 2 | Libro inmutable de eventos de custodia (`PickupEvent`), incidentes y exportación de reportes en CSV/PDF para respaldo legal. |
+| **`/`** | Visitante / Evaluador | Desktop / Móvil | Público | Presentación del caso de estudio, propuesta de valor de las 3 capas y accesos directos al ecosistema. |
+| **`/board/[sessionId]`** | Alumnos y Docentes en Patio | Smart TV 1080p | **Capa 0 (Público Pasivo)** | Proyección de llamados de alumnos mediante tarjetas de alto contraste con su *Animal + Color* asignado. Cero nombres. |
+| **`/retirar`** | Apoderados y Pickers | Smartphone (Web Móvil) | **Capa 1 (Operativo)** | Búsqueda por número celular, selección de alumnos autorizados y generación del código de traspaso de 6 dígitos. |
+| **`/staff`** | Auxiliar en Portón (Carlos) | Tablet 10" / Móvil | **Capa 1 (Operativo)** | Cola en tiempo real de alumnos llamados, verificación de parentesco del picker y validación táctil con teclado de 64px. |
+| **`/auth/login`** | Directores y Staff | Desktop / Móvil | Seguro (JWT) | Punto único de acceso con credenciales institucionales o Google Workspace OAuth. |
+| **`/admin`** | Directora (Sofía) | Desktop / Laptop | **Capa 2 (Auditoría Total)** | **Centro de Despacho (Launchpad)**: apertura y cierre de jornada, métricas de embudo y generación de enlaces para TV, Portón y QR. |
+| **`/admin/cursos`** | Directora (Sofía) | Desktop | **Capa 2 (Auditoría Total)** | Nómina completa de salones y alumnos. Despliega nombres completos, cursos, apoderados autorizados y pares Animal+Color. |
+| **`/admin/auditoria`** | Directora (Sofía) | Desktop | **Capa 2 (Auditoría Total)** | Registro histórico inmutable de eventos de custodia, firmas de funcionarios, tiempos de espera e incidentes. |
+| **`/admin/simulador`** | Directora / Evaluador | Desktop (Split-screen) | Herramienta Sandbox | Laboratorio de pruebas en 3 columnas que simula la interacción completa de Smart TV, Móvil y Tablet en < 3 minutos. |
 
 ---
 
-## 3. Arquitectura Modular de Componentes (`src/components/`)
-
-Diseñada bajo el principio de **Componentes Presentacionales (Puros) vs. Contenedores de Estado**:
+## 3. Modelo de Componentes UI (`src/components/`)
 
 ```
 src/components/
-├── ui/                     # Átomos y Componentes Base Reutilizables
-│   ├── Button/             # Botones accesibles (variantes: primary, secondary, alert, ghost)
-│   ├── Badge/              # Badges de estado de custodia (waiting, in_process, picked_up)
-│   ├── Keypad/             # Teclado táctil numérico de 6 dígitos para portón
-│   ├── Modal/              # Diálogo accesible con focus trap y escape
-│   └── QRDisplay/          # Renderizador SVG local y offline con qrcode.react
+├── ui/                     # Átomos del Sistema de Diseño (Design Tokens)
+│   ├── Badge/              # Indicador de estado de custodia (WAITING, IN_PROCESS, ARRIVED, ALERT)
+│   ├── Button/             # Botones táctiles elásticos (primary, secondary, alert, ghost)
+│   ├── Keypad/             # Teclado numérico táctil accesible de 64px con ranuras de código
+│   ├── QRDisplay/          # Renderizador de código QR vectorial autónomo (qrcode.react)
+│   └── Modal/              # Diálogo accesible con focus trap y escape handler
 │
-├── board/                  # Módulo Smart TV (Layer 0)
-│   ├── BoardHeader.tsx     # Cabecera con logo, fecha, reloj en vivo y métricas pill
-│   ├── StudentGrid.tsx     # Cuadrícula agrupada por salones con auto-fill responsive
-│   ├── StudentCard.tsx     # Card de alumno con glow de color, emoji animal y animación
-│   └── QRPanel.tsx         # Panel lateral de portón con anillo SVG de progreso
+├── board/                  # Componentes de Pantalla Mural Smart TV (Capa 0)
+│   ├── BoardHeader.tsx     # Reloj vivo en tiempo real, fecha en español y contadores
+│   ├── StudentCard.tsx     # Tarjeta anónima con avatar animal y color dinámico
+│   ├── StudentGrid.tsx     # Grilla fluida de alta visibilidad ordenada por prioridad
+│   └── QRPanel.tsx         # Panel lateral con código QR grande para apoderados
 │
-├── staff/                  # Módulo de Portón (Layer 1)
-│   ├── ValidationCard.tsx  # Ficha del picker autorizado y avatar con iniciales
-│   └── HandoverModal.tsx   # Modal de tipeo rápido del código de traspaso físico
+├── picker/                 # Asistente Móvil de Retiro (Capa 1)
+│   ├── StepLookup.tsx      # Formulario de teléfono y validación de sesión
+│   ├── StepStudentSelect.tsx # Selector visual de alumnos autorizados
+│   └── StepHandoverDisplay.tsx # Despliegue del Handover Code de 6 dígitos con temporizador
 │
-└── admin/                  # Módulo Administrativo y Sandbox
-    ├── AdminSidebar.tsx    # Barra lateral de navegación del panel de Sofía
-    ├── SchoolSetup.tsx     # Asistente de configuración de cursos y turnos
-    └── SandboxSimulator/   # Motor de simulación y demostración guiada
-        ├── SimulatorShell.tsx   # Contenedor de pantalla dividida
-        ├── VirtualPhone.tsx     # Mockup de smartphone para roles Picker y Apoderado
-        ├── WhatsAppMockup.tsx   # Maqueta visual interactiva de mensajes y botones
-        └── LiveLogConsole.tsx   # Consola de depuración de tokens y eventos en vivo
+├── staff/                  # Consola de Auxiliar de Portón (Capa 1)
+│   ├── StaffHeader.tsx     # Filtro por estados (Todos, En Portón, Esperando, Entregados)
+│   ├── ValidationCard.tsx  # Tarjeta de validación de identidad con iniciales y picker
+│   └── HandoverModal.tsx   # Modal de validación táctil con Keypad integrado
+│
+└── admin/                  # Consola de Gobierno Escolar y Simulación (Capa 2)
+    ├── LaunchpadHub.tsx    # Centro de despacho de URLs (Smart TV, Portón, Afiche QR)
+    ├── RosterTable.tsx     # Tabla de alumnos con revelación de nombres y retiradores
+    ├── SessionFunnel.tsx   # Gráfico de embudo de salida en tiempo real
+    └── SandboxSimulator/   # Vista interactiva dividida en 3 columnas (TV, Móvil, Tablet)
 ```
-
----
-
-## 4. Principios de Interfaz y Diseño Visual (UX Guidelines)
-
-1. **Tokens Centralizados**: Ningún componente define colores o radios en duro; todos consumen variables de `src/app/globals.css`.
-2. **Microanimaciones Funcionales**: Uso de curvas de resorte (`cubic-bezier(0.34, 1.56, 0.64, 1)`) para dar feedback inmediato sin ralentizar el dispositivo móvil.
-3. **Legibilidad a Distancia (Smart TV)**: Tipografía Inter con escala tipográfica agrandada para ser leída sin esfuerzo a 5-10 metros de distancia en exteriores.
-4. **Ergonomía Táctil en Portón**: En `/staff` y `/retirar`, las áreas de toque (*touch targets*) tienen un mínimo de 48×48px para operar rápidamente con una sola mano.
-
