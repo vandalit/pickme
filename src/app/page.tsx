@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import styles from "./page.module.css"
 
 export default function HomePage() {
@@ -29,8 +30,11 @@ export default function HomePage() {
             <Link href="/board/SAN-1024" className={styles.navLink}>
               Board TV
             </Link>
-            <Link href="/admin/simulador" className={styles.navButton}>
-              <span>Simulador Sandbox</span>
+            <Link href="/staff" className={styles.navLink}>
+              Portón Staff
+            </Link>
+            <Link href="/auth/login" className={styles.loginButton}>
+              <span>Acceso Colegio</span>
               <svg
                 width="14"
                 height="14"
@@ -44,16 +48,23 @@ export default function HomePage() {
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link href="/auth/login" className={styles.navLink}>
-              Acceso Colegio
-            </Link>
           </nav>
         </div>
       </header>
 
       <main>
-        {/* ── HERO INTEGRADO ── */}
+        {/* ── HERO CON BACKDROP NATIVO Y OVERLAY CONTROLADO ── */}
         <section className={styles.hero}>
+          <Image
+            src="/banner.png"
+            alt="PickMe Banner Ecosistema Escolar"
+            fill
+            priority
+            sizes="100vw"
+            className={styles.heroImage}
+          />
+          <div className={styles.heroOverlay} />
+
           <div className={styles.heroContent}>
             <div className={styles.heroPill}>
               <span className={styles.pillDot} />

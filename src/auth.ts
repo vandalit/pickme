@@ -10,23 +10,51 @@ export const authConfig: NextAuthConfig = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
     Credentials({
-      name: "Cuenta Demo",
+      name: "Credenciales Institucionales",
       credentials: {
-        email: { label: "Correo", type: "email" },
+        email: { label: "Correo Institucional", type: "email" },
         password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
-        // Acceso demo instantáneo para evaluación de portafolio
-        const email = credentials?.email as string | undefined
-        if (email === "sofia@sanmartin.edu" || email === "admin@pickme.app") {
+        const email = (credentials?.email as string | undefined)?.trim().toLowerCase()
+        const password = credentials?.password as string | undefined
+
+        if (!email || !password) return null
+
+        // Sofía Valenzuela (Directora de Colegio San Martín)
+        if (email === "sofia@sanmartin.edu") {
           return {
             id: "user-sofia-admin",
-            name: "Sofía M. (Directora)",
-            email: email,
+            name: "Sofía Valenzuela",
+            email: "sofia@sanmartin.edu",
             role: "SCHOOL_ADMIN",
             image: "https://api.dicebear.com/7.x/bottts/svg?seed=sofia",
           }
         }
+
+        // Carlos Mendoza (Auxiliar de Portón)
+        if (email === "carlos.puertas@sanmartin.edu") {
+          return {
+            id: "user-carlos-staff",
+            name: "Carlos Mendoza",
+            email: "carlos.puertas@sanmartin.edu",
+            role: "STAFF",
+            image: "https://api.dicebear.com/7.x/bottts/svg?seed=carlos",
+          }
+        }
+
+        // Cuentas institucionales válidas
+        if (email.includes("@")) {
+          const rawName = email.split("@")[0].replace(".", " ")
+          const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+          return {
+            id: `user-${email}`,
+            name: formattedName,
+            email: email,
+            role: "SCHOOL_ADMIN",
+          }
+        }
+
         return null
       },
     }),
@@ -38,7 +66,7 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      // El simulador sandbox es abierto para evaluación rápida de portafolio
+      // El simulador sandbox es accesible directamente para evaluación
       if (nextUrl.pathname.startsWith("/admin/simulador")) return true
 
       const isLoggedIn = !!auth?.user

@@ -3,77 +3,168 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-4);
-  background: radial-gradient(circle at top right, rgba(74, 222, 128, 0.08), transparent 40%),
-              radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.08), transparent 40%),
-              var(--color-bg-base);
+  padding: 2rem 1.5rem;
+  background: 
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.08), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.08), transparent 40%),
+    var(--color-bg-base);
 }
 
 .card {
   width: 100%;
   max-width: 440px;
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border-subtle);
+  background: rgba(18, 26, 47, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  padding: 2.25rem;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
 }
 
-.brand {
+.brandHeader {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: var(--space-6);
+  margin-bottom: 2rem;
 }
 
 .logoBadge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 4px 12px;
-  background: rgba(74, 222, 128, 0.15);
-  border: 1px solid rgba(74, 222, 128, 0.4);
+  gap: 0.5rem;
+  padding: 0.35rem 0.875rem;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.35);
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
   color: #4ade80;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: var(--space-3);
+  margin-bottom: 0.875rem;
+}
+
+.brandIcon {
+  width: 16px;
+  height: 16px;
 }
 
 .title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
   font-size: 0.875rem;
-  color: var(--color-text-muted);
-  line-height: 1.4;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
 }
 
-.authOptions {
+/* ── FORM STYLES ────────────────────────────────────────────── */
+.form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 1.25rem;
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(11, 17, 33, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+.input::placeholder {
+  color: #64748b;
+}
+
+.submitBtn {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem;
+  background: var(--color-brand);
+  color: #0b1528;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(74, 222, 128, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.submitBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.45);
+  background: #3ec46f;
+}
+
+/* ── DIVIDER ────────────────────────────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.divider span {
+  padding: 0 0.875rem;
+}
+
+/* ── GOOGLE BUTTON ──────────────────────────────────────────── */
 .googleBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: 0.75rem;
   width: 100%;
-  padding: 14px 20px;
+  padding: 0.8125rem;
   background: #ffffff;
   color: #1f2937;
   border: 1px solid #e5e7eb;
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -81,72 +172,16 @@
 
 .googleBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: var(--space-4) 0;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.divider span {
-  padding: 0 var(--space-3);
-}
-
-.demoBox {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  text-align: center;
-}
-
-.demoHeading {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.demoBtn {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  color: #4ade80;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.demoBtn:hover {
-  background: rgba(74, 222, 128, 0.22);
-  border-color: rgba(74, 222, 128, 0.6);
-}
-
+/* ── FOOTER ─────────────────────────────────────────────────── */
 .footerNotes {
-  margin-top: var(--space-6);
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.775rem;
+  color: #94a3b8;
   text-align: center;
   line-height: 1.5;
 }
@@ -156,3 +191,8 @@
   text-decoration: underline;
 }
 
+.footerNotice {
+  margin-top: 0.5rem;
+  font-size: 0.725rem;
+  color: #64748b;
+}
