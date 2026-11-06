@@ -53,9 +53,8 @@ export default function HomePage() {
       </header>
 
       <main>
-        {/* ── HERO CON COMPOSICIÓN EN 2 TERCIOS (RECUADRO AMARILLO) Y FUNDIDO COSMIC (RECUADRO MORADO) ── */}
+        {/* ── HERO CON COMPOSICIÓN 2/3 Y FUNDIDO GRADUAL COSMIC DARK ── */}
         <section className={styles.hero}>
-          {/* Recuadro Amarillo: Ilustración contenida en los dos tercios superiores */}
           <div className={styles.heroBannerWrapper}>
             <Image
               src="/banner.png"
@@ -67,10 +66,7 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Sombra superior suave para contraste del Navbar */}
-          <div className={styles.heroTopScrim} />
-
-          {/* Recuadro Morado: Gradiente cosmic dark de abajo hacia arriba para fundido y legibilidad */}
+          {/* Gradiente direccional orquestado: protege el Navbar arriba, abre la ilustración al medio y funde a Cosmic Dark abajo */}
           <div className={styles.heroGradientOverlay} />
 
           <div className={styles.heroContent}>

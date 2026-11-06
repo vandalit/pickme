@@ -90,7 +90,7 @@
   color: #86efac;
 }
 
-/* ── HERO CON COMPOSICIÓN EN 2 TERCIOS Y FUNDIDO COSMIC DARK ── */
+/* ── HERO CON COMPOSICIÓN 2/3 Y FUNDIDO GRADUAL COSMIC DARK ── */
 .hero {
   position: relative;
   min-height: 94vh;
@@ -105,67 +105,48 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Recuadro Amarillo: 2/3 superiores para posicionar y contener la ilustración */
+/* Ilustración de fondo posicionada centrada en el eje superior */
 .heroBannerWrapper {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 68%;
+  inset: 0;
   overflow: hidden;
   z-index: 0;
 }
 
 .heroImage {
   object-fit: cover;
-  object-position: center 36%;
-  opacity: 0.96;
+  object-position: center 22%;
+  opacity: 0.95;
 }
 
-/* Sombra superior para legibilidad del Navbar */
-.heroTopScrim {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  z-index: 1;
-  background: linear-gradient(
-    180deg,
-    rgba(11, 14, 24, 0.75) 0%,
-    rgba(11, 14, 24, 0) 100%
-  );
-  pointer-events: none;
-}
-
-/* Recuadro Morado: Relleno en gradiente de abajo hacia arriba (Deep Cosmic Dark) */
+/* Gradiente de fundido continuo (Cosmic Dark / Deep Blue Palette) */
 .heroGradientOverlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 62%;
+  inset: 0;
   z-index: 1;
-  /* Gradiente fundido: 98% abajo diluyéndose progresivamente hasta 0% en la parte superior */
-  background: linear-gradient(
-    0deg,
-    rgba(11, 14, 24, 0.98) 0%,
-    rgba(13, 16, 28, 0.94) 28%,
-    rgba(16, 18, 36, 0.72) 58%,
-    rgba(20, 20, 45, 0.28) 82%,
-    rgba(20, 20, 45, 0) 100%
-  );
   pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 14, 24, 0.5) 0%,
+    rgba(11, 14, 24, 0) 14%,
+    rgba(11, 14, 24, 0) 32%,
+    rgba(13, 16, 32, 0.38) 46%,
+    rgba(13, 16, 32, 0.82) 60%,
+    rgba(11, 14, 24, 0.96) 76%,
+    #0B0E18 92%,
+    #0B0E18 100%
+  );
 }
 
 .heroContent {
-  max-width: 840px;
+  max-width: 860px;
   margin: 0 auto;
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-top: 24vh;
 }
 
 .heroPill {
