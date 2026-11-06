@@ -37,7 +37,7 @@ export function MobileFrame({ id, children }: MobileFrameProps) {
       </div>
 
       <div className={styles.deviceFootnote}>
-        <span className={styles.footnoteHighlight}>Propósito Capa 1 (Retirador):</span> Acceso directo mediante escaneo del QR en portería. El apoderado o transportista anuncia su llegada y recibe el <strong>Handover Code de 6 dígitos</strong> con vigencia de 10 minutos.
+        <span className={styles.footnoteHighlight}>Celular del retirador:</span> Escanea el QR en la entrada con su cámara — sin app — y recibe un <strong>código de un solo uso</strong> (válido 10 min) que entrega al auxiliar para confirmar la entrega.
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export function TvFrame({ id, children }: TvFrameProps) {
       <div className={styles.tvWallMount} />
 
       <div className={styles.deviceFootnote}>
-        <span className={styles.footnoteHighlight}>Dispositivo recomendado:</span> TV mural de <strong>48–55"</strong> Full-HD montado en la pared del patio. Proyección pasiva visible a 8–12 metros de distancia. Identifica a cada alumno únicamente por su par <strong>Animal + Color</strong> sin exponer jamás nombres completos, fotos ni cursos a terceros.
+        <span className={styles.footnoteHighlight}>Pantalla del patio:</span> Cada alumno aparece con su <strong>avatar anónimo</strong> (animal + color) cuando su retirador se anuncia — sin que el público general pueda asociar el avatar con un nombre real. TV mural recomendado: <strong>48–55"</strong> Full-HD.
       </div>
     </div>
   );

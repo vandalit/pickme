@@ -82,9 +82,9 @@ export default function HomePage() {
             </h1>
 
             <p className={styles.subtitle}>
-              Elimina megáfonos, reduce aglomeraciones en portería y protege la
-              identidad física de los menores mediante arquitectura de privacidad
-              en 3 capas y código de traspaso seguro.
+              Sin llamadas de nombre, sin filas en la puerta. Cada alumno tiene un{" "}
+              <strong>avatar anónimo</strong> propio que solo su familia reconoce
+              — el sistema coordina la entrega de forma segura y silenciosa.
             </p>
 
             <div className={styles.heroCtas}>
@@ -110,16 +110,16 @@ export default function HomePage() {
         <section className={styles.touchpointsSection}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionPretitle}>
-              Arquitectura de Servicio Multi-Dispositivo
+              Cómo funciona el sistema
             </span>
             <h2 className={styles.sectionTitle}>
-              Puntos de Contacto del Ecosistema
+              Cuatro pantallas, un flujo coordinado
             </h2>
             <p className={styles.sectionDescription}>
-              En diseño de servicios y UX, los puntos de contacto son las interfaces
-              tangibles donde cada actor interactúa con el sistema. PickMe
-              desacopla la información en 3 niveles de exposición de datos según
-              la distancia física y el rol del usuario.
+              Cada momento de la salida escolar ocurre en un dispositivo diferente.
+              Pantalla en el patio, celular del retirador, tablet del auxiliar y
+              consola de la dirección trabajan juntos — sin que nadie vea más
+              información de la necesaria.
             </p>
           </div>
 
@@ -151,13 +151,13 @@ export default function HomePage() {
                 <span
                   className={`${styles.cardLayerBadge} ${styles.badgeLayer0}`}
                 >
-                  Capa 0 · Público Pasivo
+                  Pantalla Pública · Patio
                 </span>
                 <h3 className={styles.cardTitle}>Smart TV Patio</h3>
                 <p className={styles.cardDescription}>
-                  Diario mural pasivo de 1080p con anonimato total. Proyecta
-                  únicamente el animal y color del alumno cuando el apoderado se
-                  anuncia en portería.
+                  Gran pantalla en el patio que muestra el <strong>avatar anónimo</strong> de
+                  cada alumno cuyo retirador ya está en camino. Sin nombres, sin fotos
+                  — solo el personaje que la familia reconoce.
                 </p>
                 <Link
                   href="/board/SAN-1024"
@@ -204,13 +204,14 @@ export default function HomePage() {
                 <span
                   className={`${styles.cardLayerBadge} ${styles.badgeLayer1Picker}`}
                 >
-                  Capa 1 · Picker en Portón
+                  Retirador · Sin App
                 </span>
-                <h3 className={styles.cardTitle}>Picker Web Móvil</h3>
+                <h3 className={styles.cardTitle}>Celular del Retirador</h3>
                 <p className={styles.cardDescription}>
-                  Flujo web instantáneo sin descarga de aplicaciones. El
-                  retirador escanea el QR en portón, confirma el alumno y recibe
-                  el Handover Code de 6 dígitos.
+                  Sin instalar nada. El apoderado o transportista escanea el QR
+                  en la puerta con su cámara, confirma el alumno y recibe un{" "}
+                  <strong>código de verificación</strong> de 6 dígitos que entrega
+                  al auxiliar.
                 </p>
                 <Link
                   href="/retirar?session=SAN-1024"
@@ -259,13 +260,13 @@ export default function HomePage() {
                 <span
                   className={`${styles.cardLayerBadge} ${styles.badgeLayer1Staff}`}
                 >
-                  Capa 1 · Personal Escolar
+                  Auxiliar · Portón
                 </span>
-                <h3 className={styles.cardTitle}>Tablet Portón (Staff)</h3>
+                <h3 className={styles.cardTitle}>Consola del Auxiliar</h3>
                 <p className={styles.cardDescription}>
-                  Consola de alta respuesta para el auxiliar en portón. Monitorea
-                  la cola en tiempo real y valida el traspaso físico con un
-                  teclado numérico táctil de 64px.
+                  El auxiliar de portería ve en su tablet quién viene a buscar a
+                  quién, recibe el código del retirador y lo ingresa para confirmar
+                  la entrega. Todo queda registrado.
                 </p>
                 <Link
                   href="/staff"
@@ -312,13 +313,13 @@ export default function HomePage() {
                 <span
                   className={`${styles.cardLayerBadge} ${styles.badgeLayer2Admin}`}
                 >
-                  Capa 2 · Administración
+                  Dirección · Visión Total
                 </span>
-                <h3 className={styles.cardTitle}>Panel de Control</h3>
+                <h3 className={styles.cardTitle}>Panel de la Dirección</h3>
                 <p className={styles.cardDescription}>
-                  Vista ejecutiva para la dirección del colegio. Métricas en vivo,
-                  gestión de autorizaciones permanentes y auditoría forense con
-                  registro inmutable de custodia.
+                  La directora ve en tiempo real quién ha sido retirado, por quién
+                  y cuándo. Puede consultar el historial completo de cada salida y
+                  gestionar quién está autorizado para retirar a cada alumno.
                 </p>
                 <Link
                   href="/admin"

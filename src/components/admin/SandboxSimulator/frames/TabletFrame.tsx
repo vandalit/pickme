@@ -31,7 +31,7 @@ export function TabletFrame({ id, children }: TabletFrameProps) {
       </div>
 
       <div className={styles.deviceFootnote}>
-        <span className={styles.footnoteHighlight}>Propósito Capa 1 (Staff):</span> Consola táctil de portería. Exhibe la cola en vivo de llamados con iniciales del menor y nombre del retirador autorizado, permitiendo digitar el código en el <strong>Keypad de 64px</strong> para sellar la entrega física.
+        <span className={styles.footnoteHighlight}>Consola del auxiliar:</span> Recibe el código del retirador y lo ingresa en la tablet para confirmar la entrega. El sistema verifica la autorización y registra el traspaso con hora exacta y firma del funcionario.
       </div>
     </div>
   );

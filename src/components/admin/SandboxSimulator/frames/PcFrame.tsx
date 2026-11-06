@@ -38,7 +38,7 @@ export function PcFrame({ id, children }: PcFrameProps) {
       <div className={styles.monitorStandBase} />
 
       <div className={styles.deviceFootnote}>
-        <span className={styles.footnoteHighlight}>Propósito Capa 2 (Dirección):</span> Registro forense completo en vivo. Conecta la identidad completa del menor con su historial de eventos, funcionario responsable y sello criptográfico de entrega.
+        <span className={styles.footnoteHighlight}>Panel de la dirección:</span> La dirección ve en su pantalla el estado de cada alumno en tiempo real. Cada entrega queda registrada con nombre completo, retirador, auxiliar responsable y hora exacta — un historial inmutable y consultable.
       </div>
     </div>
   );

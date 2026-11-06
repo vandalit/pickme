@@ -18,10 +18,10 @@ export function SimulatorControls({
   isLoading = false,
 }: SimulatorControlsProps) {
   const steps = [
-    { num: 1, label: '1. Espera en Patio' },
-    { num: 2, label: '2. Picker en Portón' },
-    { num: 3, label: '3. Handover Keypad' },
-    { num: 4, label: '4. Custodia Sellada' },
+    { num: 1, label: '1. Alumnos en espera' },
+    { num: 2, label: '2. Retirador llega al portón' },
+    { num: 3, label: '3. Verificación del código' },
+    { num: 4, label: '4. Entrega confirmada' },
   ];
 
   return (
@@ -37,7 +37,7 @@ export function SimulatorControls({
             <span className={styles.badgeSandbox}>Sandbox Sofía</span>
           </div>
           <p className={styles.subtitle}>
-            Prueba en tiempo real cómo interactúan el Smart TV, el celular del apoderado y la tablet del portón.
+            Recorre paso a paso una salida escolar completa: desde que el retirador llega hasta que el alumno es entregado y registrado.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export function SimulatorControls({
             <path d="M9 17h6" />
             <circle cx="17" cy="17" r="2" />
           </svg>
-          1. Simular Llegada de Picker (Zorro Naranja)
+          1. Simular llegada del retirador
         </Button>
 
         <Button
@@ -99,7 +99,7 @@ export function SimulatorControls({
             <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
             <path d="M12 18h.01" />
           </svg>
-          2. Exhibir Handover Code (849201)
+          2. Mostrar código de verificación
         </Button>
 
         <Button
@@ -111,7 +111,7 @@ export function SimulatorControls({
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="m21 2-2 2m-1.5 1.5L16 7m-4-1a6 6 0 1 0 7 7l3.5-3.5a1.5 1.5 0 0 0 0-2.12l-1.38-1.38a1.5 1.5 0 0 0-2.12 0l-1.5 1.5" />
           </svg>
-          3. Ingresar Código y Traspaso
+          3. Confirmar entrega
         </Button>
       </div>
     </div>
