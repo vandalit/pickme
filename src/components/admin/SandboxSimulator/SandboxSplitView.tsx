@@ -308,7 +308,7 @@ export function SandboxSplitView({
                       <td>
                         <div className={styles.studentCell}>
                           <span className={styles.studentRealName}>Mateo González</span>
-                          <span className={styles.studentTokenTag}>🦊 Zorro Naranja</span>
+                          <span className={styles.studentTokenTag}>Zorro Naranja</span>
                         </div>
                       </td>
                       <td>1° Básico A</td>
@@ -347,7 +347,7 @@ export function SandboxSplitView({
                       <td>
                         <div className={styles.studentCell}>
                           <span className={styles.studentRealName}>Sofía Contreras</span>
-                          <span className={styles.studentTokenTag}>🐬 Delfín Celeste</span>
+                          <span className={styles.studentTokenTag}>Delfín Celeste</span>
                         </div>
                       </td>
                       <td>1° Básico A</td>
@@ -364,7 +364,7 @@ export function SandboxSplitView({
                       <td>
                         <div className={styles.studentCell}>
                           <span className={styles.studentRealName}>Lucas Silva</span>
-                          <span className={styles.studentTokenTag}>🐻 Osito Café</span>
+                          <span className={styles.studentTokenTag}>Osito Café</span>
                         </div>
                       </td>
                       <td>1° Básico A</td>

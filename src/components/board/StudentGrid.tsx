@@ -20,7 +20,9 @@ export function StudentGrid({ students }: StudentGridProps) {
     return (
       <div className={styles.emptyState} role="status">
         <span className={styles.emptyIcon} aria-hidden="true">
-          🏫
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1" />
+          </svg>
         </span>
         <h2 className={styles.emptyTitle}>No hay alumnos en la sesión actual</h2>
         <p className={styles.emptySubtitle}>

@@ -56,7 +56,12 @@ export function StepStudentSelect({
       <div className={styles.header}>
         <span className={styles.greeting}>Persona autorizada:</span>
         <h2 className={styles.pickerName}>{pickerName}</h2>
-        <span className={styles.schoolBadge}>🏫 {schoolName}</span>
+        <span className={styles.schoolBadge}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1" />
+          </svg>
+          <span>{schoolName}</span>
+        </span>
       </div>
 
       <div className={styles.list}>

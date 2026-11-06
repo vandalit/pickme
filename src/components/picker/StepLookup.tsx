@@ -95,21 +95,21 @@ export function StepLookup({
             className={styles.pillButton}
             onClick={() => setDemoUser('+56981112233')}
           >
-            🧑 Tío Ignacio (+56981112233)
+            Tío Ignacio (+56981112233)
           </button>
           <button
             type="button"
             className={styles.pillButton}
             onClick={() => setDemoUser('+56984445566')}
           >
-            🚐 Don Pedro Furgón (+56984445566)
+            Don Pedro Furgón (+56984445566)
           </button>
           <button
             type="button"
             className={styles.pillButton}
             onClick={() => setDemoUser('+56991112233')}
           >
-            👩 Carolina Apoderada (+56991112233)
+            Carolina Apoderada (+56991112233)
           </button>
         </div>
       </div>

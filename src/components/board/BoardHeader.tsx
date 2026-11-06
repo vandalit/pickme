@@ -53,7 +53,11 @@ export function BoardHeader({
       <div className={styles.leftSection}>
         <div className={styles.logo} aria-label="PickMe Smart Board">
           <span className={styles.logoIcon} aria-hidden="true">
-            🎯
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="6" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
           </span>
           <span className={styles.logoText}>
             Pick<span className={styles.logoAccent}>Me</span>

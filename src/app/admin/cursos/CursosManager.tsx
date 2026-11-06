@@ -694,3 +694,4 @@ export function CursosManager({
     </div>
   );
 }
+

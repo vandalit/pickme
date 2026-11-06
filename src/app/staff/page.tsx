@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   StaffHeader,
   StaffFilterTab,
@@ -10,7 +11,10 @@ import {
 } from '@/components/staff';
 import styles from './page.module.css';
 
-export default function StaffPage() {
+function StaffContent() {
+  const searchParams = useSearchParams();
+  const sessionQuery = searchParams.get('session') || '';
+
   const [currentTab, setCurrentTab] = useState<StaffFilterTab>('IN_PROCESS');
   const [events, setEvents] = useState<StaffEventItem[]>([]);
   const [counts, setCounts] = useState({
@@ -19,15 +23,19 @@ export default function StaffPage() {
     completed: 0,
     total: 0,
   });
-  const [schoolName, setSchoolName] = useState('Colegio San Martín');
-  const [sessionCode, setSessionCode] = useState('SAN-1024');
+  const [schoolName, setSchoolName] = useState('Colegio');
+  const [sessionCode, setSessionCode] = useState(sessionQuery || 'SALIDA');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<StaffEventItem | null>(null);
 
   // Cargar lista de portón desde la API
   const fetchQueue = useCallback(async () => {
     try {
-      const res = await fetch('/api/staff/queue');
+      const url = sessionQuery
+        ? `/api/staff/queue?session=${encodeURIComponent(sessionQuery)}`
+        : '/api/staff/queue';
+
+      const res = await fetch(url);
       const data = await res.json();
       if (res.ok) {
         setEvents(data.events || []);
@@ -40,12 +48,12 @@ export default function StaffPage() {
     } catch (err) {
       console.error('Error al cargar cola de portón:', err);
     }
-  }, []);
+  }, [sessionQuery]);
 
   useEffect(() => {
     fetchQueue();
-    // Polling reactivo cada 6 segundos
-    const interval = setInterval(fetchQueue, 6000);
+    // Polling reactivo cada 5 segundos para la tablet de portería
+    const interval = setInterval(fetchQueue, 5000);
     return () => clearInterval(interval);
   }, [fetchQueue]);
 
@@ -81,11 +89,21 @@ export default function StaffPage() {
         {filteredEvents.length === 0 ? (
           <div className={styles.emptyState} role="status">
             <span className={styles.emptyIcon} aria-hidden="true">
-              {currentTab === 'IN_PROCESS'
-                ? '⏳'
-                : currentTab === 'COMPLETED'
-                ? '📋'
-                : '🏫'}
+              {currentTab === 'IN_PROCESS' ? (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              ) : currentTab === 'COMPLETED' ? (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              ) : (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1" />
+                </svg>
+              )}
             </span>
             <h2 className={styles.emptyTitle}>
               {currentTab === 'IN_PROCESS'
@@ -96,8 +114,8 @@ export default function StaffPage() {
             </h2>
             <p className={styles.emptyDesc}>
               {currentTab === 'IN_PROCESS'
-                ? 'Cuando un picker escanee el QR exterior o se anuncie en pickme.app/retirar, aparecerá aquí inmediatamente con alerta sonora y visual.'
-                : 'Los llamados y entregas se actualizarán automáticamente en tiempo real.'}
+                ? 'Cuando un apoderado o picker anuncie su llegada desde su enlace móvil o QR, aparecerá aquí inmediatamente con su código de entrega.'
+                : 'Los llamados y traspasos se actualizarán automáticamente en tiempo real.'}
             </p>
           </div>
         ) : (
@@ -126,3 +144,10 @@ export default function StaffPage() {
   );
 }
 
+export default function StaffPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando consola de portón...</div>}>
+      <StaffContent />
+    </Suspense>
+  );
+}

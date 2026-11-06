@@ -37,7 +37,11 @@ export function StaffHeader({
       <div className={styles.topRow}>
         <div className={styles.left}>
           <span className={styles.logoIcon} aria-hidden="true">
-            🎯
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="6" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
           </span>
           <div className={styles.staffMeta}>
             <div className={styles.staffName}>
