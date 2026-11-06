@@ -25,9 +25,17 @@
   gap: 1rem;
 }
 
-.logoIcon {
-  font-size: 1.75rem;
-  filter: drop-shadow(0 0 10px rgba(108, 99, 255, 0.6));
+.logoBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid var(--color-brand);
+  color: var(--color-brand-light);
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.35);
 }
 
 .brand {

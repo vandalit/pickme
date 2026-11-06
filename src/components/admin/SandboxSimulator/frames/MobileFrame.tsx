@@ -2,15 +2,19 @@ import React from 'react';
 import styles from './MobileFrame.module.css';
 
 interface MobileFrameProps {
+  id?: string;
   children: React.ReactNode;
 }
 
-export function MobileFrame({ children }: MobileFrameProps) {
+export function MobileFrame({ id, children }: MobileFrameProps) {
   return (
-    <div className={styles.frameContainer}>
+    <div id={id} className={styles.frameContainer}>
       <div className={styles.deviceHeader}>
         <span className={styles.deviceTitle}>
-          <span>📱</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+            <path d="M12 18h.01" />
+          </svg>
           <span>Celular del Picker · Web Móvil</span>
         </span>
         <span className={styles.layerBadge}>Capa 1 · Sin Descarga</span>
@@ -38,3 +42,4 @@ export function MobileFrame({ children }: MobileFrameProps) {
     </div>
   );
 }
+

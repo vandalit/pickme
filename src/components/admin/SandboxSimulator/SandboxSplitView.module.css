@@ -1,106 +1,493 @@
-.splitGrid {
-  display: grid;
-  grid-template-columns: 1fr 340px 340px;
+.runwaySection {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-  align-items: start;
+  position: relative;
 }
 
-@media (max-width: 1200px) {
-  .splitGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Panel Wrapper ───────────────────────────── */
-.viewColumn {
+/* ── Runway Horizontal Track ─────────────────── */
+.runwayTrack {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  gap: 2.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 1rem 0.5rem 2rem 0.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
-.columnHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-md);
+/* Custom Scrollbar for the horizontal runway */
+.runwayTrack::-webkit-scrollbar {
+  height: 10px;
+}
+
+.runwayTrack::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  margin: 0 1rem;
 }
 
-.columnTitle {
-  font-size: 0.85rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text-primary);
+.runwayTrack::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(108, 99, 255, 0.5), rgba(77, 171, 247, 0.6));
+  border-radius: 999px;
+  border: 2px solid #0B0F19;
 }
 
-.layerTag {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-sm);
-  background: rgba(108, 99, 255, 0.15);
-  border: 1px solid rgba(108, 99, 255, 0.3);
-  color: var(--color-brand-light);
+.runwayTrack::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #6C63FF, #4DABF7);
 }
 
-/* ── TV Frame ────────────────────────────────── */
-.tvFrame {
+/* ── Domain Slide Cards ──────────────────────── */
+.domainSlide {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  scroll-margin: 1.5rem;
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-xl);
-  background: #0D0D14;
-  border: 4px solid #20202F;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-  min-height: 460px;
 }
 
+.tvSlide {
+  width: 720px;
+  max-width: 90vw;
+}
+
+.mobileSlide {
+  width: 360px;
+  max-width: 90vw;
+}
+
+.tabletSlide {
+  width: 500px;
+  max-width: 90vw;
+}
+
+.pcSlide {
+  width: 760px;
+  max-width: 92vw;
+}
+
+/* ── Internal Elements ───────────────────────── */
 .tvInner {
   display: flex;
   flex-direction: column;
   flex: 1;
+  background: #090C15;
 }
 
 .tvGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.85rem;
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.mobileInitialState {
+  text-align: center;
+  padding: 2.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.mobileCarIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand-light);
+}
+
+.mobileInitialTitle {
+  color: #F2F2FF;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.mobileInitialDesc {
+  font-size: 0.85rem;
+  color: #8888AA;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mobileScanBtn {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6C63FF, #5046e5);
+  color: #FFF;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.mobileScanBtn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+/* Tablet Portón View */
+.tabletWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.tabletTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tabBtn {
+  flex: 1;
+  background: transparent;
+  color: #8888AA;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.tabBtnActiveStaff {
+  background: #6C63FF;
+  color: #FFFFFF;
+}
+
+.tabBtnActiveWhatsapp {
+  background: #00A884;
+  color: #FFFFFF;
+}
+
+.staffCard {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.staffStudentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.studentMetaName {
+  font-size: 1.05rem;
+  color: #F2F2FF;
+  font-weight: 700;
+}
+
+.studentMetaSub {
+  font-size: 0.8rem;
+  color: #8888AA;
+  margin-top: 0.2rem;
+}
+
+.staffInstruction {
+  font-size: 0.85rem;
+  color: #8888AA;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.keypadArea {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem;
-  flex: 1;
+  align-items: center;
 }
 
-/* ── Mobile Frame ────────────────────────────── */
-.mobileFrame {
+.keypadPrompt {
+  font-size: 0.85rem;
+  color: #CBD5E1;
+  text-align: center;
+}
+
+.successNotice {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  color: #34D399;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  border-radius: 2rem;
-  background: #0D0D14;
-  border: 8px solid #1E1E2E;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-  min-height: 520px;
-  max-width: 340px;
-  margin: 0 auto;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.notch {
-  width: 90px;
-  height: 16px;
-  background: #1E1E2E;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-  align-self: center;
-}
-
-.mobileContent {
-  padding: 1rem;
+/* PC Monitor Admin Audit Table */
+.pcContainer {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 1rem;
+  background: #0A0D18;
+  height: 100%;
 }
 
+.pcHeaderBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pcSessionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #F2F2FF;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liveBadgePulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34D399;
+  box-shadow: 0 0 6px #34D399;
+  animation: ssePulse 1.5s infinite;
+}
+
+@keyframes ssePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+
+.auditTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.auditTable th {
+  padding: 0.6rem 0.75rem;
+  color: #94A3B8;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.auditTable td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #E2E8F0;
+  vertical-align: middle;
+}
+
+.highlightRow {
+  background: rgba(108, 99, 255, 0.08);
+}
+
+.studentCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.studentRealName {
+  font-weight: 700;
+  color: #F8FAFC;
+}
+
+.studentTokenTag {
+  font-size: 0.72rem;
+  color: #94A3B8;
+}
+
+.statusPillWaiting {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #CBD5E1;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.statusPillProcess {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #FBBF24;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.statusPillHandover {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(108, 99, 255, 0.25);
+  border: 1px solid rgba(108, 99, 255, 0.5);
+  color: #C7D2FE;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.statusPillCompleted {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6EE7B7;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ── Accessible Bottom Navigation Dock ───────── */
+.bottomDock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  position: sticky;
+  bottom: 1rem;
+  z-index: 20;
+}
+
+.dockButtonsList {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dockBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dockBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #F8FAFC;
+}
+
+.dockBtnActive {
+  background: rgba(108, 99, 255, 0.2);
+  border-color: #6C63FF;
+  color: #FFFFFF;
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.35);
+}
+
+.dockNavArrows {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.arrowBtn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #CBD5E1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.arrowBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.arrowBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .bottomDock {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dockButtonsList {
+    justify-content: center;
+  }
+  .dockNavArrows {
+    justify-content: space-between;
+  }
+}

@@ -2,15 +2,20 @@ import React from 'react';
 import styles from './PcFrame.module.css';
 
 interface PcFrameProps {
+  id?: string;
   children: React.ReactNode;
 }
 
-export function PcFrame({ children }: PcFrameProps) {
+export function PcFrame({ id, children }: PcFrameProps) {
   return (
-    <div className={styles.frameContainer}>
+    <div id={id} className={styles.frameContainer}>
       <div className={styles.deviceHeader}>
         <span className={styles.deviceTitle}>
-          <span>💻</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="20" height="14" x="2" y="3" rx="2" />
+            <line x1="8" x2="16" y1="21" y2="21" />
+            <line x1="12" x2="12" y1="17" y2="21" />
+          </svg>
           <span>Consola PC Dirección · Sofía</span>
         </span>
         <span className={styles.layerBadge}>Capa 2 · Auditoría Total</span>
@@ -38,3 +43,4 @@ export function PcFrame({ children }: PcFrameProps) {
     </div>
   );
 }
+
