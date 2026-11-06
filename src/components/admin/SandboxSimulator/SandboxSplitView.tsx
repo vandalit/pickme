@@ -93,44 +93,51 @@ export function SandboxSplitView({
         {/* Dominio 1: Smart TV Patio */}
         <div ref={tvRef} className={`${styles.domainSlide} ${styles.tvSlide}`} id="domain-tv">
           <TvFrame id="frame-tv">
-            <BoardHeader
-              schoolName="Colegio San Martín"
-              sessionTitle="Simulador Sandbox"
-              counts={{
-                waiting: stage === 1 ? 3 : 2,
-                inProcess: stage === 2 || stage === 3 ? 1 : 0,
-                completed: stage === 4 ? 1 : 0,
-                total: 3,
-              }}
-            />
+            {/*
+              El TV renderiza el board completo escalado al aspect ratio 16:9.
+              Usamos un wrapper que toma el 100% del ancho disponible y escala
+              el contenido proporcionalmente — simula fielmente el board real.
+            */}
+            <div className={styles.tvBoardViewport}>
+              <BoardHeader
+                schoolName="Colegio San Martín"
+                sessionTitle="Simulador Sandbox"
+                counts={{
+                  waiting: stage === 1 ? 3 : 2,
+                  inProcess: stage === 2 || stage === 3 ? 1 : 0,
+                  completed: stage === 4 ? 1 : 0,
+                  total: 3,
+                }}
+              />
 
-            <div className={styles.tvInner}>
-              <div className={styles.tvGrid}>
-                <StudentCard
-                  id="s-zorro"
-                  animalId="zorro"
-                  colorId="naranja"
-                  classroomName="1°A"
-                  status={zorroStatus}
-                />
-                <StudentCard
-                  id="s-delfin"
-                  animalId="delfin"
-                  colorId="celeste"
-                  classroomName="1°A"
-                  status="WAITING"
-                />
-                <StudentCard
-                  id="s-osito"
-                  animalId="osito"
-                  colorId="cafe"
-                  classroomName="1°A"
-                  status="WAITING"
-                />
-              </div>
+              <div className={styles.tvInner}>
+                <div className={styles.tvGrid}>
+                  <StudentCard
+                    id="s-zorro"
+                    animalId="zorro"
+                    colorId="naranja"
+                    classroomName="1°A"
+                    status={zorroStatus}
+                  />
+                  <StudentCard
+                    id="s-delfin"
+                    animalId="delfin"
+                    colorId="celeste"
+                    classroomName="1°A"
+                    status="WAITING"
+                  />
+                  <StudentCard
+                    id="s-osito"
+                    animalId="osito"
+                    colorId="cafe"
+                    classroomName="1°A"
+                    status="WAITING"
+                  />
+                </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '0.75rem' }}>
-                <QRDisplay value="https://pickme.app/retirar?session=SAN-1024" size={110} />
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '0.75rem' }}>
+                  <QRDisplay value="https://pickme.app/retirar?session=SAN-1024" size={110} />
+                </div>
               </div>
             </div>
           </TvFrame>

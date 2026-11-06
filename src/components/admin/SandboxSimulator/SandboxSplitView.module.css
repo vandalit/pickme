@@ -73,11 +73,28 @@
 }
 
 /* ── Internal Elements ───────────────────────── */
+
+/*
+  tvBoardViewport: Wrapper que simula fielmente el viewport del board real.
+  El contenido del board (BoardHeader + StudentCards + QR) se renderiza
+  a su tamaño natural dentro del aspect ratio 16:9 del tvScreen.
+  No hace scroll — el board real tampoco scrollea en el TV físico.
+*/
+.tvBoardViewport {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  flex: 1;
+}
+
 .tvInner {
   display: flex;
   flex-direction: column;
   flex: 1;
   background: #090C15;
+  overflow: hidden;
 }
 
 .tvGrid {

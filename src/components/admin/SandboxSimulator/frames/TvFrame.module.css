@@ -61,10 +61,12 @@
 
 .tvScreen {
   background: #090c15;
-  min-height: 520px;
-  overflow-y: auto;
+  /* Aspecto 16:9: a 1024px de pantalla disponible → ~576px de alto */
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .tvBottomBar {
