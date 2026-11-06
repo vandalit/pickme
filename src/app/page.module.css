@@ -105,17 +105,20 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Ilustración de fondo posicionada centrada en el eje superior */
+/* Ilustración de fondo desplazada ~190px hacia arriba para recortar el cielo vacío y recuperar el contenido inferior */
 .heroBannerWrapper {
   position: absolute;
-  inset: 0;
+  top: -190px;
+  left: 0;
+  right: 0;
+  height: calc(100% + 190px);
   overflow: hidden;
   z-index: 0;
 }
 
 .heroImage {
   object-fit: cover;
-  object-position: center 22%;
+  object-position: center 40%;
   opacity: 0.95;
 }
 
