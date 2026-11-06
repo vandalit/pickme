@@ -108,20 +108,22 @@
   object-fit: cover;
   object-position: center 36%;
   z-index: 0;
-  opacity: 0.92;
-  filter: contrast(1.05) brightness(0.95);
+  opacity: 0.78;
 }
 
 .heroOverlay {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(
+  /* 1. Tinte general uniforme para neutralizar el brillo crudo de la ilustración */
+  background-color: rgba(11, 15, 25, 0.45);
+  /* 2. Gradiente direccional fuerte que oscurece el tercio inferior para legibilidad 100% */
+  background-image: linear-gradient(
     180deg,
-    rgba(11, 15, 25, 0.04) 0%,
-    rgba(11, 15, 25, 0.08) 42%,
-    rgba(11, 15, 25, 0.62) 65%,
-    rgba(11, 15, 25, 0.92) 82%,
+    rgba(11, 15, 25, 0) 0%,
+    rgba(11, 15, 25, 0.05) 35%,
+    rgba(11, 15, 25, 0.65) 58%,
+    rgba(11, 15, 25, 0.94) 78%,
     var(--color-bg-base) 100%
   );
   pointer-events: none;
@@ -181,10 +183,10 @@
 .subtitle {
   font-size: clamp(0.925rem, 1.4vw, 1.05rem);
   line-height: 1.6;
-  color: #cbd5e1;
+  color: #f1f5f9;
   max-width: 620px;
   margin-bottom: 2rem;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.95);
 }
 
 .heroCtas {
