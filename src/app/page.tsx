@@ -53,17 +53,25 @@ export default function HomePage() {
       </header>
 
       <main>
-        {/* ── HERO CON BACKDROP NATIVO Y OVERLAY CONTROLADO ── */}
+        {/* ── HERO CON COMPOSICIÓN EN 2 TERCIOS (RECUADRO AMARILLO) Y FUNDIDO COSMIC (RECUADRO MORADO) ── */}
         <section className={styles.hero}>
-          <Image
-            src="/banner.png"
-            alt="PickMe Banner Ecosistema Escolar"
-            fill
-            priority
-            sizes="100vw"
-            className={styles.heroImage}
-          />
-          <div className={styles.heroOverlay} />
+          {/* Recuadro Amarillo: Ilustración contenida en los dos tercios superiores */}
+          <div className={styles.heroBannerWrapper}>
+            <Image
+              src="/banner.png"
+              alt="PickMe Banner Ecosistema Escolar"
+              fill
+              priority
+              sizes="100vw"
+              className={styles.heroImage}
+            />
+          </div>
+
+          {/* Sombra superior suave para contraste del Navbar */}
+          <div className={styles.heroTopScrim} />
+
+          {/* Recuadro Morado: Gradiente cosmic dark de abajo hacia arriba para fundido y legibilidad */}
+          <div className={styles.heroGradientOverlay} />
 
           <div className={styles.heroContent}>
             <div className={styles.heroPill}>
