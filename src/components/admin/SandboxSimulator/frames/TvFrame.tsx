@@ -25,14 +25,14 @@ export function TvFrame({ id, children }: TvFrameProps) {
           {children}
         </div>
         <div className={styles.tvBottomBar}>
-          <span className={styles.tvBrandLogo}>PickMe Display 1080p</span>
+          <span className={styles.tvBrandLogo}>PickMe Display · 1080p · ~48–50"</span>
           <span className={styles.tvLed} title="Smart TV Conectada y en vivo" />
         </div>
       </div>
       <div className={styles.tvWallMount} />
 
       <div className={styles.deviceFootnote}>
-        <span className={styles.footnoteHighlight}>Propósito Capa 0:</span> Proyección pasiva visible a distancia en el patio. Identifica a cada alumno únicamente por su par <strong>Animal + Color</strong> sin exponer jamás nombres completos, fotos ni cursos a terceros.
+        <span className={styles.footnoteHighlight}>Dispositivo recomendado:</span> TV mural de <strong>48–55"</strong> Full-HD montado en la pared del patio. Proyección pasiva visible a 8–12 metros de distancia. Identifica a cada alumno únicamente por su par <strong>Animal + Color</strong> sin exponer jamás nombres completos, fotos ni cursos a terceros.
       </div>
     </div>
   );

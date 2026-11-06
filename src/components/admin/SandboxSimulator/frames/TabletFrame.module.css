@@ -1,9 +1,14 @@
+/* ── TABLET PORTÓN ───────────────────────────────
+   Referencia física: Tablet robusta 10" (ej. Samsung Tab Active).
+   En 96dpi, 10" diagonal a 16:10 ≈ 850×530px.
+   Representamos 540px de ancho de slide con min-height 520px.
+   ─────────────────────────────────────────────── */
 .frameContainer {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
-  min-width: 360px;
+  max-width: 540px;
+  min-width: 380px;
   gap: 0.875rem;
 }
 
@@ -35,22 +40,24 @@
   text-transform: uppercase;
 }
 
-/* ── TABLET HARDWARE CHASSIS ── */
+/* ── TABLET HARDWARE CHASSIS · 10" ── */
 .tabletChassis {
   background: #141824;
-  border: 7px solid #1e2436;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border: 10px solid #1e2436;
+  border-radius: 18px;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 480px;
+  min-height: 520px;
 }
 
 .tabletTopBezel {
   background: #141824;
-  height: 16px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,4 +94,3 @@
   color: #fbbf24;
   font-weight: 600;
 }
-

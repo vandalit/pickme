@@ -1,9 +1,14 @@
+/* ── MONITOR PC DIRECCIÓN ────────────────────────
+   Referencia física: Monitor de escritorio 24–27" Full-HD.
+   En 96dpi, 24" diagonal ≈ 1200×675 px. Representamos
+   800px de ancho de slide (≈ escala ≈ 24" panorámico).
+   ─────────────────────────────────────────────── */
 .frameContainer {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 580px;
-  min-width: 420px;
+  max-width: 800px;
+  min-width: 480px;
   gap: 0.875rem;
 }
 
@@ -35,12 +40,14 @@
   text-transform: uppercase;
 }
 
-/* ── PC MONITOR HARDWARE CHASSIS ── */
+/* ── PC MONITOR HARDWARE CHASSIS · ~24" ── */
 .monitorChassis {
   background: #141824;
-  border: 5px solid #1e2436;
+  border: 6px solid #1e2436;
   border-radius: 10px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -64,7 +71,7 @@
 
 .monitorScreen {
   background: #0b0f19;
-  min-height: 460px;
+  min-height: 480px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -73,8 +80,8 @@
 
 .monitorChin {
   background: #1a2030;
-  height: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  height: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,7 +97,7 @@
 
 .monitorNeck {
   width: 44px;
-  height: 24px;
+  height: 28px;
   background: linear-gradient(180deg, #1e2436 0%, #141824 100%);
   margin: 0 auto;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
@@ -98,13 +105,13 @@
 }
 
 .monitorStandBase {
-  width: 160px;
+  width: 180px;
   height: 8px;
   background: linear-gradient(180deg, #2a334a 0%, #141824 100%);
   margin: 0 auto;
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 /* ── FOOTNOTE EXPLICATIVA ── */
@@ -122,4 +129,3 @@
   color: #c084fc;
   font-weight: 600;
 }
-

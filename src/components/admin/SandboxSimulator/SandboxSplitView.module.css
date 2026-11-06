@@ -48,23 +48,27 @@
   flex-direction: column;
 }
 
+/* Smart TV ~48–50" mural: 1060px de contenedor (frame ~1096px con margen scroll) */
 .tvSlide {
-  width: 720px;
-  max-width: 90vw;
+  width: 1080px;
+  max-width: 94vw;
 }
 
+/* Celular Picker · smartphone 6.1" · 360px viewport */
 .mobileSlide {
   width: 360px;
   max-width: 90vw;
 }
 
+/* Tablet Staff · 10" rugged · ~500px viewport 4:3 landscape-ish */
 .tabletSlide {
-  width: 500px;
+  width: 540px;
   max-width: 90vw;
 }
 
+/* Monitor PC Dirección · 24" Full-HD · ~760px representado */
 .pcSlide {
-  width: 760px;
+  width: 800px;
   max-width: 92vw;
 }
 
@@ -78,9 +82,9 @@
 
 .tvGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.85rem;
-  padding: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
   flex: 1;
 }
 

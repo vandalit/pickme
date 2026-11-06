@@ -102,25 +102,6 @@ export default function HomePage() {
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
-
-              <Link
-                href="/retirar?session=SAN-1024"
-                className={styles.ctaSecondary}
-              >
-                <span>Flujo Móvil Picker</span>
-                <svg
-                  className={styles.ctaIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                  <path d="M12 18h.01" />
-                </svg>
-              </Link>
             </div>
           </div>
         </section>

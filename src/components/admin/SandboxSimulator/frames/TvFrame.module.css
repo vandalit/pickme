@@ -1,9 +1,16 @@
+/* ── SMART TV MURAL ─────────────────────────────
+   Referencia física: TV de patio escolar tipo mural.
+   A 96dpi, 1px ≈ 0.264mm. Un TV de 55" (140cm) wide tiene
+   ~1215px de pantalla nativa en 96dpi. Usamos 1020px
+   para representar un TV ~48–50" FHD, con bisel de 18px a
+   cada lado → chasis total ~1056px. Aspecto 16:9 aprox.
+   ─────────────────────────────────────────────── */
 .frameContainer {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 580px;
-  min-width: 380px;
+  max-width: 1060px;
+  min-width: 680px;
   gap: 0.875rem;
 }
 
@@ -35,12 +42,17 @@
   text-transform: uppercase;
 }
 
-/* ── TV HARDWARE FRAME ── */
+/* ── TV HARDWARE FRAME · ~48–50" mural ── */
 .tvBezel {
-  background: #0f131f;
-  border: 4px solid #1e2436;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: #0c1020;
+  border: 14px solid #161c2e;
+  border-left-width: 18px;
+  border-right-width: 18px;
+  border-radius: 10px;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.02);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -48,28 +60,28 @@
 }
 
 .tvScreen {
-  background: #0b0f19;
-  min-height: 460px;
+  background: #090c15;
+  min-height: 520px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
 .tvBottomBar {
-  background: #141824;
-  height: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: #101624;
+  height: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
 }
 
 .tvBrandLogo {
-  font-size: 0.625rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #64748b;
+  letter-spacing: 0.12em;
+  color: #3b4a66;
   text-transform: uppercase;
 }
 
@@ -78,16 +90,16 @@
   height: 5px;
   border-radius: 50%;
   background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
+  box-shadow: 0 0 7px #4ade80;
 }
 
 .tvWallMount {
-  width: 120px;
+  width: 140px;
   height: 10px;
   background: linear-gradient(180deg, #1e2436 0%, #0d111a 100%);
   margin: 0 auto;
   border-radius: 0 0 6px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-top: none;
 }
 
@@ -106,4 +118,3 @@
   color: #38bdf8;
   font-weight: 600;
 }
-
