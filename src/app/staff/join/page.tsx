@@ -48,6 +48,26 @@ export default async function StaffJoinPage({ searchParams }: Props) {
     }
   }
 
+  // AUTO-DETECCIÓN: Si no trae token en URL, buscar si hay una invitación pendiente para su email
+  if (!tokenInvite) {
+    const emailInvite = await prisma.invitation.findFirst({
+      where: {
+        email,
+        acceptedAt: null,
+        expiresAt: { gte: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { school: true },
+    });
+
+    if (emailInvite) {
+      tokenInvite = {
+        token: emailInvite.token,
+        schoolName: emailInvite.school.name,
+      };
+    }
+  }
+
   // Listar todos los colegios y marcar si ya envió solicitud a alguno
   const allSchools = await prisma.school.findMany({
     orderBy: { name: 'asc' },

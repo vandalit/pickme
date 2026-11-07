@@ -70,6 +70,29 @@ export function StaffHeader({
 
   const hasSession = Boolean(sessionId);
 
+  // Determinar si la jornada se abrió anticipadamente respecto al horario de salida regular
+  const isEarlyPickup = React.useMemo(() => {
+    if (!hasSession || !defaultExitTime) return false;
+    try {
+      const now = new Date();
+      const tz = timezone || 'America/Santiago';
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      const [currentH, currentM] = formatter.format(now).split(':').map(Number);
+      const [exitH, exitM] = defaultExitTime.split(':').map(Number);
+      const currentMinutes = currentH * 60 + currentM;
+      const exitMinutes = exitH * 60 + exitM;
+      // Si estamos más de 30 minutos antes de la hora regular de salida
+      return currentMinutes < exitMinutes - 30;
+    } catch {
+      return false;
+    }
+  }, [hasSession, defaultExitTime, timezone]);
+
   return (
     <header className={styles.header} role="banner">
       <div className={styles.topRow}>
@@ -101,6 +124,22 @@ export function StaffHeader({
                   title={`Horario de salida programado (${timezone || 'America/Santiago'})`}
                 >
                   Salida: {defaultExitTime} hrs
+                </span>
+              )}
+              {isEarlyPickup && (
+                <span
+                  style={{
+                    fontSize: '0.725rem',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '4px',
+                    padding: '1px 6px',
+                    fontWeight: 600,
+                  }}
+                  title="Jornada aperturada anticipadamente para autorizar retiros previos al horario regular."
+                >
+                  ⚡ Retiros Anticipados Habilitados
                 </span>
               )}
             </div>

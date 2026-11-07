@@ -8,7 +8,7 @@ import {
   batchUpdateAttendanceAction,
   importStudentsCsvAction,
 } from './actions';
-import { addLateArrivalToSessionAction, openDailySessionAction } from '@/app/admin/sessionActions';
+import { addLateArrivalToSessionAction, openDailySessionAction, closeDailySessionAction } from '@/app/admin/sessionActions';
 import { CSV_TEMPLATE_EXAMPLE } from '@/lib/csvImporter';
 import { getAnimal, getColor } from '@/lib/avatars';
 import styles from './CursosManager.module.css';
@@ -257,6 +257,25 @@ export function CursosManager({
     });
   };
 
+  // Revocar Pase / Detener Salida ("Arrepentimiento de Admin" - Señal de bloqueo a portería)
+  const handleRevokeDeparturePass = () => {
+    if (!liveSessionCode) return;
+    const confirmRevoke = window.confirm(
+      '¿Deseas revocar el pase de salida y suspender temporalmente las entregas en portón?\n\nEl personal de portería verá inmediatamente la sesión cerrada y no podrá validar retiros.'
+    );
+    if (!confirmRevoke) return;
+
+    startTransition(async () => {
+      const res = await closeDailySessionAction();
+      if (res.success) {
+        setLiveSessionCode(null);
+        alert('Pase de salida revocado. La jornada ha sido cerrada y el portón está bloqueado.');
+      } else {
+        alert(res.error || 'No se pudo revocar la jornada de salida.');
+      }
+    });
+  };
+
   // Importar CSV
   const handleImportCsv = () => {
     if (!csvText.trim()) {
@@ -465,7 +484,11 @@ export function CursosManager({
             className={styles.btnSendLive}
             onClick={handleSendToDeparture}
             disabled={isPending}
-            title="Aperturar o sincronizar lista viva con el panel de portería"
+            title={
+              liveSessionCode
+                ? 'Sincronizar cambios recientes de alumnos presentes con la cola activa en portón'
+                : 'Aperturar la jornada escolar y transferir formalmente la nómina viva al personal de portería para que puedan validar retiros'
+            }
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="22" y1="2" x2="11" y2="13" />
@@ -479,6 +502,22 @@ export function CursosManager({
               </span>
             )}
           </button>
+
+          {liveSessionCode && (
+            <button
+              type="button"
+              className={styles.btnRevokePass}
+              onClick={handleRevokeDeparturePass}
+              disabled={isPending}
+              title="Revocar el pase de salida y suspender temporalmente las entregas en portería (Señal de bloqueo a staff)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+              <span>Revocar Pase / Detener</span>
+            </button>
+          )}
         </div>
       </div>
 
