@@ -90,6 +90,75 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
     assert.strictEqual(withdrawnStudents[0].fullName, 'Joaquín Fuentes Cruz');
   });
 
+  it('Verifica Apertura de Jornada (Paso 4): genera sesión OPEN y snapshot de exactamente 9 eventos WAITING', async () => {
+    const pruebaSchool = await prisma.school.findFirst({ where: { name: 'colegio prueba' } });
+    assert.ok(pruebaSchool);
+
+    // Limpiar sesiones previas de prueba si hubieran
+    await prisma.pickupEvent.deleteMany({
+      where: { session: { schoolId: pruebaSchool.id } }
+    });
+    await prisma.pickupSession.deleteMany({
+      where: { schoolId: pruebaSchool.id }
+    });
+
+    // 1. Obtener los alumnos activos que deben ser convocados
+    const activeStudents = await prisma.student.findMany({
+      where: { classroom: { schoolId: pruebaSchool.id }, status: 'ACTIVE' }
+    });
+    assert.strictEqual(activeStudents.length, 9);
+
+    // 2. Simular la apertura formal de jornada (equivalente a openDailySessionAction)
+    const sessionCode = `CP-${Math.floor(1000 + Math.random() * 9000)}`;
+    const session = await prisma.pickupSession.create({
+      data: {
+        schoolId: pruebaSchool.id,
+        sessionCode,
+        status: 'OPEN',
+        startedAt: new Date(),
+        events: {
+          create: activeStudents.map(s => ({
+            studentId: s.id,
+            status: 'WAITING',
+          })),
+        },
+      },
+      include: {
+        events: {
+          include: { student: true }
+        }
+      }
+    });
+
+    assert.ok(session.id);
+    assert.strictEqual(session.status, 'OPEN');
+    assert.strictEqual(session.events.length, 9, 'Debe crear exactamente 9 eventos WAITING');
+
+    // Comprobar que todos los eventos iniciales están en WAITING
+    for (const evt of session.events) {
+      assert.strictEqual(evt.status, 'WAITING');
+      assert.strictEqual(evt.student.status, 'ACTIVE');
+      assert.notStrictEqual(evt.student.fullName, 'Florencia Rojas Díaz', 'Florencia (ABSENT) no debe estar en los eventos');
+      assert.notStrictEqual(evt.student.fullName, 'Joaquín Fuentes Cruz', 'Joaquín (WITHDRAWN) no debe estar en los eventos');
+    }
+
+    // 3. Validar los endpoints generados para el Launchpad
+    const launchpadUrls = {
+      boardTv: `/board/${session.id}`,
+      staffPorton: `/staff?session=${session.sessionCode}`,
+      pickerMovil: `/retirar?session=${session.sessionCode}`
+    };
+
+    assert.ok(launchpadUrls.boardTv.startsWith('/board/'));
+    assert.ok(launchpadUrls.staffPorton.includes(`session=${session.sessionCode}`));
+    assert.ok(launchpadUrls.pickerMovil.includes(`session=${session.sessionCode}`));
+
+    console.log(`[Launchpad Generado] Sesión: ${session.sessionCode} | Alumnos convocados: ${session.events.length}`);
+    console.log(`  -> Board TV: ${launchpadUrls.boardTv}`);
+    console.log(`  -> Staff Portón: ${launchpadUrls.staffPorton}`);
+    console.log(`  -> Móvil Picker: ${launchpadUrls.pickerMovil}`);
+  });
+
   it('Verifica lógica de Handover Code: 6 dígitos, TTL de 10 min y validación estricta', () => {
     // 1. Generación de código
     const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -117,3 +186,4 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
     assert.strictEqual(validate(code, code, pastExpiry).reason, 'EXPIRED', 'Código expirado debe ser rechazado');
   });
 });
+

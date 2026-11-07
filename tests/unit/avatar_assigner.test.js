@@ -54,3 +54,4 @@ describe('Algoritmo de Asignación de Avatares (avatarAssigner)', () => {
     assert.strictEqual(fallback.colorId, COLORS[0].id);
   });
 });
+
