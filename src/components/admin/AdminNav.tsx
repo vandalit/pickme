@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut as clientSignOut } from 'next-auth/react';
 import { ProfileModal } from './ProfileModal';
 import styles from './AdminNav.module.css';
 
@@ -116,11 +117,22 @@ export function AdminNav({
             <span>❓ Ayuda</span>
           </button>
 
-          <form action={onSignOut}>
-            <button type="submit" className={styles.logoutBtn}>
-              Cerrar Sesión
-            </button>
-          </form>
+          <button
+            type="button"
+            className={styles.logoutBtn}
+            onClick={async () => {
+              if (onSignOut) {
+                try {
+                  await onSignOut();
+                } catch {
+                  // Fallback a cliente directo
+                }
+              }
+              await clientSignOut({ callbackUrl: '/auth/login' });
+            }}
+          >
+            Cerrar Sesión
+          </button>
         </div>
       </div>
 

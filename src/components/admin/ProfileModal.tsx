@@ -63,7 +63,7 @@ export function ProfileModal({
 
               <div className={styles.infoCard}>
                 <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Institución / Workspace:</span>
+                  <span className={styles.infoLabel}>Establecimiento Educacional:</span>
                   <strong className={styles.infoValue}>{schoolName}</strong>
                 </div>
                 <div className={styles.infoRow}>

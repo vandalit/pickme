@@ -71,11 +71,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         )}
 
-        {/* ── GOOGLE WORKSPACE OAUTH PRINCIPAL ── */}
+        {/* ── GOOGLE OAUTH PRINCIPAL ── */}
         <form
           action={async () => {
             "use server"
-            await signIn("google", { redirectTo: "/admin" })
+            await signIn("google", { redirectTo: "/onboarding" })
           }}
         >
           <button type="submit" className={styles.googleBtn}>
@@ -115,7 +115,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               await signIn("credentials", {
                 email,
                 password,
-                redirectTo: "/admin",
+                redirectTo: "/onboarding",
               })
             } catch (error) {
               if (isRedirectError(error)) {

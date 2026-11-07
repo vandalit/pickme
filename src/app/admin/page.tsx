@@ -19,7 +19,7 @@ export default async function AdminDashboardPage() {
   // 1. Resolver el colegio asociado a la cuenta del usuario
   const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
   if (needsOnboarding || !resolvedSchool) {
-    redirect('/admin/onboarding');
+    redirect('/onboarding');
   }
 
   const userName = session.user.name || 'Director(a)';

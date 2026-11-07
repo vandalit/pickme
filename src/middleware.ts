@@ -6,9 +6,12 @@ const { auth } = NextAuth(authConfig)
 export default auth
 
 export const config = {
-  // Protege las rutas administrativas (excluyendo el simulador interactivo público) y de staff
+  // Protege /admin (incluyendo la raíz /admin y todas sus subrutas excepto el simulador público), /staff y /onboarding
   matcher: [
+    "/admin",
     "/admin/((?!simulador).*)",
+    "/staff",
     "/staff/:path*",
+    "/onboarding",
   ],
 }
