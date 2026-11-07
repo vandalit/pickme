@@ -191,9 +191,26 @@ export async function updateStudentStatusAction(
     return { success: false, error: 'Sesión no autenticada.' };
   }
 
+  const { school } = await resolveUserSchool(session.user.email);
+  if (!school?.id) {
+    return { success: false, error: 'Establecimiento educacional no encontrado.' };
+  }
+
   try {
+    // Validar aislamiento multi-tenant: el alumno debe pertenecer a este colegio
+    const targetStudent = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        classroom: { schoolId: school.id },
+      },
+    });
+
+    if (!targetStudent) {
+      return { success: false, error: 'Alumno no encontrado en tu establecimiento.' };
+    }
+
     await prisma.student.update({
-      where: { id: studentId },
+      where: { id: targetStudent.id },
       data: { status: newStatus as any },
     });
 
@@ -215,9 +232,28 @@ export async function batchUpdateAttendanceAction(
     return { success: false, error: 'Sesión no autenticada.' };
   }
 
+  const { school } = await resolveUserSchool(session.user.email);
+  if (!school?.id) {
+    return { success: false, error: 'Establecimiento educacional no encontrado.' };
+  }
+
   try {
+    // Aislamiento multi-tenant: filtrar solo los IDs que pertenezcan a las aulas del colegio
+    const validStudents = await prisma.student.findMany({
+      where: {
+        id: { in: studentIds },
+        classroom: { schoolId: school.id },
+      },
+      select: { id: true },
+    });
+
+    const validIds = validStudents.map((s) => s.id);
+    if (validIds.length === 0) {
+      return { success: false, error: 'Ningún alumno seleccionado pertenece a tu institución.' };
+    }
+
     const res = await prisma.student.updateMany({
-      where: { id: { in: studentIds } },
+      where: { id: { in: validIds } },
       data: { status: newStatus as any },
     });
     revalidatePath('/admin/cursos');

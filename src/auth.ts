@@ -40,19 +40,8 @@ export const authConfig: NextAuthConfig = {
               image: dbUser.avatarUrl ?? undefined,
             }
           }
-        } catch (_err) {
-          // BD no disponible — continúa con credenciales de desarrollo
-        }
-
-        // Fallback de desarrollo: cuenta demo de Sofía (directora)
-        if (email === "sofia@sanmartin.edu") {
-          return {
-            id: "user-sofia-admin",
-            name: "Sofía Valenzuela",
-            email: "sofia@sanmartin.edu",
-            role: "SCHOOL_ADMIN",
-            image: "https://api.dicebear.com/7.x/bottts/svg?seed=sofia",
-          }
+        } catch (err) {
+          console.error('[auth.authorize] Error al verificar credenciales en BD:', err);
         }
 
         return null
