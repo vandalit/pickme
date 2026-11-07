@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { auth } from '@/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,20 @@ export async function POST(req: NextRequest) {
         { error: 'Debes ingresar el código de 6 dígitos.' },
         { status: 400 }
       );
+    }
+
+    // Resolver usuario staff autenticado si no fue provisto explícitamente
+    let effectiveStaffId = staffId || null;
+    if (!effectiveStaffId) {
+      const userSession = await auth();
+      if (userSession?.user?.email) {
+        const staffUser = await prisma.user.findUnique({
+          where: { email: userSession.user.email.toLowerCase().trim() },
+        });
+        if (staffUser) {
+          effectiveStaffId = staffUser.id;
+        }
+      }
     }
 
     // Buscar el evento correspondiente
@@ -65,13 +80,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Traspaso exitoso: actualizar estado a IN_TRANSIT
+    // Traspaso exitoso: actualizar estado a IN_TRANSIT con firma del staff
     const updated = await prisma.pickupEvent.update({
       where: { id: event.id },
       data: {
         status: 'IN_TRANSIT',
         staffConfirmedAt: new Date(),
-        staffId: staffId || event.staffId,
+        staffId: effectiveStaffId || event.staffId,
       },
     });
 

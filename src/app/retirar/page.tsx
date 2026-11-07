@@ -18,7 +18,7 @@ function RetirarContent() {
   const [phone, setPhone] = useState('');
   const [sessionCode, setSessionCode] = useState(initialSession);
   const [pickerName, setPickerName] = useState('');
-  const [schoolName, setSchoolName] = useState('Colegio San Martín');
+  const [schoolName, setSchoolName] = useState('');
   const [students, setStudents] = useState<AuthorizedStudent[]>([]);
   const [activeStudent, setActiveStudent] = useState<AuthorizedStudent | null>(null);
 

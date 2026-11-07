@@ -14,7 +14,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 1. Buscar la sesión activa correspondiente
+    // Normalizar formato de teléfono (remover espacios y guiones)
+    const cleanPhone = phone.replace(/[\s-]/g, '');
+
+    // 1. Buscar la sesión activa correspondiente con estricto aislamiento multi-tenant
     let session = null;
     if (sessionCodeOrId) {
       session = await prisma.pickupSession.findFirst({
@@ -27,12 +30,46 @@ export async function GET(req: NextRequest) {
         },
         include: { school: true },
       });
-    }
 
-    // Si no se pasó session o no se encontró, buscar la sesión abierta más reciente
-    if (!session) {
+      if (!session) {
+        return NextResponse.json(
+          { error: `El código "${sessionCodeOrId}" no corresponde a ninguna jornada escolar abierta.` },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Si no se especificó código, buscar la jornada abierta del colegio al que pertenece este apoderado/picker
+      const phoneSuffix = cleanPhone.slice(-8);
       session = await prisma.pickupSession.findFirst({
-        where: { status: 'OPEN' },
+        where: {
+          status: 'OPEN',
+          school: {
+            classrooms: {
+              some: {
+                students: {
+                  some: {
+                    OR: [
+                      {
+                        guardians: {
+                          some: {
+                            guardian: { whatsappNumber: { contains: phoneSuffix } },
+                          },
+                        },
+                      },
+                      {
+                        authorizations: {
+                          some: {
+                            picker: { whatsappNumber: { contains: phoneSuffix } },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         include: { school: true },
       });
@@ -40,13 +77,10 @@ export async function GET(req: NextRequest) {
 
     if (!session) {
       return NextResponse.json(
-        { error: 'No hay ninguna sesión de salida escolar abierta en este momento.' },
+        { error: 'No se encontró ninguna jornada escolar abierta asociada a tu número.' },
         { status: 404 }
       );
     }
-
-    // Normalizar formato de teléfono (remover espacios y guiones)
-    const cleanPhone = phone.replace(/[\s-]/g, '');
 
     // 2. Buscar si el teléfono pertenece a un Picker o Guardian registrado
     const picker = await prisma.picker.findFirst({

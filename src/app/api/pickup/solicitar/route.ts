@@ -14,20 +14,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Validar que el alumno existe y obtener sus datos
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+    // 1. Validar que la sesión escolar existe y está abierta (por UUID o por Código de Portón)
+    const session = await prisma.pickupSession.findFirst({
+      where: {
+        OR: [
+          { id: sessionId },
+          { sessionCode: { equals: sessionId, mode: 'insensitive' } },
+        ],
+        status: 'OPEN',
+      },
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'La jornada escolar no fue encontrada o se encuentra cerrada.' },
+        { status: 404 }
+      );
+    }
+
+    // 2. Validar que el alumno existe y pertenece a este colegio
+    const student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        classroom: { schoolId: session.schoolId },
+      },
       include: { classroom: true },
     });
 
     if (!student) {
       return NextResponse.json(
-        { error: 'El alumno especificado no fue encontrado.' },
+        { error: 'El alumno especificado no fue encontrado en este establecimiento.' },
         { status: 404 }
       );
     }
 
-    // 2. Buscar si hay un pickerId asociado a este teléfono
+    // 3. Buscar si hay un pickerId asociado a este teléfono
     let pickerId: string | null = null;
     if (pickerPhone) {
       const cleanPhone = pickerPhone.replace(/[\s-]/g, '');
@@ -44,15 +65,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Generar Handover Code seguro de 6 dígitos
+    // 4. Generar Handover Code seguro de 6 dígitos
     const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de vigencia
 
-    // 4. Buscar o crear el evento de custodia en la sesión activa
+    // 5. Buscar o crear el evento de custodia en la sesión activa
     const existingEvent = await prisma.pickupEvent.findFirst({
       where: {
-        sessionId,
-        studentId,
+        sessionId: session.id,
+        studentId: student.id,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -72,8 +93,8 @@ export async function POST(req: NextRequest) {
     } else {
       event = await prisma.pickupEvent.create({
         data: {
-          sessionId,
-          studentId,
+          sessionId: session.id,
+          studentId: student.id,
           pickerId,
           status: 'IN_PROCESS',
           handoverCode: randomCode,

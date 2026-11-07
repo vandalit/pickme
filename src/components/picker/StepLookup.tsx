@@ -17,8 +17,8 @@ export function StepLookup({
   isLoading = false,
   error,
 }: StepLookupProps) {
-  const [phone, setPhone] = useState('+56981112233');
-  const [sessionCode, setSessionCode] = useState(initialSessionCode || 'SAN-1024');
+  const [phone, setPhone] = useState('');
+  const [sessionCode, setSessionCode] = useState(initialSessionCode || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,32 +87,34 @@ export function StepLookup({
         </Button>
       </form>
 
-      <div className={styles.quickFillSection}>
-        <span className={styles.quickFillLabel}>Demo — Cuentas rápidas de prueba:</span>
-        <div className={styles.pillsRow}>
-          <button
-            type="button"
-            className={styles.pillButton}
-            onClick={() => setDemoUser('+56981112233')}
-          >
-            Tío Ignacio (+56981112233)
-          </button>
-          <button
-            type="button"
-            className={styles.pillButton}
-            onClick={() => setDemoUser('+56984445566')}
-          >
-            Don Pedro Furgón (+56984445566)
-          </button>
-          <button
-            type="button"
-            className={styles.pillButton}
-            onClick={() => setDemoUser('+56991112233')}
-          >
-            Carolina Apoderada (+56991112233)
-          </button>
+      {sessionCode.trim().toUpperCase() === 'SAN-1024' && (
+        <div className={styles.quickFillSection}>
+          <span className={styles.quickFillLabel}>Demo — Cuentas rápidas de prueba:</span>
+          <div className={styles.pillsRow}>
+            <button
+              type="button"
+              className={styles.pillButton}
+              onClick={() => setDemoUser('+56981112233')}
+            >
+              Tío Ignacio (+56981112233)
+            </button>
+            <button
+              type="button"
+              className={styles.pillButton}
+              onClick={() => setDemoUser('+56984445566')}
+            >
+              Don Pedro Furgón (+56984445566)
+            </button>
+            <button
+              type="button"
+              className={styles.pillButton}
+              onClick={() => setDemoUser('+56991112233')}
+            >
+              Carolina Apoderada (+56991112233)
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
