@@ -8,6 +8,9 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "test:unit": "tsc src/lib/avatarAssigner.ts src/lib/avatars.ts src/lib/csvImporter.ts --module commonjs --target es2022 --skipLibCheck --outDir dist/lib && node --test tests/unit/*.test.js",
+    "test:integration": "node --test tests/integration/*.test.js",
+    "test": "npm run test:unit && npm run test:integration",
     "db:seed": "tsc prisma/seed.ts --module commonjs --target es2022 --skipLibCheck --outDir prisma/dist && node prisma/dist/prisma/seed.js"
   },
   "prisma": {
