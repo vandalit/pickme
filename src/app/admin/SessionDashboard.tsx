@@ -66,7 +66,9 @@ export function SessionDashboard({
 }: SessionDashboardProps) {
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showOpenModal, setShowOpenModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
+  const [dismissalTime, setDismissalTime] = useState('13:30');
   const [copiedLinkKey, setCopiedLinkKey] = useState<string | null>(null);
 
   // Filtros de tabla
@@ -79,6 +81,8 @@ export function SessionDashboard({
       const res = await openDailySessionAction();
       if (!res.success && res.error) {
         setActionError(res.error);
+      } else {
+        setShowOpenModal(false);
       }
     });
   };
@@ -212,13 +216,13 @@ export function SessionDashboard({
           <button
             type="button"
             className={styles.startBtn}
-            onClick={handleStartSession}
+            onClick={() => setShowOpenModal(true)}
             disabled={isPending || schoolSummary.activeStudents === 0}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            <span>{isPending ? 'Iniciando Jornada...' : 'Iniciar Jornada de Salida de Hoy'}</span>
+            <span>{isPending ? 'Iniciando Jornada...' : 'Configurar e Iniciar Jornada de Salida'}</span>
           </button>
         </section>
       )}
@@ -578,6 +582,135 @@ export function SessionDashboard({
             </div>
           </section>
         </>
+      )}
+
+      {/* ── MODAL DE PREPARACIÓN Y APERTURA DE JORNADA ── */}
+      {showOpenModal && (
+        <div className={styles.modalBackdrop} role="dialog" aria-modal="true">
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon} style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <h3 className={styles.modalTitle}>Preparar Jornada de Salida</h3>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Confirmación de Asistencia Diaria y Convocatoria
+                </span>
+              </div>
+            </div>
+
+            <div style={{ margin: '1rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div
+                style={{
+                  background: 'rgba(74, 222, 128, 0.08)',
+                  border: '1px solid rgba(74, 222, 128, 0.25)',
+                  borderRadius: '8px',
+                  padding: '0.85rem 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                }}
+              >
+                <div style={{ color: '#4ade80' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.875rem' }}>
+                    {schoolSummary.activeStudents} Alumnos Presentes Convocados
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#86efac' }}>
+                    Se proyectarán en el Smart TV de patio y estarán disponibles en el portón.
+                  </div>
+                </div>
+              </div>
+
+              {schoolSummary.inactiveStudents > 0 && (
+                <div
+                  style={{
+                    background: 'rgba(251, 191, 36, 0.08)',
+                    border: '1px solid rgba(251, 191, 36, 0.25)',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div style={{ color: '#fbbf24' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.875rem' }}>
+                      {schoolSummary.inactiveStudents} Alumnos Ausentes (Custodia no asumida)
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#fde68a' }}>
+                      No se proyectarán en TV ni se generarán alertas de retiro para ellos hoy.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.25rem' }}>
+                <label htmlFor="modalDismissalTime" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>
+                  Horario Estimado de Salida:
+                </label>
+                <input
+                  id="modalDismissalTime"
+                  type="time"
+                  value={dismissalTime}
+                  onChange={(e) => setDismissalTime(e.target.value)}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '6px',
+                    color: '#ffffff',
+                    padding: '0.5rem 0.75rem',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    maxWidth: '160px',
+                  }}
+                />
+              </div>
+
+              <div style={{ fontSize: '0.775rem', color: '#64748b', marginTop: '0.25rem' }}>
+                ¿Deseas modificar las inasistencias antes de iniciar?{' '}
+                <Link href="/admin/cursos" style={{ color: '#818cf8', textDecoration: 'underline' }}>
+                  Revisar nómina en Cursos
+                </Link>
+              </div>
+            </div>
+
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.cancelModalBtn}
+                onClick={() => setShowOpenModal(false)}
+                disabled={isPending}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={styles.confirmCloseBtn}
+                style={{ background: 'var(--color-brand, #6366f1)', borderColor: 'var(--color-brand, #6366f1)' }}
+                onClick={handleStartSession}
+                disabled={isPending || schoolSummary.activeStudents === 0}
+              >
+                {isPending ? 'Iniciando...' : 'Confirmar y Abrir Jornada'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── MODAL DE CONFIRMACIÓN DE CIERRE ── */}

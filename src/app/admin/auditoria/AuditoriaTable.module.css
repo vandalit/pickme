@@ -198,3 +198,162 @@
   color: #94a3b8;
   font-size: 0.9rem;
 }
+
+/* ── PESTAÑAS DE VISTA (TABLA vs LOG PLANO) ── */
+.viewSelectorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.viewTabBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.4);
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewTabBtn:hover {
+  background: rgba(30, 41, 59, 0.7);
+  color: #f8fafc;
+}
+
+.viewTabBtnActive {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+}
+
+/* ── PANEL DE TEXTO PLANO FORENSE ── */
+.logPanelCard {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.logPanelHeader {
+  padding: 1rem 1.25rem;
+  background: rgba(30, 41, 59, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sessionSelectorWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sessionSelectLabel {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sessionSelect {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  color: #f8fafc;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.sessionSelect:focus {
+  border-color: #3b82f6;
+}
+
+.logActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.6);
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionButton:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+
+.actionButtonPrimary {
+  background: rgba(59, 130, 246, 0.9);
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.actionButtonPrimary:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.plainTextPre {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  background: #090d16;
+  overflow-x: auto;
+  max-height: 520px;
+  white-space: pre;
+  tab-size: 2;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.plainTextEmpty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.emptySubtitle {
+  font-size: 0.825rem;
+  color: #64748b;
+  max-width: 460px;
+  margin: 0 auto;
+  line-height: 1.5;
+}

@@ -95,3 +95,4 @@ export default function BoardLandingPage() {
     </main>
   );
 }
+

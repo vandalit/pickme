@@ -8,8 +8,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "tsc src/lib/avatarAssigner.ts src/lib/avatars.ts src/lib/csvImporter.ts --module commonjs --target es2022 --skipLibCheck --outDir dist/lib && node --test tests/unit/*.test.js",
-    "test:integration": "node --test tests/integration/01_session_lifecycle.test.js && node --test tests/integration/02_pickup_flow.test.js && node --test tests/integration/03_audit_close.test.js",
+    "test:unit": "tsc src/lib/avatarAssigner.ts src/lib/avatars.ts src/lib/csvImporter.ts src/lib/auditLogFormatter.ts --module commonjs --target es2022 --skipLibCheck --outDir dist/lib && node --test tests/unit/*.test.js",
+    "test:integration": "node --test tests/integration/01_session_lifecycle.test.js && sleep 2 && node --test tests/integration/02_pickup_flow.test.js && sleep 2 && node --test tests/integration/03_audit_close.test.js",
     "test": "npm run test:unit && npm run test:integration",
     "db:seed": "tsc prisma/seed.ts --module commonjs --target es2022 --skipLibCheck --outDir prisma/dist && node prisma/dist/prisma/seed.js"
   },

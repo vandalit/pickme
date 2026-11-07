@@ -205,6 +205,30 @@ export async function updateStudentStatusAction(
   }
 }
 
+// ── 3B. ACTUALIZACIÓN MASIVA DE ASISTENCIA DIARIA ──────────────────────────────
+export async function batchUpdateAttendanceAction(
+  studentIds: string[],
+  newStatus: 'ACTIVE' | 'ABSENT'
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, error: 'Sesión no autenticada.' };
+  }
+
+  try {
+    const res = await prisma.student.updateMany({
+      where: { id: { in: studentIds } },
+      data: { status: newStatus as any },
+    });
+    revalidatePath('/admin/cursos');
+    revalidatePath('/admin');
+    return { success: true, count: res.count };
+  } catch (err: any) {
+    console.error('[batchUpdateAttendanceAction] Error al actualizar asistencia en lote:', err);
+    return { success: false, error: 'Error al actualizar asistencia masiva.' };
+  }
+}
+
 // ── 4. IMPORTACIÓN MASIVA VIA CSV/EXCEL ─────────────────────────────────────────
 export async function importStudentsCsvAction(
   csvContent: string

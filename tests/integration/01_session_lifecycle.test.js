@@ -6,7 +6,7 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const { TEST_SCHOOL_NAME, setupTestSchool } = require('./testHelper');
 
-describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
+describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', { concurrency: 1 }, () => {
   let pool;
   let prisma;
   let testSchool;

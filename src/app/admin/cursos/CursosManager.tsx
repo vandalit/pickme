@@ -5,6 +5,7 @@ import {
   createClassroomAction,
   createStudentAction,
   updateStudentStatusAction,
+  batchUpdateAttendanceAction,
   importStudentsCsvAction,
 } from './actions';
 import { CSV_TEMPLATE_EXAMPLE } from '@/lib/csvImporter';
@@ -188,6 +189,25 @@ export function CursosManager({
     });
   };
 
+  const activeStudentsCount = students.filter((s) => s.status === 'ACTIVE').length;
+  const absentStudentsCount = students.filter((s) => s.status === 'ABSENT').length;
+  const withdrawnStudentsCount = students.filter((s) => s.status === 'WITHDRAWN').length;
+
+  // Marcar todos presentes en lote
+  const handleBatchMarkAllPresent = () => {
+    const targetStudents = filteredStudents.filter((s) => s.status !== 'ACTIVE');
+    if (targetStudents.length === 0) return;
+    const targetIds = targetStudents.map((s) => s.id);
+
+    setStudents((prev) =>
+      prev.map((s) => (targetIds.includes(s.id) ? { ...s, status: 'ACTIVE' } : s))
+    );
+
+    startTransition(async () => {
+      await batchUpdateAttendanceAction(targetIds, 'ACTIVE');
+    });
+  };
+
   // Importar CSV
   const handleImportCsv = () => {
     if (!csvText.trim()) {
@@ -328,6 +348,69 @@ export function CursosManager({
             </span>
           </div>
         ))}
+      </div>
+
+      {/* ── GOBERNANZA DE ASISTENCIA DIARIA (CUSTODIA) ── */}
+      <div className={styles.attendanceBar} role="region" aria-label="Control diario de asistencia">
+        <div className={styles.attendanceStats}>
+          <span className={`${styles.statBadge} ${styles.statBadgeActive}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <strong>{activeStudentsCount}</strong> Presentes hoy (Convocados a salida)
+          </span>
+
+          <span className={`${styles.statBadge} ${styles.statBadgeAbsent}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <strong>{absentStudentsCount}</strong> Ausentes hoy (Custodia no asumida)
+          </span>
+
+          {withdrawnStudentsCount > 0 && (
+            <span className={styles.statBadge}>
+              <strong>{withdrawnStudentsCount}</strong> Retirados
+            </span>
+          )}
+        </div>
+
+        <div className={styles.attendanceActions}>
+          <div className={styles.filterAttendanceGroup}>
+            <button
+              type="button"
+              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ALL' ? styles.filterAttendanceBtnActive : ''}`}
+              onClick={() => setSelectedStatus('ALL')}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ACTIVE' ? styles.filterAttendanceBtnActive : ''}`}
+              onClick={() => setSelectedStatus('ACTIVE')}
+            >
+              Solo Presentes
+            </button>
+            <button
+              type="button"
+              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ABSENT' ? styles.filterAttendanceBtnActive : ''}`}
+              onClick={() => setSelectedStatus('ABSENT')}
+            >
+              Solo Ausentes
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className={styles.btnBatch}
+            onClick={handleBatchMarkAllPresent}
+            disabled={isPending || absentStudentsCount === 0}
+            title="Marcar todos los alumnos visibles como presentes para la jornada de hoy"
+          >
+            Marcar Todos Presentes Hoy
+          </button>
+        </div>
       </div>
 
       {/* ── TABLA DE NÓMINA ── */}

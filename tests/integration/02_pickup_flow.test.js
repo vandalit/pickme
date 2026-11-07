@@ -6,7 +6,7 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const { TEST_SCHOOL_NAME } = require('./testHelper');
 
-describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', () => {
+describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', { concurrency: 1 }, () => {
   let pool;
   let prisma;
   let session;

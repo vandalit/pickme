@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db';
 import { auth, signOut } from '@/auth';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { resolveUserSchool } from '@/lib/userSchool';
-import { AuditoriaTable, AuditRecord } from './AuditoriaTable';
+import { generatePlainTextAuditLog } from '@/lib/auditLogFormatter';
+import { AuditoriaTable, AuditRecord, ClosedSessionLog } from './AuditoriaTable';
 import styles from '../page.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -35,9 +36,10 @@ export default async function AdminAuditoriaPage() {
   };
 
   let auditLogs: AuditRecord[] = [];
+  let closedSessionLogs: ClosedSessionLog[] = [];
 
   try {
-    const [totalSessions, openSession, events] = await Promise.all([
+    const [totalSessions, openSession, events, closedSessionsRaw] = await Promise.all([
       prisma.pickupSession.count({
         where: { schoolId: resolvedSchool.id },
       }),
@@ -56,10 +58,41 @@ export default async function AdminAuditoriaPage() {
         orderBy: { updatedAt: 'desc' },
         take: 200,
       }),
+      prisma.pickupSession.findMany({
+        where: { schoolId: resolvedSchool.id, status: 'CLOSED' },
+        include: {
+          school: {
+            select: { name: true, address: true },
+          },
+          events: {
+            include: {
+              student: { include: { classroom: true } },
+              picker: true,
+              staff: true,
+            },
+          },
+        },
+        orderBy: { closedAt: 'desc' },
+        take: 30,
+      }),
     ]);
 
     if (openSession) {
       activeSessionCode = openSession.sessionCode;
+    }
+
+    if (closedSessionsRaw.length > 0) {
+      closedSessionLogs = closedSessionsRaw.map((s) => ({
+        id: s.id,
+        sessionCode: s.sessionCode,
+        startedAt: s.startedAt ? s.startedAt.toISOString() : s.createdAt.toISOString(),
+        closedAt: s.closedAt ? s.closedAt.toISOString() : s.createdAt.toISOString(),
+        totalEvents: s.events.length,
+        completedCount: s.events.filter(
+          (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED' || e.status === 'HANDOVER'
+        ).length,
+        plainText: generatePlainTextAuditLog(s as any),
+      }));
     }
 
     if (events.length > 0) {
@@ -132,7 +165,11 @@ export default async function AdminAuditoriaPage() {
             </p>
           </div>
 
-          <AuditoriaTable metrics={metrics} logs={auditLogs} />
+          <AuditoriaTable
+            metrics={metrics}
+            logs={auditLogs}
+            closedSessionLogs={closedSessionLogs}
+          />
         </section>
       </main>
     </div>
