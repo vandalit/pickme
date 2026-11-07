@@ -58,7 +58,12 @@ export async function GET(req: NextRequest) {
       },
       include: {
         authorizations: {
-          where: { status: 'ACTIVE' },
+          where: {
+            status: 'ACTIVE',
+            student: {
+              classroom: { schoolId: session.schoolId },
+            },
+          },
           include: {
             student: {
               include: {
@@ -85,6 +90,11 @@ export async function GET(req: NextRequest) {
       },
       include: {
         students: {
+          where: {
+            student: {
+              classroom: { schoolId: session.schoolId },
+            },
+          },
           include: {
             student: {
               include: {
