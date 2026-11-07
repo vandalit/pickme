@@ -62,19 +62,22 @@ El proceso de retiro escolar es uno de los momentos de mayor riesgo y fricción 
 ## 4. Épicas de producto
 
 ### E1 — Workspace multi-tenant (crear colegio, invitar staff)
-**Estado:** Implementado (invitación por token: próxima versión)
+**Estado:** Implementado
 
 - Creación de workspace de colegio con datos básicos (nombre, dirección, teléfono de emergencia, timezone, horario de salida).
 - El primer usuario del workspace adquiere rol `SCHOOL_ADMIN`.
-- Admin gestiona personal de portería desde `/admin/staff`.
-- **Próxima versión:** flujo de onboarding bifurcado Admin/Staff; `UserStatus` (PENDING → ACTIVE → SUSPENDED); modelo `Invitation` con token de un solo uso y expiración.
+- Admin gestiona personal de portería desde `/admin/staff` mediante registro directo o invitación por token temporal (48h/7d).
+- Sistema de estados de usuario: `UserStatus` (`PENDING` → `ACTIVE` → `SUSPENDED`).
+- Modelo `Invitation` con token UUID de un solo uso.
 
 ### E2 — Onboarding bifurcado Admin / Staff
-**Estado:** Próxima versión (`/onboarding`, `/staff/join`)
+**Estado:** Implementado (`/onboarding`, `/staff/join`)
 
-- `/onboarding`: flujo guiado para que el admin configure el colegio por primera vez (nómina, horario, primer staff).
-- `/staff/join`: el staff accede con su invitation link y completa el registro sin necesidad de contraseña previa.
-- El token de invitación actúa como factor de autenticación de un solo uso.
+- `/onboarding`: flujo guiado donde el usuario escoge su rol:
+  - **Director**: deriva a `/admin/onboarding` para fundar el workspace escolar.
+  - **Staff**: deriva a `/staff/join` para vincularse o aceptar su invitación.
+- `/staff/join`: el staff accede con su enlace de invitación (`?token=...`) y se vincula en un click, o envía una solicitud a un colegio registrado.
+- El token de invitación actúa como factor de vinculación temporal sin necesidad de gestionar contraseñas manuales.
 
 ### E3 — Gestión de nómina y asistencia diaria
 **Estado:** Implementado
@@ -88,15 +91,17 @@ El proceso de retiro escolar es uno de los momentos de mayor riesgo y fricción 
 **Estado:** Implementado
 
 - Admin abre jornada manualmente desde `/admin`: crea `PickupSession(OPEN)` y un `PickupEvent(WAITING)` por cada alumno `ACTIVE`.
-- **Horario automático:** `School.defaultExitTime` configurable en `/admin`. Cron endpoint `GET /api/cron/auto-open-sessions` (bearer `CRON_SECRET`) abre la sesión a la hora configurada.
+- **Acción explícita "Send / Sincronizar"**: Botón directo en la barra de control de `/admin/cursos` para aperturar la salida con un click o sincronizar la nómina viva.
+- **Horario automático multizona**: `School.defaultExitTime` y `School.timezone` configurables. Endpoint `GET /api/cron/auto-open-sessions` (bearer `CRON_SECRET`) abre la sesión a la hora exacta en el huso horario local de la institución.
 - Admin puede cerrar la jornada manualmente; al cierre se genera el log forense.
 
 ### E5 — Lista viva de custodia (con llegadas tardías)
-**Estado:** Implementado (llegadas tardías: próxima versión)
+**Estado:** Implementado
 
 - El board `/board/[sessionId]` muestra el estado de cada `PickupEvent` en tiempo real (polling 5 s).
 - Estados: `WAITING → IN_PROCESS → HANDOVER → IN_TRANSIT → ARRIVED`.
-- **Próxima versión:** manejo de llegadas tardías (picker llega después del cierre de jornada).
+- **Llegadas tardías (`addLateArrivalToSessionAction`)**: si un alumno ausente llega tarde y es marcado `ACTIVE` durante una jornada abierta, se incorpora automáticamente a la cola de salida de portería sin reiniciar la jornada.
+- Integración de QR interactivo directo en el Smart TV Board enlazando a `/retirar?session=${sessionCode}`.
 
 ### E6 — Smart TV Board con PIN
 **Estado:** Implementado

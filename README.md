@@ -39,9 +39,10 @@ PickMe es una plataforma multi-tenant (un **workspace por colegio**) que reempla
 | `STAFF` | Personal de portería | `/staff` |
 | Anónimo | Picker (apoderado) | `/retirar`, `/board` |
 
-- El middleware redirige a `STAFF` fuera de `/staff` → `/staff`.
-- `/staff` está protegido con guard en Server Component (requiere sesión activa).
-- El admin invita staff desde `/admin/staff` (actualmente crea usuario STAFF directamente; invitación por token próxima versión).
+- El middleware y `auth.ts` redirigen a `STAFF` fuera de `/admin` → `/staff`.
+- `/staff` está protegido con guard en Server Component (requiere sesión activa y estado `ACTIVE`).
+- Cuentas de staff con estado `PENDING` son redirigidas automáticamente a `/staff/join?pending=1`.
+- El admin invita staff desde `/admin/staff` mediante registro directo o generación de enlaces de invitación con token temporal (`/staff/join?token=...`).
 
 ---
 
@@ -52,9 +53,11 @@ PickMe es una plataforma multi-tenant (un **workspace por colegio**) que reempla
 |---|---|
 | `/` | Landing / home |
 | `/auth/login` | Inicio de sesión (NextAuth) |
+| `/onboarding` | Selección de rol inicial (Director o Personal de Portón) |
+| `/staff/join` | Portal de vinculación o aceptación de invitación con token |
 | `/retirar` | Picker anuncia retiro y recibe OTP |
 | `/board` | Smart TV Board (lista viva de custodia) |
-| `/board/[sessionId]` | Board de jornada específica |
+| `/board/[sessionId]` | Board de jornada específica con QR de acceso directo |
 
 ### Admin (`/admin`)
 | Ruta | Descripción |

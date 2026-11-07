@@ -53,9 +53,10 @@ model School {
   name              String
   address           String?
   emergencyPhone    String?
-  qrRefreshSecs     Int       @default(30)
+  qrRefreshSecs     Int       @default(300)
   defaultExitTime   String?   // "HH:MM" en timezone local del colegio
   timezone          String    @default("America/Santiago")
+  invitations       Invitation[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
@@ -66,16 +67,35 @@ enum Role {
   SUPERADMIN
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
 model User {
-  id        String   @id @default(cuid())
-  schoolId  String
-  email     String   @unique
+  id        String     @id @default(cuid())
+  schoolId  String?    // Nullable antes de completar onboarding
+  email     String     @unique
   name      String?
   role      Role
-  googleId  String?  @unique
+  status    UserStatus @default(ACTIVE)
+  googleId  String?    @unique
   avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  schoolId    String
+  email       String
+  role        Role      @default(STAFF)
+  token       String    @unique  // UUID para /staff/join?token=xxxx
+  expiresAt   DateTime           // 48h / 7d
+  acceptedAt  DateTime?          // null = pendiente
+  createdAt   DateTime  @default(now())
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
 model Classroom {
@@ -419,14 +439,10 @@ Cliente (Staff) → GET /api/staff/queue            (cada 5 s)
 
 | Funcionalidad | Estado | Notas |
 |---|---|---|
-| `UserStatus` (PENDING/ACTIVE/SUSPENDED) | Próxima versión | Schema pendiente |
-| Modelo `Invitation` con token | Próxima versión | Schema pendiente |
-| Flujo `/staff/join` (invitation link) | Próxima versión | Depende de `Invitation` |
-| Flujo `/onboarding` bifurcado | Próxima versión | Ruta existe, flujo incompleto |
-| WebSockets / tiempo real push | No planeado | Polling 5 s es suficiente para MVP |
-| Almacenamiento de contraseñas (`bcrypt`) | No planeado | Staff usa Google OAuth; auth sin contraseña |
-| Llegadas tardías (picker post-cierre) | Próxima versión | Requiere lógica de sesión extendida |
-| Autorizaciones delegadas (Guardian) | Parcialmente modelado | Schema existe; UI pendiente |
+| WebSockets / tiempo real push | No planeado | Polling 5 s es suficiente para MVP y reduce costos |
+| Almacenamiento de contraseñas (`bcrypt`) | No planeado | Modelo Passwordless/OAuth + Invitaciones por Token |
+| Autorizaciones delegadas complejas (Guardian) | Parcialmente modelado | Schema existe (`Guardian`); UI avanzada pendiente |
+| Apps móviles nativas | No planeado | Web App responsive para móvil y TV |
 
 ---
 
