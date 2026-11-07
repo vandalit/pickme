@@ -15,7 +15,7 @@ function createPrismaClient(): PrismaClient {
     connectionString,
     max: process.env.NODE_ENV === 'production' ? 5 : 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 20000, // 20s para tolerar cold-starts del serverless pooler de Neon
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({

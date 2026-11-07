@@ -67,11 +67,8 @@ export function StudentCard({
       )}
 
       <div className={styles.avatarWrapper}>
-        <span className={styles.emoji} aria-label={animal.name}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
+        <span className={styles.emoji} role="img" aria-label={animal.name}>
+          {animal.emoji}
         </span>
         {isCompleted && (
           <span className={styles.checkmark} aria-label="Retirado">

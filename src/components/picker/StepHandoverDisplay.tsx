@@ -103,10 +103,9 @@ export function StepHandoverDisplay({
 
         <div className={styles.studentHero} style={heroStyle}>
           <div className={styles.avatar}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
-              <path d="M19 11v2a7 7 0 0 1-14 0v-2" />
-            </svg>
+            <span role="img" aria-label={animal.name}>
+              {animal.emoji}
+            </span>
           </div>
           <span className={styles.studentLabel}>{label}</span>
           <span className={styles.studentMeta}>
@@ -139,10 +138,9 @@ export function StepHandoverDisplay({
 
       <div className={styles.studentHero} style={heroStyle}>
         <div className={styles.avatar}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
+          <span role="img" aria-label={animal.name}>
+            {animal.emoji}
+          </span>
         </div>
         <span className={styles.studentLabel}>{label}</span>
         <span className={styles.studentMeta}>
