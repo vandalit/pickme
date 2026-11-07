@@ -10,6 +10,8 @@ export interface StaffHeaderProps {
   schoolName: string;
   sessionCode: string;
   sessionId: string | null;
+  defaultExitTime?: string | null;
+  timezone?: string | null;
   currentTab: StaffFilterTab;
   onSelectTab: (tab: StaffFilterTab) => void;
   counts: {
@@ -28,6 +30,8 @@ export function StaffHeader({
   schoolName,
   sessionCode,
   sessionId,
+  defaultExitTime,
+  timezone,
   currentTab,
   onSelectTab,
   counts,
@@ -82,7 +86,24 @@ export function StaffHeader({
               <span>{staffName}</span>
               <span className={styles.roleBadge}>Portón</span>
             </div>
-            <span className={styles.schoolInfo}>{schoolName}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className={styles.schoolInfo}>{schoolName}</span>
+              {defaultExitTime && (
+                <span
+                  style={{
+                    fontSize: '0.725rem',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    borderRadius: '4px',
+                    padding: '1px 6px',
+                  }}
+                  title={`Horario de salida programado (${timezone || 'America/Santiago'})`}
+                >
+                  Salida: {defaultExitTime} hrs
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -13,6 +13,8 @@ import styles from './page.module.css';
 interface StaffContentProps {
   staffName: string;
   schoolName: string;
+  defaultExitTime?: string | null;
+  timezone?: string | null;
   activeSessionCode: string | null;
   activeSessionId: string | null;
   onSignOut: () => Promise<void>;
@@ -21,6 +23,8 @@ interface StaffContentProps {
 export default function StaffContent({
   staffName,
   schoolName,
+  defaultExitTime,
+  timezone,
   activeSessionCode,
   activeSessionId,
   onSignOut,
@@ -87,6 +91,8 @@ export default function StaffContent({
         schoolName={schoolName}
         sessionCode={sessionCode ?? 'Sin jornada'}
         sessionId={sessionId}
+        defaultExitTime={defaultExitTime}
+        timezone={timezone}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         counts={counts}

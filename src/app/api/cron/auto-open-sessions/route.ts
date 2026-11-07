@@ -21,21 +21,36 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  // Hora local en formato HH:MM
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-  // Buscar colegios que tienen horario configurado para esta hora
+  // Buscar todos los colegios con defaultExitTime configurado
   const schools = await prisma.school.findMany({
-    where: { defaultExitTime: currentTime },
+    where: { defaultExitTime: { not: null } },
   });
 
-  if (schools.length === 0) {
-    return NextResponse.json({ triggered: 0, message: 'No schools scheduled for this minute.' });
+  const matchedSchools = schools.filter((school) => {
+    if (!school.defaultExitTime) return false;
+    try {
+      const tz = school.timezone || 'America/Santiago';
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      const localTime = formatter.format(now); // "HH:MM"
+      return localTime === school.defaultExitTime;
+    } catch {
+      return false;
+    }
+  });
+
+  if (matchedSchools.length === 0) {
+    return NextResponse.json({ triggered: 0, message: 'No schools scheduled for this minute in their local timezone.' });
   }
 
   const results: { schoolId: string; schoolName: string; result: string }[] = [];
 
-  for (const school of schools) {
+  for (const school of matchedSchools) {
     try {
       // Verificar si ya hay una sesión abierta
       const existingOpen = await prisma.pickupSession.findFirst({
@@ -93,7 +108,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     triggered: results.length,
-    time: currentTime,
+    timestamp: now.toISOString(),
     results,
   });
 }

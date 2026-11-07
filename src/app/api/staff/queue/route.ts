@@ -7,21 +7,30 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sessionParam = searchParams.get('session');
 
-    // 1. Resolver usuario autenticado si existe
+    // 1. Guard de Autenticación: solo staff o admin autenticados
     const userSession = await auth();
-    let userSchoolId: string | null = null;
-    let staffName = 'Personal de Portón';
-
-    if (userSession?.user?.email) {
-      const user = await prisma.user.findUnique({
-        where: { email: userSession.user.email.toLowerCase().trim() },
-        include: { school: true },
-      });
-      if (user) {
-        userSchoolId = user.schoolId;
-        staffName = user.name;
-      }
+    if (!userSession?.user?.email) {
+      return NextResponse.json(
+        { error: 'No autorizado. Debes iniciar sesión para consultar la cola operativa.' },
+        { status: 401 }
+      );
     }
+
+    const email = userSession.user.email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { school: true },
+    });
+
+    if (!user || !user.schoolId || user.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'Tu cuenta no tiene permisos activos para operar en portería.' },
+        { status: 403 }
+      );
+    }
+
+    const userSchoolId = user.schoolId;
+    const staffName = user.name;
 
     // 2. Obtener la sesión activa con aislamiento estricto
     let session = null;

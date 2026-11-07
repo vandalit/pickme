@@ -21,7 +21,8 @@ export function QRPanel({
       ? window.location.origin
       : 'https://pickme.app');
 
-  const checkinUrl = `${origin}/retirar?session=${encodeURIComponent(sessionId)}`;
+  const targetParam = sessionCode || sessionId;
+  const checkinUrl = `${origin}/retirar?session=${encodeURIComponent(targetParam)}`;
 
   return (
     <aside

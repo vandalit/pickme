@@ -54,6 +54,8 @@ export default async function StaffPage() {
         <StaffContent
           staffName={dbUser.name}
           schoolName={dbUser.school.name}
+          defaultExitTime={dbUser.school.defaultExitTime}
+          timezone={dbUser.school.timezone}
           activeSessionCode={activeSession?.sessionCode ?? null}
           activeSessionId={activeSession?.id ?? null}
           onSignOut={handleSignOut}
