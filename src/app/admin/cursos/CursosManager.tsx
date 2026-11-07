@@ -140,7 +140,7 @@ export function CursosManager({
       pickerName: (formData.get('pickerName') as string) || undefined,
       pickerRelationship: (formData.get('pickerRelationship') as string) || undefined,
       pickerPhone: (formData.get('pickerPhone') as string) || undefined,
-      status: (formData.get('status') as any) || 'ACTIVE',
+      status: 'ABSENT' as const, // Nace matriculado pero SIN ingreso hoy (custodia estricta)
     };
 
     startTransition(async () => {
@@ -556,7 +556,8 @@ export function CursosManager({
                   <th>Apoderado Titular</th>
                   <th>Retiradores / Furgón</th>
                   <th>Pase Rápido</th>
-                  <th>Ingreso / Asistencia</th>
+                  <th>Matrícula (Nómina)</th>
+                  <th>Asistencia Hoy (Custodia)</th>
                 </tr>
               </thead>
               <tbody>
@@ -673,30 +674,64 @@ export function CursosManager({
                         </div>
                       </td>
 
+                      {/* ── COLUMNA 1: MATRÍCULA (NÓMINA ESCOLAR) ── */}
                       <td>
-                        <button
-                          type="button"
+                        <select
+                          value={s.status === 'WITHDRAWN' ? 'WITHDRAWN' : 'ENROLLED'}
                           disabled={isPending}
-                          onClick={() => handleToggleAttendance(s.id)}
-                          className={`${styles.attendanceToggleBtn} ${
-                            s.status === 'ACTIVE'
-                              ? styles.attendanceToggleActive
-                              : styles.attendanceToggleAbsent
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'WITHDRAWN') {
+                              if (window.confirm(`¿Dar de baja a ${s.fullName} de la nómina del establecimiento?`)) {
+                                handleStatusChange(s.id, 'WITHDRAWN');
+                              }
+                            } else {
+                              handleStatusChange(s.id, 'ABSENT');
+                            }
+                          }}
+                          className={`${styles.statusSelect} ${
+                            s.status === 'WITHDRAWN'
+                              ? styles.statusWithdrawn
+                              : styles.statusActive
                           }`}
-                          title={
-                            s.status === 'ACTIVE'
-                              ? '🟢 Ingreso confirmado (En sala). Clic para desmarcar.'
-                              : '⚪ Sin ingreso a sala. Clic para marcar ingreso a clases.'
-                          }
-                          aria-label={`Asistencia de ${s.fullName}: ${
-                            s.status === 'ACTIVE' ? 'Presente en sala' : 'Sin ingreso'
-                          }`}
+                          title="Estatuto del alumno en la institución (Matriculado regular o Dado de baja)"
                         >
-                          <span className={styles.toggleDot} />
-                          <span className={styles.toggleLabel}>
-                            {s.status === 'ACTIVE' ? '✓ En Sala' : 'Sin ingreso'}
+                          <option value="ENROLLED">✓ Matriculado</option>
+                          <option value="WITHDRAWN">✕ Retirado (Baja)</option>
+                        </select>
+                      </td>
+
+                      {/* ── COLUMNA 2: ASISTENCIA VIVA DE HOY (TOGGLE DE 1 CLIC) ── */}
+                      <td>
+                        {s.status === 'WITHDRAWN' ? (
+                          <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+                            Sin custodia (Baja)
                           </span>
-                        </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => handleToggleAttendance(s.id)}
+                            className={`${styles.attendanceToggleBtn} ${
+                              s.status === 'ACTIVE'
+                                ? styles.attendanceToggleActive
+                                : styles.attendanceToggleAbsent
+                            }`}
+                            title={
+                              s.status === 'ACTIVE'
+                                ? '🟢 Ingreso confirmado (En sala). Clic para desmarcar.'
+                                : '⚪ Sin ingreso a sala. Clic para marcar ingreso a clases.'
+                            }
+                            aria-label={`Asistencia de ${s.fullName}: ${
+                              s.status === 'ACTIVE' ? 'Presente en sala' : 'Sin ingreso'
+                            }`}
+                          >
+                            <span className={styles.toggleDot} />
+                            <span className={styles.toggleLabel}>
+                              {s.status === 'ACTIVE' ? '✓ En Sala' : 'Sin ingreso'}
+                            </span>
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
