@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'PickMe — Administración Escolar (Sofía)',
+  title: 'PickMe — Administración Escolar',
   description: 'Panel de supervisión, nómina de alumnos y auditoría de custodia escolar',
   robots: {
     index: false,

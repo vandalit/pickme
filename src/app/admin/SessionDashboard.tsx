@@ -7,6 +7,7 @@ import {
   openDailySessionAction,
   closeDailySessionAction,
 } from './sessionActions';
+import { ScheduleWidget } from './ScheduleWidget';
 
 export interface DashboardRosterItem {
   id: string;
@@ -224,6 +225,9 @@ export function SessionDashboard({
             </svg>
             <span>{isPending ? 'Iniciando Jornada...' : 'Configurar e Iniciar Jornada de Salida'}</span>
           </button>
+
+          {/* Configuración de apertura automática */}
+          <ScheduleWidget />
         </section>
       )}
 

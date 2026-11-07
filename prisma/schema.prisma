@@ -57,6 +57,7 @@ model School {
   address        String?
   emergencyPhone String?
   qrRefreshSecs  Int             @default(300) // 5 minutos por defecto
+  defaultExitTime String?        // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
