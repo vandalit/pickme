@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   if (errorParam === "CredentialsSignin") {
     errorMessage = "Credenciales incorrectas. Verifica tu correo y contraseña institucional."
   } else if (errorParam === "OAuthSignin" || errorParam === "OAuthCallbackError") {
-    errorMessage = "No fue posible completar la autenticación con Google Workspace. Inténtalo nuevamente."
+    errorMessage = "No fue posible completar la autenticación con Google. Inténtalo nuevamente."
   } else if (errorParam === "Configuration") {
     errorMessage = "Aviso de configuración en el proveedor de autenticación. Verifica las credenciales de Google Cloud o utiliza tu correo institucional."
   } else if (errorParam === "NoSchool") {
@@ -97,7 +97,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
               />
             </svg>
-            <span>Continuar con Google Workspace</span>
+            <span>Continuar con Google</span>
           </button>
         </form>
 
