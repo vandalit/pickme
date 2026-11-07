@@ -140,6 +140,19 @@ export default function JoinClientContent({
           </div>
         )}
       </div>
+
+      <div style={{ textAlign: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <a
+          href="/onboarding"
+          style={{
+            fontSize: '0.825rem',
+            color: '#38bdf8',
+            textDecoration: 'none',
+          }}
+        >
+          ¿Eres Director y quieres dar de alta tu colegio? Crear colegio aquí →
+        </a>
+      </div>
     </div>
   );
 }

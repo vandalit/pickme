@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ProfileModal } from './ProfileModal';
 import styles from './AdminNav.module.css';
 
 interface AdminNavProps {
   userName: string;
+  userEmail?: string;
   schoolName: string;
   activeSessionCode: string | null;
   onSignOut: () => Promise<void>;
@@ -14,11 +16,13 @@ interface AdminNavProps {
 
 export function AdminNav({
   userName,
+  userEmail = '',
   schoolName,
   activeSessionCode,
   onSignOut,
 }: AdminNavProps) {
   const pathname = usePathname();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const initial = userName.charAt(0).toUpperCase();
 
   const navItems = [
@@ -76,13 +80,13 @@ export function AdminNav({
   return (
     <header className={styles.header}>
       <div className={styles.headerTop}>
-        <div className={styles.userArea}>
+        <Link href="/admin" className={styles.homeLink} title="Ir a Salida en Vivo (Dashboard)">
           <div className={styles.avatar}>{initial}</div>
           <div className={styles.meta}>
             <span className={styles.name}>{userName}</span>
             <span className={styles.institution}>Director(a) · {schoolName}</span>
           </div>
-        </div>
+        </Link>
 
         <div className={styles.topRight}>
           <div className={styles.sessionPill}>
@@ -94,6 +98,24 @@ export function AdminNav({
             </span>
           </div>
 
+          <button
+            type="button"
+            className={styles.profileBtn}
+            onClick={() => setIsProfileOpen(true)}
+            title="Ver mi perfil y rol institucional"
+          >
+            <span>👤 Perfil</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.helpBtn}
+            onClick={() => setIsProfileOpen(true)}
+            title="Ayuda y preguntas frecuentes"
+          >
+            <span>❓ Ayuda</span>
+          </button>
+
           <form action={onSignOut}>
             <button type="submit" className={styles.logoutBtn}>
               Cerrar Sesión
@@ -101,6 +123,15 @@ export function AdminNav({
           </form>
         </div>
       </div>
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userName={userName}
+        userEmail={userEmail}
+        currentRole="SCHOOL_ADMIN"
+        schoolName={schoolName}
+      />
 
       <nav className={styles.navTabs}>
         {navItems.map((item) => {

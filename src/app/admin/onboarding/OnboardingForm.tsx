@@ -96,23 +96,39 @@ export function OnboardingForm({ initialAdminName, userEmail }: OnboardingFormPr
         </span>
       </div>
 
-      <button type="submit" className={styles.submitBtn} disabled={isPending}>
-        {isPending ? (
-          <>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-            <span>Configurando establecimiento...</span>
-          </>
-        ) : (
-          <>
-            <span>Crear Colegio y Comenzar</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </>
-        )}
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <button type="submit" className={styles.submitBtn} disabled={isPending}>
+          {isPending ? (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              <span>Configurando establecimiento...</span>
+            </>
+          ) : (
+            <>
+              <span>Crear Colegio y Comenzar</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </>
+          )}
+        </button>
+
+        <a
+          href="/onboarding"
+          style={{
+            textAlign: 'center',
+            fontSize: '0.85rem',
+            color: '#94a3b8',
+            textDecoration: 'none',
+            padding: '0.5rem',
+            transition: 'color 0.15s',
+          }}
+        >
+          ← ¿Te equivocaste de rol? Volver a selección (Soy Staff / Portería)
+        </a>
+      </div>
 
       <style jsx>{`
         @keyframes spin {
