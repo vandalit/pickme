@@ -44,7 +44,21 @@ export async function GET(
       );
     }
 
-    const students = session.events.map((e) => {
+    const now = new Date().getTime();
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+    // Filtrar alumnos con cooldown: si fueron entregados (IN_TRANSIT / ARRIVED) hace más de 10 min, desaparecen del monitor
+    const activeEvents = session.events.filter((e) => {
+      const isDelivered = e.status === 'IN_TRANSIT' || e.status === 'ARRIVED';
+      if (!isDelivered) return true;
+
+      // Si fue confirmado por staff, revisar si pasaron más de 10 minutos
+      const confirmedTime = e.staffConfirmedAt ? new Date(e.staffConfirmedAt).getTime() : new Date(e.updatedAt).getTime();
+      const diffMs = now - confirmedTime;
+      return diffMs < TEN_MINUTES_MS;
+    });
+
+    const students = activeEvents.map((e) => {
       let publicStatus: 'WAITING' | 'IN_PROCESS' | 'HANDOVER' | 'IN_TRANSIT' | 'ARRIVED' | 'ALERT' =
         'WAITING';
 
