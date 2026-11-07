@@ -4,14 +4,16 @@ import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"
 import { prisma } from "@/lib/db"
 
+const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || ""
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || ""
+
 const providers = []
 
-// Solo activar Google si las credenciales existen en el entorno
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+if (googleClientId && googleClientSecret) {
   providers.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     })
   )
 }
@@ -29,47 +31,13 @@ providers.push(
 
       if (!email || !password) return null
 
-      // 1. Cuenta Demo institucional preconfigurada (Sofía - Colegio San Martín)
-      if (email === "sofia@sanmartin.edu") {
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { email },
-            include: { school: true },
-          })
-          if (dbUser) {
-            return {
-              id: dbUser.id,
-              name: dbUser.name,
-              email: dbUser.email,
-              role: dbUser.role,
-              schoolId: dbUser.schoolId,
-              userStatus: dbUser.status,
-              image: dbUser.avatarUrl ?? undefined,
-            }
-          }
-        } catch (_err) {
-          // Si Neon tiene timeout o error de red, usar demo seguro
-        }
-
-        return {
-          id: "user-sofia-admin",
-          name: "Sofía Valenzuela",
-          email: "sofia@sanmartin.edu",
-          role: "SCHOOL_ADMIN",
-          schoolId: "demo-school-san-martin",
-          userStatus: "ACTIVE",
-          image: "https://api.dicebear.com/7.x/bottts/svg?seed=sofia",
-        }
-      }
-
-      // 2. Consulta y registro de usuario institucional en BD
       try {
         let dbUser = await prisma.user.findUnique({
           where: { email },
           include: { school: true },
         })
 
-        // Si es usuario nuevo, crearlo para que pueda avanzar al Onboarding de colegio
+        // Si es una cuenta nueva, registrarla como SCHOOL_ADMIN pendiente de onboarding
         if (!dbUser) {
           const userName = email.split("@")[0].replace(/[._-]/g, " ")
           dbUser = await prisma.user.create({
@@ -93,16 +61,8 @@ providers.push(
           image: dbUser.avatarUrl ?? undefined,
         }
       } catch (err) {
-        console.warn("[auth.authorize] BD no disponible o timeout, fallback administrativo local:", err)
-        // Permitir que el administrador nuevo no quede bloqueado
-        return {
-          id: `local-${email}`,
-          name: email.split("@")[0],
-          email,
-          role: "SCHOOL_ADMIN",
-          schoolId: null,
-          userStatus: "ACTIVE",
-        }
+        console.error("[auth.authorize] Error al verificar o registrar usuario en BD:", err)
+        return null
       }
     },
   })
@@ -129,24 +89,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.userStatus = (user as any).userStatus
         }
       }
-      if (account?.provider === "google" && account.id_token) {
+
+      // Sincronización transparente de cuenta Google en PostgreSQL
+      if (account?.provider === "google" && token.email) {
         token.googleIdToken = account.id_token
-        if (token.email) {
-          try {
-            const dbUser = await prisma.user.findUnique({
-              where: { email: token.email as string },
+        try {
+          const normalizedEmail = (token.email as string).trim().toLowerCase()
+          let dbUser = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+          })
+
+          // Si es primer ingreso con Google: crear usuario en BD como SCHOOL_ADMIN
+          if (!dbUser) {
+            const userName = (token.name as string) || normalizedEmail.split("@")[0]
+            dbUser = await prisma.user.create({
+              data: {
+                email: normalizedEmail,
+                name: userName,
+                role: "SCHOOL_ADMIN",
+                status: "ACTIVE",
+                avatarUrl: (token.picture as string) || null,
+              },
             })
-            if (dbUser) {
-              token.role = dbUser.role
-              token.sub = dbUser.id
-              token.schoolId = dbUser.schoolId
-              token.userStatus = dbUser.status
-            }
-          } catch (_err) {
-            // BD no disponible
           }
+
+          token.role = dbUser.role
+          token.sub = dbUser.id
+          token.schoolId = dbUser.schoolId
+          token.userStatus = dbUser.status
+        } catch (err) {
+          console.error("[auth.jwt] Error sincronizando usuario Google en BD:", err)
         }
       }
+
       return token
     },
     session({ session, token }) {
