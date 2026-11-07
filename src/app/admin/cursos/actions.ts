@@ -132,7 +132,7 @@ export async function createStudentAction(data: {
         initials,
         animalId: assignedAvatar.animalId,
         colorId: assignedAvatar.colorId,
-        status: (data.status as any) || 'ACTIVE',
+        status: (data.status as any) || 'ABSENT',
         guardians: {
           create: {
             guardianId: guardian.id,

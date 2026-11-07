@@ -203,6 +203,14 @@ export function CursosManager({
     });
   };
 
+  // Toggle rápido de 1 clic para marcar ingreso en sala vs sin ingreso (Custodia viva)
+  const handleToggleAttendance = (studentId: string) => {
+    const student = students.find((s) => s.id === studentId);
+    if (!student) return;
+    const newStatus: 'ACTIVE' | 'ABSENT' = student.status === 'ACTIVE' ? 'ABSENT' : 'ACTIVE';
+    handleStatusChange(studentId, newStatus);
+  };
+
   const activeStudentsCount = students.filter((s) => s.status === 'ACTIVE').length;
   const absentStudentsCount = students.filter((s) => s.status === 'ABSENT').length;
   const withdrawnStudentsCount = students.filter((s) => s.status === 'WITHDRAWN').length;
@@ -548,7 +556,7 @@ export function CursosManager({
                   <th>Apoderado Titular</th>
                   <th>Retiradores / Furgón</th>
                   <th>Pase Rápido</th>
-                  <th>Estado Jornada</th>
+                  <th>Ingreso / Asistencia</th>
                 </tr>
               </thead>
               <tbody>
@@ -666,24 +674,29 @@ export function CursosManager({
                       </td>
 
                       <td>
-                        <select
-                          value={s.status}
+                        <button
+                          type="button"
                           disabled={isPending}
-                          onChange={(e) =>
-                            handleStatusChange(s.id, e.target.value as 'ACTIVE' | 'ABSENT' | 'WITHDRAWN')
-                          }
-                          className={`${styles.statusSelect} ${
+                          onClick={() => handleToggleAttendance(s.id)}
+                          className={`${styles.attendanceToggleBtn} ${
                             s.status === 'ACTIVE'
-                              ? styles.statusActive
-                              : s.status === 'ABSENT'
-                              ? styles.statusAbsent
-                              : styles.statusWithdrawn
+                              ? styles.attendanceToggleActive
+                              : styles.attendanceToggleAbsent
+                          }`}
+                          title={
+                            s.status === 'ACTIVE'
+                              ? '🟢 Ingreso confirmado (En sala). Clic para desmarcar.'
+                              : '⚪ Sin ingreso a sala. Clic para marcar ingreso a clases.'
+                          }
+                          aria-label={`Asistencia de ${s.fullName}: ${
+                            s.status === 'ACTIVE' ? 'Presente en sala' : 'Sin ingreso'
                           }`}
                         >
-                          <option value="ACTIVE">Activo</option>
-                          <option value="ABSENT">Ausente hoy</option>
-                          <option value="WITHDRAWN">Retirado</option>
-                        </select>
+                          <span className={styles.toggleDot} />
+                          <span className={styles.toggleLabel}>
+                            {s.status === 'ACTIVE' ? '✓ En Sala' : 'Sin ingreso'}
+                          </span>
+                        </button>
                       </td>
                     </tr>
                   );
