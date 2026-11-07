@@ -8,6 +8,7 @@ import {
   batchUpdateAttendanceAction,
   importStudentsCsvAction,
 } from './actions';
+import { addLateArrivalToSessionAction, openDailySessionAction } from '@/app/admin/sessionActions';
 import { CSV_TEMPLATE_EXAMPLE } from '@/lib/csvImporter';
 import { getAnimal, getColor } from '@/lib/avatars';
 import styles from './CursosManager.module.css';
@@ -37,15 +38,18 @@ interface CursosManagerProps {
   initialClassrooms: ClassroomItem[];
   initialStudents: StudentItem[];
   schoolName: string;
+  activeSessionCode?: string | null;
 }
 
 export function CursosManager({
   initialClassrooms,
   initialStudents,
   schoolName,
+  activeSessionCode = null,
 }: CursosManagerProps) {
   const [classrooms, setClassrooms] = useState<ClassroomItem[]>(initialClassrooms);
   const [students, setStudents] = useState<StudentItem[]>(initialStudents);
+  const [liveSessionCode, setLiveSessionCode] = useState<string | null>(activeSessionCode);
   const [selectedClassroomId, setSelectedClassroomId] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -174,8 +178,11 @@ export function CursosManager({
     });
   };
 
-  // Cambio de estado rápido en la fila
+  // Cambio de estado rápido en la fila (Lista viva y custodia)
   const handleStatusChange = (studentId: string, newStatus: 'ACTIVE' | 'ABSENT' | 'WITHDRAWN') => {
+    const student = students.find((s) => s.id === studentId);
+    const wasAbsent = student?.status === 'ABSENT';
+
     // Actualización optimista
     setStudents((prev) =>
       prev.map((s) => (s.id === studentId ? { ...s, status: newStatus } : s))
@@ -185,6 +192,13 @@ export function CursosManager({
       const res = await updateStudentStatusAction(studentId, newStatus);
       if (!res.success) {
         alert(res.error || 'Error al actualizar estado');
+        return;
+      }
+
+      // Si hay una jornada de salida abierta y el alumno se marca ACTIVE (Llegada tardía),
+      // se incorpora automáticamente a la lista viva de portón
+      if (liveSessionCode && wasAbsent && newStatus === 'ACTIVE') {
+        await addLateArrivalToSessionAction(studentId);
       }
     });
   };
@@ -205,6 +219,41 @@ export function CursosManager({
 
     startTransition(async () => {
       await batchUpdateAttendanceAction(targetIds, 'ACTIVE');
+      if (liveSessionCode) {
+        for (const sid of targetIds) {
+          await addLateArrivalToSessionAction(sid);
+        }
+      }
+    });
+  };
+
+  // Enviar a salida / Apertura o Sincronización explícita con el Portón
+  const handleSendToDeparture = () => {
+    if (activeStudentsCount === 0) {
+      alert('No hay alumnos marcados como presentes para convocar a salida.');
+      return;
+    }
+
+    startTransition(async () => {
+      if (!liveSessionCode) {
+        // Iniciar jornada de salida si no estaba abierta
+        const res = await openDailySessionAction();
+        if (res.success && res.sessionCode) {
+          setLiveSessionCode(res.sessionCode);
+          alert(`¡Jornada de salida aperturada (${res.sessionCode})! Los ${activeStudentsCount} alumnos presentes están convocados en portón.`);
+        } else {
+          alert(res.error || 'No se pudo iniciar la jornada de salida.');
+        }
+      } else {
+        // Si ya está abierta, sincronizar todos los alumnos presentes faltantes
+        const activeIds = students.filter((s) => s.status === 'ACTIVE').map((s) => s.id);
+        let addedCount = 0;
+        for (const sid of activeIds) {
+          const res = await addLateArrivalToSessionAction(sid);
+          if (res.success) addedCount++;
+        }
+        alert(`Lista viva sincronizada: ${activeStudentsCount} alumnos presentes activos en el portón.`);
+      }
     });
   };
 
@@ -409,6 +458,26 @@ export function CursosManager({
             title="Marcar todos los alumnos visibles como presentes para la jornada de hoy"
           >
             Marcar Todos Presentes Hoy
+          </button>
+
+          <button
+            type="button"
+            className={styles.btnSendLive}
+            onClick={handleSendToDeparture}
+            disabled={isPending}
+            title="Aperturar o sincronizar lista viva con el panel de portería"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+            <span>{liveSessionCode ? 'Sincronizar con Portón' : 'Aperturar Salida (Send)'}</span>
+            {liveSessionCode && (
+              <span className={styles.liveSessionBadge}>
+                <span className={styles.livePulseDot} />
+                {liveSessionCode}
+              </span>
+            )}
           </button>
         </div>
       </div>

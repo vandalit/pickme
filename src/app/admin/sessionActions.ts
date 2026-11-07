@@ -137,6 +137,107 @@ export async function openDailySessionAction(): Promise<SessionActionResult> {
 }
 
 /**
+ * Agrega un alumno a la jornada escolar abierta en curso (Llegada tardía / Lista viva).
+ * Si ya existe un evento para este alumno en la sesión abierta, lo reactiva o retorna éxito.
+ */
+export async function addLateArrivalToSessionAction(
+  studentId: string
+): Promise<{ success: boolean; error?: string; eventId?: string }> {
+  try {
+    const userSession = await auth();
+    if (!userSession?.user?.email) {
+      return { success: false, error: 'No tienes una sesión activa.' };
+    }
+
+    const { school } = await resolveUserSchool(userSession.user.email);
+    if (!school) {
+      return { success: false, error: 'No se encontró tu colegio.' };
+    }
+
+    // 1. Buscar sesión abierta del colegio
+    const activeSession = await prisma.pickupSession.findFirst({
+      where: {
+        schoolId: school.id,
+        status: 'OPEN',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!activeSession) {
+      return {
+        success: false,
+        error: 'No hay ninguna jornada escolar abierta en este momento.',
+      };
+    }
+
+    // 2. Verificar que el alumno pertenezca al colegio
+    const student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        classroom: { schoolId: school.id },
+      },
+    });
+
+    if (!student) {
+      return {
+        success: false,
+        error: 'Alumno no encontrado en este establecimiento.',
+      };
+    }
+
+    // 3. Asegurar que el status del alumno en BD sea ACTIVE
+    if (student.status !== 'ACTIVE') {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { status: 'ACTIVE' },
+      });
+    }
+
+    // 4. Comprobar si ya existe un evento de retiro para este alumno en la sesión
+    const existingEvent = await prisma.pickupEvent.findFirst({
+      where: {
+        sessionId: activeSession.id,
+        studentId: student.id,
+      },
+    });
+
+    if (existingEvent) {
+      // Si ya fue entregado (IN_TRANSIT o ARRIVED), no se reabre
+      if (existingEvent.status === 'IN_TRANSIT' || existingEvent.status === 'ARRIVED') {
+        return {
+          success: false,
+          error: 'El alumno ya fue retirado en la jornada de hoy.',
+        };
+      }
+      return { success: true, eventId: existingEvent.id };
+    }
+
+    // 5. Crear el nuevo evento de retiro en cola WAITING
+    const newEvent = await prisma.pickupEvent.create({
+      data: {
+        sessionId: activeSession.id,
+        studentId: student.id,
+        status: 'WAITING',
+      },
+    });
+
+    // Revalidar rutas para refrescar la lista viva en tiempo real
+    revalidatePath('/admin');
+    revalidatePath('/admin/cursos');
+    revalidatePath('/staff');
+    revalidatePath(`/board/${activeSession.sessionCode}`);
+
+    return { success: true, eventId: newEvent.id };
+  } catch (error) {
+    console.error('[addLateArrivalToSessionAction] Error:', error);
+    return {
+      success: false,
+      error: 'Error interno al agregar el alumno a la jornada activa.',
+    };
+  }
+}
+
+/**
  * Cierra la jornada escolar actual:
  * 1. Pasa el estado a 'CLOSED'.
  * 2. Registra el timestamp closedAt.

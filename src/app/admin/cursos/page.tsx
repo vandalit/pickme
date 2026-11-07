@@ -123,6 +123,7 @@ export default async function AdminCursosPage() {
             initialClassrooms={classroomsList}
             initialStudents={studentsList}
             schoolName={schoolName}
+            activeSessionCode={activeSessionCode}
           />
         </section>
       </main>
