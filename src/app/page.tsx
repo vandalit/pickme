@@ -27,11 +27,8 @@ export default function HomePage() {
           </Link>
 
           <nav className={styles.navActions}>
-            <Link href="/board/SAN-1024" className={styles.navLink}>
-              Board TV
-            </Link>
-            <Link href="/staff" className={styles.navLink}>
-              Portón Staff
+            <Link href="/admin/simulador" className={styles.navLink}>
+              Simulador Interactivo
             </Link>
             <Link href="/auth/login" className={styles.loginButton}>
               <span>Acceso Colegio</span>
@@ -257,10 +254,10 @@ export default function HomePage() {
                   — solo el personaje que la familia reconoce.
                 </p>
                 <Link
-                  href="/board/SAN-1024"
+                  href="/admin/simulador"
                   className={styles.cardButton}
                 >
-                  <span>Explorar Board TV</span>
+                  <span>Ver en el Simulador</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
@@ -311,10 +308,10 @@ export default function HomePage() {
                   al auxiliar.
                 </p>
                 <Link
-                  href="/retirar?session=SAN-1024"
+                  href="/admin/simulador"
                   className={styles.cardButton}
                 >
-                  <span>Simular Picker Móvil</span>
+                  <span>Ver en el Simulador</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
@@ -366,10 +363,10 @@ export default function HomePage() {
                   la entrega. Todo queda registrado.
                 </p>
                 <Link
-                  href="/staff"
+                  href="/admin/simulador"
                   className={styles.cardButton}
                 >
-                  <span>Abrir Portal Staff</span>
+                  <span>Ver en el Simulador</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
@@ -419,10 +416,10 @@ export default function HomePage() {
                   gestionar quién está autorizado para retirar a cada alumno.
                 </p>
                 <Link
-                  href="/admin"
+                  href="/auth/login"
                   className={styles.cardButton}
                 >
-                  <span>Ver Panel Admin</span>
+                  <span>Acceso Dirección</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
