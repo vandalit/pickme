@@ -1,0 +1,112 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 1.25rem;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.15s, background 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cardAdmin:hover:not(:disabled) {
+  border-color: #6366f1;
+  background: #1e1b4b;
+}
+
+.cardStaff:hover:not(:disabled) {
+  border-color: #10b981;
+  background: #022c22;
+}
+
+.cardIcon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #334155;
+  border-top-color: #f1f5f9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  color: #f87171;
+  background: #1f0a0a;
+  border: 1px solid #7f1d1d;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+}
+
+.hint {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.hint strong {
+  color: #94a3b8;
+}
+

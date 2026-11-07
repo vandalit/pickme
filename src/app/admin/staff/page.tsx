@@ -4,7 +4,7 @@ import { auth, signOut } from '@/auth';
 import { prisma } from '@/lib/db';
 import { resolveUserSchool } from '@/lib/userSchool';
 import { AdminNav } from '@/components/admin/AdminNav';
-import { StaffManager, StaffMember } from './StaffManager';
+import { StaffManager, StaffMember, PendingInvitation } from './StaffManager';
 import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -36,9 +36,9 @@ export default async function AdminStaffPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Listar staff del colegio
+  // Listar staff activo del colegio
   const staffUsers = await prisma.user.findMany({
-    where: { schoolId: resolvedSchool.id, role: 'STAFF' },
+    where: { schoolId: resolvedSchool.id, role: 'STAFF', status: 'ACTIVE' },
     orderBy: { createdAt: 'asc' },
   });
 
@@ -47,6 +47,20 @@ export default async function AdminStaffPage() {
     name: u.name,
     email: u.email,
     createdAt: u.createdAt.toISOString(),
+  }));
+
+  // Listar invitaciones / solicitudes pendientes
+  const pendingInvites = await prisma.invitation.findMany({
+    where: { schoolId: resolvedSchool.id, acceptedAt: null },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const invitations: PendingInvitation[] = pendingInvites.map((i) => ({
+    id: i.id,
+    email: i.email,
+    token: i.token,
+    createdAt: i.createdAt.toISOString(),
+    expiresAt: i.expiresAt.toISOString(),
   }));
 
   async function handleSignOut() {
@@ -63,7 +77,7 @@ export default async function AdminStaffPage() {
         onSignOut={handleSignOut}
       />
       <main className={styles.main}>
-        <StaffManager initialMembers={staffMembers} />
+        <StaffManager initialMembers={staffMembers} initialInvitations={invitations} />
       </main>
     </div>
   );
