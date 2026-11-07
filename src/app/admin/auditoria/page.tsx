@@ -24,54 +24,17 @@ export default async function AdminAuditoriaPage() {
 
   const userName = session.user.name || 'Director(a)';
   const schoolName = resolvedSchool.name;
-  let activeSessionCode = 'SAN-1024';
+  let activeSessionCode: string | null = null;
 
   let metrics = {
-    totalSessions: 1,
-    totalEvents: 3,
-    completedHandover: 2,
-    inProcess: 1,
+    totalSessions: 0,
+    totalEvents: 0,
+    completedHandover: 0,
+    inProcess: 0,
     alerts: 0,
   };
 
-  let auditLogs: AuditRecord[] = [
-    {
-      id: 'a1',
-      sessionCode: 'SAN-1024',
-      timestamp: '2026-11-05 14:32:15 UTC',
-      studentName: 'Vicente Toro Morales',
-      classroom: '1° Básico A',
-      pickerName: 'Ignacio Herrera (Tío)',
-      staffName: 'Carlos Mendoza',
-      handoverCode: '582-914',
-      status: 'IN_PROCESS',
-      hashSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    },
-    {
-      id: 'a2',
-      sessionCode: 'SAN-1024',
-      timestamp: '2026-11-05 14:28:44 UTC',
-      studentName: 'Valentina Soto Miranda',
-      classroom: '2° Básico B',
-      pickerName: 'Don Pedro Transporte (Furgón)',
-      staffName: 'Carlos Mendoza',
-      handoverCode: '741-209',
-      status: 'IN_TRANSIT',
-      hashSha256: 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
-    },
-    {
-      id: 'a3',
-      sessionCode: 'SAN-1024',
-      timestamp: '2026-11-05 14:25:02 UTC',
-      studentName: 'Lucas Castro Ruiz',
-      classroom: '2° Básico B',
-      pickerName: 'Ignacio Herrera (Tío)',
-      staffName: 'Carlos Mendoza',
-      handoverCode: '930-415',
-      status: 'ARRIVED',
-      hashSha256: '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d',
-    },
-  ];
+  let auditLogs: AuditRecord[] = [];
 
   try {
     const [totalSessions, openSession, events] = await Promise.all([

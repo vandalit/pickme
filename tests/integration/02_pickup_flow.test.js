@@ -4,6 +4,7 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
+const { TEST_SCHOOL_NAME } = require('./testHelper');
 
 describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', () => {
   let pool;
@@ -17,7 +18,7 @@ describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', () => {
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
 
-    const school = await prisma.school.findFirst({ where: { name: 'colegio prueba' } });
+    const school = await prisma.school.findFirst({ where: { name: TEST_SCHOOL_NAME } });
     assert.ok(school);
 
     // Obtener sesión abierta de prueba
@@ -29,7 +30,7 @@ describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', () => {
         }
       }
     });
-    assert.ok(session, 'Debe existir una sesión abierta en colegio prueba');
+    assert.ok(session, `Debe existir una sesión abierta en ${TEST_SCHOOL_NAME}`);
 
     testStudent = session.events.find(e => e.student.fullName === 'Vicente Toro Morales')?.student;
     assert.ok(testStudent, 'Vicente Toro Morales debe estar entre los alumnos convocados');

@@ -4,15 +4,20 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
+const { TEST_SCHOOL_NAME, setupTestSchool } = require('./testHelper');
 
 describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
   let pool;
   let prisma;
+  let testSchool;
 
-  before(() => {
+  before(async () => {
     pool = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 20000 });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
+
+    // Configurar colegio de prueba automatizado aislado (sin tocar colegios reales)
+    testSchool = await setupTestSchool(prisma);
   });
 
   after(async () => {
@@ -22,19 +27,19 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
 
   it('Verifica la existencia y aislamiento de colegios en base de datos', async () => {
     const schools = await prisma.school.findMany();
-    assert.ok(schools.length >= 2, 'Deben existir al menos Colegio San Martín y colegio prueba');
+    assert.ok(schools.length >= 2, 'Deben existir al menos Colegio San Martín y el colegio de prueba');
     
     const demoSchool = schools.find(s => s.name === 'Colegio San Martín');
-    const pruebaSchool = schools.find(s => s.name === 'colegio prueba');
+    const qaSchool = schools.find(s => s.name === TEST_SCHOOL_NAME);
 
     assert.ok(demoSchool, 'Colegio San Martín debe existir en PostgreSQL');
-    assert.ok(pruebaSchool, 'colegio prueba debe existir en PostgreSQL');
-    assert.notStrictEqual(demoSchool.id, pruebaSchool.id, 'Los colegios deben tener IDs distintos');
+    assert.ok(qaSchool, `${TEST_SCHOOL_NAME} debe existir en PostgreSQL`);
+    assert.notStrictEqual(demoSchool.id, qaSchool.id, 'Los colegios deben tener IDs distintos');
   });
 
-  it('Verifica que colegio prueba tiene 11 alumnos matriculados y CERO colisiones de avatar', async () => {
-    const pruebaSchool = await prisma.school.findFirst({
-      where: { name: 'colegio prueba' },
+  it('Verifica que el colegio de prueba tiene 10 alumnos matriculados y CERO colisiones de avatar', async () => {
+    const school = await prisma.school.findFirst({
+      where: { name: TEST_SCHOOL_NAME },
       include: {
         classrooms: {
           include: { students: true }
@@ -42,12 +47,12 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
       }
     });
 
-    assert.ok(pruebaSchool);
-    const totalStudents = pruebaSchool.classrooms.reduce((acc, c) => acc + c.students.length, 0);
-    assert.strictEqual(totalStudents, 11, 'Deben existir 11 alumnos matriculados');
+    assert.ok(school);
+    const totalStudents = school.classrooms.reduce((acc, c) => acc + c.students.length, 0);
+    assert.strictEqual(totalStudents, 10, 'Deben existir 10 alumnos matriculados desde el CSV mock');
 
     // Verificar colisiones por curso
-    for (const c of pruebaSchool.classrooms) {
+    for (const c of school.classrooms) {
       const keys = c.students.map(s => `${s.animalId}::${s.colorId}`);
       const uniqueKeys = new Set(keys);
       assert.strictEqual(
@@ -59,30 +64,30 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
   });
 
   it('Verifica filtro de asistencia: solo alumnos ACTIVE son convocados a la jornada', async () => {
-    const pruebaSchool = await prisma.school.findFirst({ where: { name: 'colegio prueba' } });
+    const school = await prisma.school.findFirst({ where: { name: TEST_SCHOOL_NAME } });
     
     const activeStudents = await prisma.student.findMany({
       where: {
-        classroom: { schoolId: pruebaSchool.id },
+        classroom: { schoolId: school.id },
         status: 'ACTIVE'
       }
     });
 
     const absentStudents = await prisma.student.findMany({
       where: {
-        classroom: { schoolId: pruebaSchool.id },
+        classroom: { schoolId: school.id },
         status: 'ABSENT'
       }
     });
 
     const withdrawnStudents = await prisma.student.findMany({
       where: {
-        classroom: { schoolId: pruebaSchool.id },
+        classroom: { schoolId: school.id },
         status: 'WITHDRAWN'
       }
     });
 
-    assert.strictEqual(activeStudents.length, 9, 'Deben haber 9 alumnos ACTIVE');
+    assert.strictEqual(activeStudents.length, 8, 'Deben haber 8 alumnos ACTIVE');
     assert.strictEqual(absentStudents.length, 1, 'Florencia Rojas debe ser ABSENT');
     assert.strictEqual(withdrawnStudents.length, 1, 'Joaquín Fuentes debe ser WITHDRAWN');
 
@@ -90,29 +95,21 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
     assert.strictEqual(withdrawnStudents[0].fullName, 'Joaquín Fuentes Cruz');
   });
 
-  it('Verifica Apertura de Jornada (Paso 4): genera sesión OPEN y snapshot de exactamente 9 eventos WAITING', async () => {
-    const pruebaSchool = await prisma.school.findFirst({ where: { name: 'colegio prueba' } });
-    assert.ok(pruebaSchool);
-
-    // Limpiar sesiones previas de prueba si hubieran
-    await prisma.pickupEvent.deleteMany({
-      where: { session: { schoolId: pruebaSchool.id } }
-    });
-    await prisma.pickupSession.deleteMany({
-      where: { schoolId: pruebaSchool.id }
-    });
+  it('Verifica Apertura de Jornada (Paso 4): genera sesión OPEN y snapshot de exactamente 8 eventos WAITING', async () => {
+    const school = await prisma.school.findFirst({ where: { name: TEST_SCHOOL_NAME } });
+    assert.ok(school);
 
     // 1. Obtener los alumnos activos que deben ser convocados
     const activeStudents = await prisma.student.findMany({
-      where: { classroom: { schoolId: pruebaSchool.id }, status: 'ACTIVE' }
+      where: { classroom: { schoolId: school.id }, status: 'ACTIVE' }
     });
-    assert.strictEqual(activeStudents.length, 9);
+    assert.strictEqual(activeStudents.length, 8);
 
     // 2. Simular la apertura formal de jornada (equivalente a openDailySessionAction)
-    const sessionCode = `CP-${Math.floor(1000 + Math.random() * 9000)}`;
+    const sessionCode = `QA-${Math.floor(1000 + Math.random() * 9000)}`;
     const session = await prisma.pickupSession.create({
       data: {
-        schoolId: pruebaSchool.id,
+        schoolId: school.id,
         sessionCode,
         status: 'OPEN',
         startedAt: new Date(),
@@ -132,7 +129,7 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
 
     assert.ok(session.id);
     assert.strictEqual(session.status, 'OPEN');
-    assert.strictEqual(session.events.length, 9, 'Debe crear exactamente 9 eventos WAITING');
+    assert.strictEqual(session.events.length, 8, 'Debe crear exactamente 8 eventos WAITING');
 
     // Comprobar que todos los eventos iniciales están en WAITING
     for (const evt of session.events) {
@@ -186,4 +183,3 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', () => {
     assert.strictEqual(validate(code, code, pastExpiry).reason, 'EXPIRED', 'Código expirado debe ser rechazado');
   });
 });
-

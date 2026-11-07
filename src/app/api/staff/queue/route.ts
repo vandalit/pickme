@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { auth } from '@/auth';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const sessionParam = searchParams.get('session');
 
-    // 1. Obtener la sesión activa
+    // 1. Resolver usuario autenticado si existe
+    const userSession = await auth();
+    let userSchoolId: string | null = null;
+    let staffName = 'Personal de Portón';
+
+    if (userSession?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where: { email: userSession.user.email.toLowerCase().trim() },
+        include: { school: true },
+      });
+      if (user) {
+        userSchoolId = user.schoolId;
+        staffName = user.name;
+      }
+    }
+
+    // 2. Obtener la sesión activa con aislamiento estricto
     let session = null;
     if (sessionParam) {
       session = await prisma.pickupSession.findFirst({
@@ -18,11 +35,12 @@ export async function GET(req: NextRequest) {
         },
         include: { school: true },
       });
-    }
-
-    if (!session) {
+    } else if (userSchoolId) {
       session = await prisma.pickupSession.findFirst({
-        where: { status: 'OPEN' },
+        where: {
+          schoolId: userSchoolId,
+          status: 'OPEN',
+        },
         orderBy: { createdAt: 'desc' },
         include: { school: true },
       });
@@ -30,7 +48,7 @@ export async function GET(req: NextRequest) {
 
     if (!session) {
       return NextResponse.json(
-        { error: 'No hay ninguna sesión de salida activa en este momento.' },
+        { error: 'No se especificó una sesión válida ni hay jornada abierta para tu institución.' },
         { status: 404 }
       );
     }
@@ -87,6 +105,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      staffName,
       session: {
         id: session.id,
         sessionCode: session.sessionCode,

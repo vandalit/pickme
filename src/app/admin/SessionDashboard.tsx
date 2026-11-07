@@ -6,7 +6,6 @@ import styles from './SessionDashboard.module.css';
 import {
   openDailySessionAction,
   closeDailySessionAction,
-  simulateArrivalForEventAction,
 } from './sessionActions';
 
 export interface DashboardRosterItem {
@@ -97,12 +96,6 @@ export function SessionDashboard({
     });
   };
 
-  const handleSimulateArrival = (eventId: string) => {
-    startTransition(async () => {
-      await simulateArrivalForEventAction(eventId);
-    });
-  };
-
   const handleCopy = (key: string, urlPath: string) => {
     if (typeof window === 'undefined') return;
     const fullUrl = `${window.location.origin}${urlPath}`;
@@ -174,6 +167,47 @@ export function SessionDashboard({
               <span className={styles.metricLbl}>Ausentes / Inactivos</span>
             </div>
           </div>
+
+          {schoolSummary.activeStudents === 0 && (
+            <div
+              style={{
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
+                borderRadius: '8px',
+                padding: '1rem 1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                margin: '0.75rem 0',
+                textAlign: 'left',
+              }}
+            >
+              <div>
+                <p style={{ margin: 0, fontWeight: 600, color: '#e2e8f0', fontSize: '0.9rem' }}>
+                  Tu colegio aún no tiene alumnos matriculados
+                </p>
+                <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: '0.8rem' }}>
+                  Para iniciar una jornada de salida, primero debes crear tus cursos o importar la nómina escolar.
+                </p>
+              </div>
+              <Link
+                href="/admin/cursos"
+                style={{
+                  background: 'var(--color-brand, #6366f1)',
+                  color: '#ffffff',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  fontSize: '0.825rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Ir a Nómina & Cursos →
+              </Link>
+            </div>
+          )}
 
           <button
             type="button"
@@ -464,13 +498,12 @@ export function SessionDashboard({
                       <th>Retirador Convocado</th>
                       <th>Estado de Custodia</th>
                       <th>Hora</th>
-                      <th>Acción Demo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredRoster.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className={styles.emptyRoster}>
+                        <td colSpan={6} className={styles.emptyRoster}>
                           No hay alumnos que coincidan con el filtro seleccionado.
                         </td>
                       </tr>
@@ -536,22 +569,6 @@ export function SessionDashboard({
                             )}
                           </td>
                           <td className={styles.timeCol}>{item.timeFormatted} hrs</td>
-                          <td>
-                            {item.status === 'WAITING' && (
-                              <button
-                                type="button"
-                                className={styles.simulateBtn}
-                                onClick={() => handleSimulateArrival(item.id)}
-                                disabled={isPending}
-                                title="Simula que el apoderado se anunció en portón para este alumno"
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <path d="M5 12h14M12 5l7 7-7 7" />
-                                </svg>
-                                <span>Anunciar Arribo</span>
-                              </button>
-                            )}
-                          </td>
                         </tr>
                       ))
                     )}

@@ -59,14 +59,18 @@ export const authConfig: NextAuthConfig = {
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  trustHost: true,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días de persistencia de sesión
+  },
   pages: {
     signIn: "/auth/login",
     error: "/auth/login",
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      // El simulador sandbox es accesible directamente para evaluación
+      // El sandbox de clientes del home es accesible directamente
       if (nextUrl.pathname.startsWith("/admin/simulador")) return true
 
       const isLoggedIn = !!auth?.user
@@ -81,6 +85,9 @@ export const authConfig: NextAuthConfig = {
         token.name = user.name
         token.email = user.email
         token.picture = user.image
+        if ((user as any).role) {
+          token.role = (user as any).role
+        }
       }
       if (account?.provider === "google" && account.id_token) {
         token.googleIdToken = account.id_token
@@ -88,8 +95,12 @@ export const authConfig: NextAuthConfig = {
       return token
     },
     session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub
+      if (token && session.user) {
+        if (token.sub) session.user.id = token.sub
+        if (token.email) session.user.email = token.email
+        if (token.name) session.user.name = token.name
+        if (token.picture) session.user.image = token.picture as string
+        if (token.role) (session.user as any).role = token.role
       }
       return session
     },

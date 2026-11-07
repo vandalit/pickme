@@ -23,41 +23,42 @@ export default async function AdminCursosPage() {
   }
 
   const userName = session.user.name || 'Director(a)';
-  let schoolName = resolvedSchool?.name || 'Colegio San Martín';
-  let activeSessionCode = 'SAN-1024';
+  let schoolName = resolvedSchool?.name || 'Mi Establecimiento';
+  let activeSessionCode: string | null = null;
 
   let classroomsList: ClassroomItem[] = [];
   let studentsList: StudentItem[] = [];
 
   try {
-    const school = await prisma.school.findFirst({
-      where: resolvedSchool?.id ? { id: resolvedSchool.id } : undefined,
-      include: {
-        classrooms: {
-          include: {
-            students: {
-              include: {
-                guardians: { include: { guardian: true } },
-                authorizations: { include: { picker: true } },
+    if (resolvedSchool?.id) {
+      const school = await prisma.school.findUnique({
+        where: { id: resolvedSchool.id },
+        include: {
+          classrooms: {
+            include: {
+              students: {
+                include: {
+                  guardians: { include: { guardian: true } },
+                  authorizations: { include: { picker: true } },
+                },
               },
             },
+            orderBy: [{ grade: 'asc' }, { section: 'asc' }],
           },
-          orderBy: [{ grade: 'asc' }, { section: 'asc' }],
+          sessions: {
+            where: { status: 'OPEN' },
+            take: 1,
+          },
         },
-        sessions: {
-          where: { status: 'OPEN' },
-          take: 1,
-        },
-      },
-    });
+      });
 
-    if (school) {
-      schoolName = school.name;
-      if (school.sessions[0]) {
-        activeSessionCode = school.sessions[0].sessionCode;
-      }
+      if (school) {
+        schoolName = school.name;
+        if (school.sessions[0]) {
+          activeSessionCode = school.sessions[0].sessionCode;
+        }
 
-      // Mapear salones
+        // Mapear salones
       classroomsList = school.classrooms.map((c) => ({
         id: c.id,
         grade: c.grade,
@@ -90,7 +91,8 @@ export default async function AdminCursosPage() {
         });
       });
     }
-  } catch (error) {
+  }
+} catch (error) {
     console.warn('[AdminCursos] Error al consultar datos en BD:', error);
   }
 

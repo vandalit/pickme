@@ -25,6 +25,7 @@ function StaffContent() {
   });
   const [schoolName, setSchoolName] = useState('Colegio');
   const [sessionCode, setSessionCode] = useState(sessionQuery || 'SALIDA');
+  const [staffName, setStaffName] = useState('Personal de Portón');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<StaffEventItem | null>(null);
 
@@ -43,6 +44,9 @@ function StaffContent() {
         if (data.session) {
           setSchoolName(data.session.schoolName);
           setSessionCode(data.session.sessionCode);
+        }
+        if (data.staffName) {
+          setStaffName(data.staffName);
         }
       }
     } catch (err) {
@@ -75,7 +79,7 @@ function StaffContent() {
   return (
     <div className={styles.container}>
       <StaffHeader
-        staffName="Carlos Mendoza"
+        staffName={staffName}
         schoolName={schoolName}
         sessionCode={sessionCode}
         currentTab={currentTab}
