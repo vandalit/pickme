@@ -1,0 +1,12 @@
+nombre_completo,curso,apoderado_nombre,apoderado_whatsapp,retirador_nombre,retirador_parentesco,estado
+Vicente Toro Morales,1° Básico A,Carolina Herrera,+56991112233,Ignacio Herrera,Tío,ACTIVO
+Matías Silva Gómez,1° Básico A,Marcela Gómez,+56992223344,Marcela Gómez,Mamá Titular,ACTIVO
+Sofía Morales Paz,1° Básico A,Rodrigo Morales,+56993334455,Don Pedro Transporte,Furgón Escolar,ACTIVO
+Lucas Castro Ruiz,1° Básico A,Patricia Ruiz,+56994445566,Lucas Castro Padre,Papá,ACTIVO
+Florencia Rojas Díaz,1° Básico A,Andrea Díaz,+56995556677,Abuela Carmen,Abuela,AUSENTE
+Martín Vargas Pavez,2° Básico B,Loreto Pavez,+56996667788,Don Pedro Transporte,Furgón Escolar,ACTIVO
+Valentina Soto Miranda,2° Básico B,María Miranda,+56997778899,Ignacio Herrera,Tío,ACTIVO
+Benjamín Araya Pino,2° Básico B,Esteban Araya,+56998889900,Esteban Araya,Papá,ACTIVO
+Camila Contreras Lagos,2° Básico B,Fernanda Lagos,+56999990011,Tía Rosa,Familiar Autorizado,ACTIVO
+Joaquín Fuentes Cruz,2° Básico B,Gabriel Fuentes,+56990001122,Gabriel Fuentes,Papá,RETIRADO
+
