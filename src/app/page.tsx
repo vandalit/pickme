@@ -106,6 +106,103 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ── PROPUESTA CONCEPTUAL (CÓMO FUNCIONA PARA EL APODERADO) ── */}
+        <section className={styles.conceptSection}>
+          <div className={styles.conceptInner}>
+            <div className={styles.conceptHeader}>
+              <span className={styles.conceptPretitle}>Para el apoderado</span>
+              <h2 className={styles.conceptTitle}>
+                Sin descargar nada.{" "}
+                <span className={styles.conceptTitleAccent}>
+                  Llega, escanea, listo.
+                </span>
+              </h2>
+              <p className={styles.conceptLead}>
+                PickMe funciona desde la cámara de cualquier celular. Cuando llegas
+                al colegio, apuntas al QR en el portón, el sistema reconoce tu
+                autorización, genera un código de 6 dígitos y tú se lo muestras
+                al auxiliar. En segundos, la entrega queda registrada y recibes
+                confirmación. Sin fila, sin llamadas, sin instalar ninguna aplicación.
+              </p>
+            </div>
+
+            <ul className={styles.conceptList}>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a7 7 0 0 1 7 7c0 4.5-7 13-7 13S5 13.5 5 9a7 7 0 0 1 7-7z" />
+                    <circle cx="12" cy="9" r="2.5" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Sin descargar ninguna aplicación</strong> — funciona
+                  directo desde el navegador del celular.
+                </span>
+              </li>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M7 7h3v3H7zM14 7h3v3h-3zM7 14h3v3H7zM14 14h1M17 14v3h-3v-1" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Un QR en el portón</strong> — escaneas con la cámara
+                  del celular, como leer un menú de restaurante.
+                </span>
+              </li>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                    <path d="M15 13l2 2 4-4" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Tu hijo aparece con su avatar anónimo</strong> — solo
+                  tú lo reconoces, el patio no ve nombres ni fotos.
+                </span>
+              </li>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <path d="M9 10h6M9 14h3" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Código de 6 dígitos</strong> — lo dices al auxiliar
+                  en portón, quien confirma la identidad en su tablet.
+                </span>
+              </li>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Confirmación automática por WhatsApp</strong> — el
+                  apoderado principal recibe aviso instantáneo de la entrega.
+                </span>
+              </li>
+              <li className={styles.conceptItem}>
+                <span className={styles.conceptItemIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Registro inmutable de cada retiro</strong> — la
+                  dirección accede al historial completo con hora y persona autorizada.
+                </span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         {/* ── PUNTOS DE CONTACTO (TOUCHPOINTS) ── */}
         <section className={styles.touchpointsSection}>
           <div className={styles.sectionHeader}>
