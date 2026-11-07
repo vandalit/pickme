@@ -1,179 +1,445 @@
-# PickMe — Documento de Diseño de Sistemas (SDD)
+# SDD — Software Design Document: PickMe
 
-**Versión**: 2.0 — Especificación Técnica Integral y Arquitectura de Sistemas  
-**Estado**: Activo / Especificación Formal  
-**Última actualización**: Noviembre 2026  
-**Autor Principal**: Antigravity (Google DeepMind)  
-
----
-
-## 1. Resumen Ejecutivo y Misión del Sistema
-
-**PickMe** es una plataforma monolítica modular de alta disponibilidad y privacidad estricta diseñada para orquestar la salida diaria de estudiantes en colegios primarios e infantiles.
-
-El sistema resuelve la vulnerabilidad física y legal del retiro escolar desacoplando radicalmente la **visibilidad pública en el portón** de la **identidad privada del menor**, articulando una **cadena de custodia digital inmutable** verificada con un protocolo de traspaso sellado por código numérico de un solo uso (*Handover Code*).
+**Versión:** 2.0  
+**Estado:** En desarrollo activo (commit base: 82eb1f2)  
+**Documento de producto relacionado:** [PRD.md](PRD.md)
 
 ---
 
-## 2. Criterios de Aceptación (CA) y Requisitos No Funcionales (NFR)
-
-### 2.1 Criterios de Aceptación del Producto (CAs)
-* **CA-1 — Anonimato Total en TV Pasiva (`/board/[sessionId]`)**:  
-  La pantalla mural en patio no expone nombres completos, apellidos, cursos ni fotos. Identifica al menor exclusivamente por su par único **Animal + Color** asignado por salón (ej: *Zorro Naranja*).
-* **CA-2 — Cero Fricción para el Retirador (`/retirar`)**:  
-  Los apoderados y transportistas operan vía web móvil en cualquier navegador sin descargar apps de App Store / Play Store. El acceso se origina escaneando el código QR dinámico de portería o abriendo el enlace de la jornada.
-* **CA-3 — Protocolo de Traspaso Físico Sellado (*Handover Code*)**:  
-  La entrega física de un alumno en portería solo transiciona al estado `IN_TRANSIT` / `PICKED_UP` cuando el personal de portón tipea en su consola táctil (`/staff`) el código criptográfico de 6 dígitos con tiempo de vida (TTL) de 10 minutos generado en el móvil del picker.
-* **CA-4 — Cadena de Custodia Inmutable en Base de Datos**:  
-  Toda transición de estado (`WAITING` ➔ `IN_PROCESS` ➔ `HANDOVER` ➔ `IN_TRANSIT` ➔ `ARRIVED` ➔ `ALERT`) se persiste en PostgreSQL con sellado temporal UTC, identificadores foráneos inalterables, firmas de staff y hashes de integridad.
-* **CA-5 — Consola Administrativa, Launchpad de Despacho y Modo Prueba**:  
-  La dirección del colegio (Sofía) cuenta con una consola institucional para gobernar la institución (nómina de alumnos, asignación Animal+Color, apertura de jornada, distribución de URLs a pantallas y auditoría forense), complementado con un simulador interactivo para onboarding rápido.
-
-### 2.2 Requisitos No Funcionales de Ingeniería (NFRs)
-1. **Privacidad por Diseño (3 Capas de Exposición)**:
-   * **Capa 0 (Público Pasivo)**: Datos anónimos (Animal + Color). Cero PII (Personally Identifiable Information).
-   * **Capa 1 (Operativo Portón y Móvil)**: Iniciales del alumno, nombre del retirador autorizado, relación de parentesco y Handover Code.
-   * **Capa 2 (Administración y Auditoría)**: Nombre completo, dirección particular, RUT/DNI hasheado, bitácora forense completa.
-2. **Resiliencia Operativa & Tolerancia a Fallos**:
-   * Si la base de datos experimenta latencia o caída temporal, los componentes de interfaz deben entrar en modo degradado elegante (*graceful degradation*) con caché local o datos precargados, evitando pantallas de error 500 no capturadas.
-3. **Optimización Táctil (Touch-First Industrial)**:
-   * Teclado numérico en `/staff` con botones táctiles de mínimo **64×64px** para operar bajo luz solar directa o con guantes.
-
----
-
-## 3. Arquitectura del Sistema y Topología de Red
+## 1. Arquitectura del sistema
 
 ```
-                                 INTERFACES DE USUARIO (Tier 1)
- ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
- │   Smart TV Patio      │   │  Web Móvil Picker     │   │   Consola Portón      │   │   Consola Sofía       │
- │   /board/[sessionId]  │   │  /retirar?session=... │   │   /staff              │   │   /admin/*            │
- │   (Capa 0 - Pasivo)   │   │  (Capa 1 - Sin login) │   │   (Capa 1 - Staff)    │   │   (Capa 2 - Admin)    │
- └───────────┬───────────┘   └───────────┬───────────┘   └───────────┬───────────┘   └───────────┬───────────┘
-             │                           │                           │                           │
-             │ HTTPS (SSR/Client)        │ HTTPS (REST)              │ HTTPS (NextAuth JWT)      │ HTTPS (NextAuth JWT)
-             ▼                           ▼                           ▼                           ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                        NEXT.JS 16 APP ROUTER — RUNTIME SERVERLESS / DOCKER                                 │
-│                                                                                                            │
-│   ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐   │
-│   │ Middleware / Proxy Gate (Protección de rutas /admin/* vía NextAuth v5 JWT)                        │   │
-│   └────────────────────────────────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                                            │
-│   ┌───────────────────────────────────┐    ┌───────────────────────────────────┐                           │
-│   │ API Endpoints (/api/*)            │    │ Servicios de Dominio              │                           │
-│   │  ├── /api/auth/* (NextAuth v5)    │    │  ├── SessionDispatcherService     │                           │
-│   │  ├── /api/pickup/lookup           │    │  ├── HandoverSecurityEngine       │                           │
-│   │  ├── /api/pickup/solicitar        │    │  ├── CustodyLedgerService         │                           │
-│   │  ├── /api/pickup/verificar-handover│   │  └── QRRotationManager            │                           │
-│   │  └── /api/staff/queue             │    └─────────────────┬─────────────────┘                           │
-│   └─────────────────┬─────────────────┘                      │                                             │
-└─────────────────────┼────────────────────────────────────────┼─────────────────────────────────────────────┘
-                      │                                        │
-                      ▼                                        ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                       PERSISTENCIA & EVENTOS (Tier 3)                                                      │
-│                                                                                                            │
-│   ┌────────────────────────────────────────────────────┐   ┌───────────────────────────────────────────┐   │
-│   │ PostgreSQL 16 (Neon Serverless / Docker Local)      │   │ Real-time Event Broker (Pusher / Polling)  │   │
-│   │ Pooler Pgbouncer (max 5 lambdas en producción)     │   │ Canal privado: pickup-session-[sessionId] │   │
-│   │ Driver: @prisma/adapter-pg + pg                    │   │ Eventos: student-waiting, handover-ready  │   │
-│   └────────────────────────────────────────────────────┘   └───────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        Vercel (Edge/Serverless)              │
+│                                                              │
+│  ┌─────────────┐   ┌─────────────┐   ┌──────────────────┐  │
+│  │  App Router │   │  API Routes │   │  Middleware       │  │
+│  │  (RSC/SC)   │   │  (/api/*)   │   │  (auth guard)    │  │
+│  └──────┬──────┘   └──────┬──────┘   └──────────────────┘  │
+│         │                 │                                  │
+│         └────────┬────────┘                                  │
+│                  │                                           │
+│           ┌──────▼──────┐                                   │
+│           │   Prisma 7  │                                   │
+│           │   Client    │                                   │
+│           └──────┬──────┘                                   │
+└──────────────────┼──────────────────────────────────────────┘
+                   │ TLS / connection pooling
+           ┌───────▼───────┐
+           │  PostgreSQL   │
+           │  (Neon)       │
+           └───────────────┘
+
+Actores externos:
+  - Browser (picker, staff, admin, TV board)
+  - Google OAuth 2.0
+  - Cron scheduler (Vercel Cron / externo)
+```
+
+**Decisiones de arquitectura clave:**
+- **Sin WebSockets**: polling de 5 s desde el cliente. Simplicidad operativa en serverless.
+- **Multi-tenant por `schoolId`**: cada query a entidades escolares incluye `schoolId` extraído de la sesión JWT. No existe routing de base de datos por tenant; es filtrado en capa de aplicación.
+- **Server Components por defecto**: solo se usan Client Components donde se necesita interactividad o hooks de React.
+
+---
+
+## 2. Schema de base de datos
+
+### Schema actual (Prisma)
+
+```prisma
+model School {
+  id                String    @id @default(cuid())
+  name              String
+  address           String?
+  emergencyPhone    String?
+  qrRefreshSecs     Int       @default(30)
+  defaultExitTime   String?   // "HH:MM" en timezone local del colegio
+  timezone          String    @default("America/Santiago")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+enum Role {
+  SCHOOL_ADMIN
+  STAFF
+  SUPERADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  schoolId  String
+  email     String   @unique
+  name      String?
+  role      Role
+  googleId  String?  @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Classroom {
+  id        String   @id @default(cuid())
+  schoolId  String
+  grade     String
+  section   String
+  createdAt DateTime @default(now())
+}
+
+enum StudentStatus {
+  ACTIVE
+  ABSENT
+  WITHDRAWN
+}
+
+model Student {
+  id          String        @id @default(cuid())
+  classroomId String
+  fullName    String
+  initials    String
+  animalId    String
+  colorId     String
+  status      StudentStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+}
+
+model Guardian {
+  id              String   @id @default(cuid())
+  whatsappNumber  String
+  fullName        String
+  idDocumentHash  String
+  createdAt       DateTime @default(now())
+}
+
+model StudentGuardian {
+  studentId  String
+  guardianId String
+  isPrimary  Boolean @default(false)
+  @@id([studentId, guardianId])
+}
+
+model Picker {
+  id             String   @id @default(cuid())
+  whatsappNumber String
+  fullName       String
+  relationship   String?
+  idDocumentHash String
+  createdAt      DateTime @default(now())
+}
+
+model Authorization {
+  id          String    @id @default(cuid())
+  studentId   String
+  pickerId    String?
+  guardianId  String?
+  type        String
+  status      String
+  validFrom   DateTime?
+  validUntil  DateTime?
+  legalProof  String?
+  createdAt   DateTime  @default(now())
+}
+
+enum SessionStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+model PickupSession {
+  id          String        @id @default(cuid())
+  schoolId    String
+  sessionCode String
+  status      SessionStatus @default(DRAFT)
+  startedAt   DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime      @default(now())
+}
+
+enum PickupEventStatus {
+  WAITING
+  IN_PROCESS
+  HANDOVER
+  IN_TRANSIT
+  ARRIVED
+  ALERT
+}
+
+model PickupEvent {
+  id                 String            @id @default(cuid())
+  sessionId          String
+  studentId          String
+  pickerId           String?
+  staffId            String?
+  status             PickupEventStatus @default(WAITING)
+  handoverCode       String?
+  handoverExpiry     DateTime?
+  pickerScannedAt    DateTime?
+  staffConfirmedAt   DateTime?
+  inTransitAt        DateTime?
+  arrivedAt          DateTime?
+  alertTriggeredAt   DateTime?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Incident {
+  id             String    @id @default(cuid())
+  eventId        String
+  type           String
+  description    String
+  resolvedAt     DateTime?
+  resolutionNote String?
+  createdAt      DateTime  @default(now())
+}
+```
+
+### Próximos cambios al schema (no implementados aún)
+
+```prisma
+// Gestión de estado de usuario
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+// Añadir a model User:
+// status UserStatus @default(ACTIVE)
+
+// Invitaciones de staff por token
+model Invitation {
+  id         String    @id @default(cuid())
+  schoolId   String
+  email      String
+  role       Role
+  token      String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+```
+
+> **Nota:** `School.timezone` ya está en el schema actual con `@default("America/Santiago")`.
+
+---
+
+## 3. Control de acceso y autenticación
+
+### NextAuth v5 — Configuración
+
+- **Provider Credentials**: `prisma.user.findUnique({ where: { email } })`. Verifica que el usuario exista en BD y tenga rol válido. No se almacenan contraseñas.
+- **Provider Google OAuth**: al autenticar con Google, se hace `prisma.user.findUnique({ where: { googleId } })` o por email para resolver el rol real desde BD.
+- **JWT callback**: el JWT incluye `{ id, schoolId, role }` extraídos del usuario en BD.
+- **Session callback**: la sesión expone `{ id, schoolId, role }` al cliente.
+
+### Middleware (`middleware.ts`)
+
+```
+/admin/*  → requiere role === SCHOOL_ADMIN
+            si role === STAFF → redirect /staff
+            si no autenticado → redirect /auth/login
+
+/staff    → requiere autenticación
+            guard adicional en Server Component
+```
+
+Rutas públicas que el middleware no intercepta: `/`, `/auth/login`, `/retirar`, `/board`, `/board/*`.
+
+### Tabla de acceso por ruta
+
+| Ruta | Acceso |
+|---|---|
+| `/` | Público |
+| `/auth/login` | Público |
+| `/retirar` | Público (anónimo) |
+| `/board` | Público |
+| `/board/[sessionId]` | Público |
+| `/admin` y subrutas | `SCHOOL_ADMIN` |
+| `/staff` | `STAFF` (autenticado) |
+| `/api/staff/queue` | `STAFF` (sesión JWT) |
+| `/api/pickup/*` | Público (validación interna por OTP) |
+| `/api/admin/*` | `SCHOOL_ADMIN` (sesión JWT) |
+| `/api/cron/auto-open-sessions` | Bearer `CRON_SECRET` |
+
+---
+
+## 4. Rutas y estructura de páginas
+
+```
+app/
+├── page.tsx                        → Landing
+├── auth/
+│   └── login/page.tsx              → Pantalla de login (NextAuth)
+├── retirar/
+│   └── page.tsx                    → Picker: anunciar retiro
+├── board/
+│   ├── page.tsx                    → Board general
+│   └── [sessionId]/page.tsx        → Board de sesión específica
+├── admin/
+│   ├── page.tsx                    → Dashboard admin
+│   ├── cursos/page.tsx             → Nómina y asistencia
+│   ├── staff/page.tsx              → Gestión de personal
+│   ├── auditoria/page.tsx          → Registro forense
+│   ├── onboarding/page.tsx         → Onboarding del colegio
+│   └── simulador/page.tsx          → Simulador de jornada
+├── staff/
+│   └── page.tsx                    → Cola de retiros (staff)
+│
+│   [Próximas rutas]
+├── onboarding/page.tsx             → Onboarding bifurcado (admin nuevo)
+└── staff/join/page.tsx             → Staff: aceptar invitación con token
 ```
 
 ---
 
-## 4. El Centro de Mando Administrativo: Launchpad y Orquestación
+## 5. Flujos principales
 
-El módulo administrativo no es una vitrina publicitaria; es el **motor de despacho operativo** que conecta todas las interfaces antes de iniciar la salida física.
-
-### 4.1 Ciclo de Vida de una Jornada de Salida (`PickupSession`)
-Una jornada escolar atraviesa 3 estados formales:
-1. **`DRAFT` (Planificación)**: Creada por el sistema o la dirección previo a la salida. Se verifica nómina y personal asignado.
-2. **`OPEN` (Jornada Activa)**: La sesión entra en ejecución. Se generan los enlaces activos de despacho y el Smart TV proyecta la cola en tiempo real.
-3. **`CLOSED` (Jornada Sellada)**: Se cierran las puertas físicas. Todo alumno no retirado pasa a protocolo de guardia/retraso y se genera el acta forense inmutable.
-
-### 4.2 Despacho Multi-Dispositivo (Launchpad Hub)
-Al abrir la jornada `SAN-1024`, el Launchpad en `/admin` genera y distribuye los tres puntos de contacto:
+### 5.1 Apertura de jornada (manual)
 
 ```
-[ Iniciar Jornada SAN-1024 ] ───► 1. Smart TV Patio:    https://app.pickme.cl/board/SAN-1024
-                             ───► 2. Consola Portón:    https://app.pickme.cl/staff
-                             ───► 3. Afiche / QR Tótem: https://app.pickme.cl/retirar?session=SAN-1024
+Admin → POST /api/admin/schedule (o acción de formulario en /admin)
+  1. Verifica que no exista PickupSession OPEN para schoolId
+  2. Crea PickupSession { schoolId, status: OPEN, startedAt: now() }
+  3. Consulta Student donde classroomId.schoolId = schoolId AND status = ACTIVE
+  4. Para cada alumno:
+       Crea PickupEvent { sessionId, studentId, status: WAITING }
+  5. Responde con sessionId
+```
+
+### 5.2 Apertura automática (cron)
+
+```
+Vercel Cron / scheduler externo → GET /api/cron/auto-open-sessions
+  Header: Authorization: Bearer CRON_SECRET
+
+  1. Valida bearer token
+  2. Consulta todos los School con defaultExitTime definido
+  3. Para cada School:
+       Convierte now() a timezone del colegio
+       Si hora local == defaultExitTime (±1 min):
+         Si no hay PickupSession OPEN → ejecuta flujo de apertura (5.1)
+```
+
+### 5.3 Picker solicita retiro (OTP)
+
+```
+Picker → POST /api/pickup/solicitar { studentId, pickerId? }
+  1. Busca PickupEvent WAITING para studentId en sesión OPEN
+  2. Genera handoverCode (6 dígitos), handoverExpiry (now + N min)
+  3. Actualiza PickupEvent { status: IN_PROCESS, handoverCode, handoverExpiry }
+  4. Retorna { handoverCode }
+```
+
+### 5.4 Staff valida OTP (handover)
+
+```
+Staff → POST /api/pickup/verificar-handover { handoverCode, eventId }
+  1. Busca PickupEvent por eventId
+  2. Verifica handoverCode y que handoverExpiry > now()
+  3. Actualiza PickupEvent { status: IN_TRANSIT, staffId, inTransitAt: now() }
+  4. Retorna { ok: true }
+```
+
+### 5.5 Cierre de jornada y log forense
+
+```
+Admin → acción de cierre en /admin
+  1. Actualiza PickupSession { status: CLOSED, closedAt: now() }
+  2. Consulta todos los PickupEvent de la sesión con sus relaciones
+  3. Genera log .txt estructurado:
+       - Cabecera: schoolId, sessionId, sessionCode, closedAt
+       - Por evento: studentId, pickerId, staffId, status, timestamps
+  4. Calcula SHA-256 del log
+  5. Persiste o retorna el log para descarga
+```
+
+### 5.6 Polling del Board y cola de Staff
+
+```
+Cliente (Browser) → GET /api/board/[sessionId]   (cada 5 s)
+  Retorna estado actual de todos los PickupEvent de la sesión
+
+Cliente (Staff) → GET /api/staff/queue            (cada 5 s)
+  Retorna PickupEvent en estados IN_PROCESS / HANDOVER para schoolId del staff
 ```
 
 ---
 
-## 5. Arquitectura de Autenticación y Gobernanza
+## 6. Stack tecnológico detallado
 
-### 5.1 Estrategia de Autenticación Unificada
-El acceso a la plataforma escolar se centraliza en un único punto de entrada institucional [`/auth/login`](src/app/auth/login/page.tsx):
-* **Credenciales Institucionales**: Correo corporativo escolar + Contraseña cifrada con `bcrypt` (mínimo 10 salt rounds).
-* **Google Workspace OAuth 2.0**: Delegación mediante Google Cloud Console con dominios educativos autorizados (`@colegio.edu`).
-* **Tokens de Sesión**: JWT firmado con `AUTH_SECRET` (256-bit SHA-256) emitido por NextAuth v5 en cookies HTTP-only, SameSite=Lax.
-
-### 5.2 Onboarding de Nuevos Colegios
-Cuando un director registra un nuevo colegio:
-1. Se valida el token del usuario y se crea el registro `School`.
-2. Se activa el **Wizard de Configuración Inicial**:
-   * Sede y Parámetros (nombre, teléfono de emergencia, tolerancia horaria).
-   * Creación de Cursos y Salones (ej. *1° Básico A*, *2° Básico B*).
-   * Carga de nómina de alumnos con asignación algorítmica garantizada de **Animal + Color** único por aula.
+| Área | Tecnología | Versión | Notas |
+|---|---|---|---|
+| Framework | Next.js | 15 | App Router; RSC por defecto |
+| Runtime UI | React | 19 | — |
+| Lenguaje | TypeScript | 5.x | strict mode |
+| Estilos | CSS Modules | — | Sin frameworks CSS externos |
+| Auth | NextAuth | v5 (beta) | JWT strategy |
+| ORM | Prisma | 7 | — |
+| BD | PostgreSQL | 16 | Neon (serverless) |
+| Deploy | Vercel | — | Edge middleware, Serverless Functions |
+| Tiempo real | Polling | — | 5 s intervalo; sin WebSockets |
 
 ---
 
-## 6. Modelo de Datos Relacional y Taxonomía Institucional
+## 7. Variables de entorno
 
-```
-[ School ] (Colegio San Martín)
-    │
-    ├── 1 ─── n [ User ] (Directora Sofía, Auxiliar Carlos)
-    │
-    ├── 1 ─── n [ Classroom ] (1° Básico A, 2° Básico B)
-    │                │
-    │                └── 1 ─── n [ Student ] (Vicente Toro: Cocodrilo Amarillo)
-    │                                │
-    │                                ├── n ─── n [ StudentGuardian ] ─── [ Guardian ]
-    │                                │
-    │                                └── 1 ─── n [ Authorization ] ──── [ Picker ] (Tío Ignacio)
-    │
-    └── 1 ─── n [ PickupSession ] (SAN-1024: Estado OPEN)
-                     │
-                     └── 1 ─── n [ PickupEvent ] (Cadena de Custodia)
-                                      │
-                                      └── 1 ─── n [ Incident ]
-```
-
-### 6.1 Matriz de Campos y Exposición por Capas
-
-| Entidad | Campo | Capa 0 (Smart TV) | Capa 1 (Portón / Móvil) | Capa 2 (Admin Sofía) |
-|---|---|:---:|:---:|:---:|
-| **Student** | `animalId` + `colorId` | **Visible** (*Cocodrilo Amarillo*) | **Visible** | **Visible** |
-| **Student** | `initials` | Oculto | **Visible** (*V.T.*) | **Visible** |
-| **Student** | `fullName` | **Oculto** | Oculto | **Visible** (*Vicente Toro Morales*) |
-| **Student** | `homeAddress` | **Oculto** | Oculto | **Visible** (Uso de transporte) |
-| **Picker** | `fullName` + `relationship` | **Oculto** | **Visible** (*Ignacio H. · Tío*) | **Visible** |
-| **Custody** | `handoverCode` | **Oculto** | **Visible** (Móvil Picker / Keypad) | **Visible en Logs** |
-| **Custody** | `timestamps` UTC | Oculto | Oculto | **Visible en Bitácora Forense** |
+| Variable | Descripción | Requerida |
+|---|---|---|
+| `DATABASE_URL` | Connection string PostgreSQL (Neon) | Sí |
+| `NEXTAUTH_SECRET` | Secret para firmar JWTs | Sí |
+| `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID | Sí |
+| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret | Sí |
+| `CRON_SECRET` | Bearer token para endpoint de cron | Sí |
 
 ---
 
-## 7. Protocolo Criptográfico del Handover Code
+## 8. Estrategia de despliegue
 
-1. **Generación**: Al solicitar retiro en `/retirar`, el servidor genera un número pseudoaleatorio seguro:
-   $$\text{Code} = \text{randomInt}(100000, 999999)$$
-2. **TTL (Time to Live)**: Se persiste `handoverExpiry = now() + 600\text{ segundos}` (10 minutos).
-3. **Validación en Portón**: El auxiliar ingresa los 6 dígitos en el Keypad táctil de `/staff`.
-4. **Verificación Transaccional**:
-   * Si el código coincide y `now() < handoverExpiry`: el estado cambia atómicamente a `IN_TRANSIT`, registrando `staffId` y `staffConfirmedAt`.
-   * Si falla 3 veces consecutivas: se bloquea el código y se genera un `Incident` tipo `UNAUTHORIZED_ATTEMPT` notificando de inmediato a la administración.
+### Producción
+- **Frontend + API Routes:** Vercel (Serverless Functions en Node.js runtime).
+- **Base de datos:** Neon PostgreSQL. Connection pooling via `DATABASE_URL` con `pgbouncer=true` en modo serverless.
+- **Cron:** Vercel Cron Jobs o servicio externo tipo cron-job.org con el endpoint `GET /api/cron/auto-open-sessions`.
+- **Variables de entorno:** configuradas en Vercel Dashboard (no en repositorio).
+
+### Local / Desarrollo
+- `npm run dev` con Next.js en modo desarrollo.
+- PostgreSQL local o Neon branch de desarrollo.
+- `npx prisma db push` para sincronizar el schema.
+- `npx prisma studio` para explorar datos.
+
+### CI
+- No hay pipeline de CI configurado actualmente.
+- Se recomienda: lint (`eslint`), type-check (`tsc --noEmit`), y tests e2e antes de merge a `main`.
 
 ---
 
-## 8. Estrategia de Despliegue e Infraestructura Serverless
+## 9. Qué NO está implementado aún
 
-* **Alojamiento**: Vercel Serverless Functions (Node.js 20.x, región `iad1`).
-* **Base de Datos**: Neon Serverless PostgreSQL (región `iad1` con PgBouncer en puerto 5432).
-* **Pool de Conexiones**: Límite estricto `max: 5` por función serverless para evitar la saturación del pool de Neon.
-* **Build Pipeline**: Script `postinstall: "prisma generate"` que compila el motor Prisma durante la fase de instalación de Vercel.
+| Funcionalidad | Estado | Notas |
+|---|---|---|
+| `UserStatus` (PENDING/ACTIVE/SUSPENDED) | Próxima versión | Schema pendiente |
+| Modelo `Invitation` con token | Próxima versión | Schema pendiente |
+| Flujo `/staff/join` (invitation link) | Próxima versión | Depende de `Invitation` |
+| Flujo `/onboarding` bifurcado | Próxima versión | Ruta existe, flujo incompleto |
+| WebSockets / tiempo real push | No planeado | Polling 5 s es suficiente para MVP |
+| Almacenamiento de contraseñas (`bcrypt`) | No planeado | Staff usa Google OAuth; auth sin contraseña |
+| Llegadas tardías (picker post-cierre) | Próxima versión | Requiere lógica de sesión extendida |
+| Autorizaciones delegadas (Guardian) | Parcialmente modelado | Schema existe; UI pendiente |
+
+---
+
+## 10. Decisiones de diseño relevantes
+
+### Sin WebSockets
+El polling cada 5 s es suficiente para la latencia aceptable en el flujo de salida escolar (handover de ~3 min). Evitar WebSockets elimina la necesidad de servicios externos de tiempo real y simplifica el despliegue serverless.
+
+### Sin contraseñas
+El personal de portería (STAFF) se autentica con Google OAuth. No se almacena ningún hash de contraseña. La próxima versión introducirá invitaciones por token de un solo uso que actúan como factor de autenticación, manteniendo el mismo principio.
+
+### Multi-tenant por filtrado en aplicación
+No se usa row-level security en PostgreSQL ni bases de datos separadas por tenant. El aislamiento se garantiza incluyendo `schoolId` (extraído del JWT de la sesión) en cada query relevante. Es responsabilidad del desarrollador incluir este filtro; se debe auditar en code review.
+
+### CSS Modules
+Decisión explícita para mantener el bundle mínimo, evitar purge de clases no utilizadas y tener estilos colocalizados con los componentes. No se acepta Tailwind ni styled-components en PRs.
