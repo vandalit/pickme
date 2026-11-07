@@ -546,7 +546,8 @@ export function CursosManager({
                   <th>Alumno / Identidad (Capa 2)</th>
                   <th>Curso</th>
                   <th>Apoderado Titular</th>
-                  <th>Retiradores Autorizados</th>
+                  <th>Retiradores / Furgón</th>
+                  <th>Pase Rápido</th>
                   <th>Estado Jornada</th>
                 </tr>
               </thead>
@@ -594,6 +595,39 @@ export function CursosManager({
                         <span style={{ color: '#c7d2fe', fontSize: '0.825rem' }}>
                           {s.authorizedPickers}
                         </span>
+                      </td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.filterAttendanceBtn}
+                          style={{
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            background: 'rgba(56, 189, 248, 0.1)',
+                            color: '#38bdf8',
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.6rem',
+                          }}
+                          onClick={() => {
+                            const name = prompt(`Generar Pase de Emergencia para ${s.fullName}\n\nIngresa el nombre de quien retira hoy (ej: Carmen Silva):`);
+                            if (!name?.trim()) return;
+                            const rel = prompt(`Parentesco o relación de ${name} con el alumno (ej: Vecina, Tía):`) || 'Familiar / Autorizado';
+                            
+                            import('@/app/pase/actions').then(async (m) => {
+                              const res = await m.createDailyPassAction(s.id, s.guardianPhone, name, rel);
+                              if (res.success && res.passUrl) {
+                                const fullUrl = `${window.location.origin}${res.passUrl}`;
+                                navigator.clipboard.writeText(fullUrl);
+                                alert(`¡Pase Diario Creado!\n\nPIN para portón: ${res.pinCode}\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`);
+                              } else {
+                                alert(res.error || 'No se pudo crear el pase');
+                              }
+                            });
+                          }}
+                          title="Generar pase temporal de 1 día para un retirador de urgencia o tercero"
+                        >
+                          + Pase Emergencia
+                        </button>
                       </td>
 
                       <td>

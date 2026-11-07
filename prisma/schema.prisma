@@ -63,6 +63,7 @@ model School {
   address         String?
   emergencyPhone  String?
   qrRefreshSecs   Int             @default(300)
+  pinLength       Int             @default(3)     // 2, 3 o 6 dígitos para validación rápida
   defaultExitTime String?         // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
   timezone        String          @default("America/Santiago") // Zona horaria del colegio para el cron
   createdAt       DateTime        @default(now())
@@ -72,6 +73,8 @@ model School {
   classrooms      Classroom[]
   sessions        PickupSession[]
   invitations     Invitation[]
+  transports      TransportService[]
+  dailyPasses     DailyPass[]
 
   @@map("schools")
 }
@@ -143,12 +146,15 @@ model Student {
   homeAddress    String?         // Dirección de entrega
   homeLatitude   Float?
   homeLongitude  Float?
+  transportId    String?         // Asignación opcional a furgón escolar
   createdAt      DateTime        @default(now())
 
   classroom      Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  transport      TransportService? @relation(fields: [transportId], references: [id], onDelete: SetNull)
   guardians      StudentGuardian[]
   authorizations Authorization[]
   events         PickupEvent[]
+  dailyPasses    DailyPass[]
 
   @@unique([classroomId, animalId, colorId]) // Garantiza combinación única por salón
   @@index([classroomId])
@@ -162,11 +168,14 @@ model Guardian {
   whatsappNumber String            @unique
   fullName       String
   idDocumentHash String?
+  familyToken    String?
   createdAt      DateTime          @default(now())
 
   students       StudentGuardian[]
   authorizations Authorization[]
+  dailyPasses    DailyPass[]
 
+  @@index([familyToken])
   @@map("guardians")
 }
 
@@ -280,4 +289,58 @@ model Incident {
 
   @@index([eventId])
   @@map("incidents")
+}
+
+// ── TRANSPORTES ESCOLARES / FURGONES (RETIRO RECURRENTE EN LOTE) ─────────────
+
+model TransportService {
+  id                  String    @id @default(uuid())
+  schoolId            String
+  name                String    // Ej: "Furgón Escolar Tío Pedro"
+  plateNumber         String?   // Ej: "BZ-8429"
+  driverName          String    // Ej: "Pedro Morales"
+  driverPhone         String    // WhatsApp de Don Pedro
+  weeklyToken         String    @unique @default(uuid()) // Token semanal renovable
+  tokenExpiresAt      DateTime
+
+  // Soporte de Chofer de Reemplazo temporal por el día
+  tempDriverName      String?
+  tempDriverPhone     String?
+  tempDriverToken     String?   @unique
+  tempDriverExpiresAt DateTime?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  school              School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students            Student[]
+
+  @@index([schoolId])
+  @@map("transport_services")
+}
+
+// ── PASES DIARIOS DE EMERGENCIA (CASO CARMEN SILVA / TERCEROS) ───────────────
+
+model DailyPass {
+  id            String    @id @default(uuid())
+  schoolId      String
+  studentId     String
+  guardianId    String    // Apoderado titular que delega la custodia hoy
+  pickerName    String    // Nombre de quien retira (ej: "Carmen Silva")
+  relationship  String    // Parentesco / Vínculo (ej: "Vecina / Amiga de la familia")
+  passToken     String    @unique @default(uuid()) // Token para pickme.app/pase/[passToken]
+  pinCode       String    // PIN configurable (2, 3 o 6 dígitos)
+  validForDate  DateTime  // Fecha para la cual es válido (expira al final del día)
+  isRevoked     Boolean   @default(false) // Revocable en tiempo real por el apoderado
+  usedAt        DateTime? // Se sella cuando portería valida la entrega
+  createdAt     DateTime  @default(now())
+
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian      Guardian  @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([passToken])
+  @@map("daily_passes")
 }
