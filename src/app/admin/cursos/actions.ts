@@ -222,6 +222,86 @@ export async function updateStudentStatusAction(
   }
 }
 
+// ── 3C. BYPASS DE EMERGENCIA POR DIRECCIÓN / ADMIN (CUSTODIA ASUMIDA POR ADMIN) ─────
+/**
+ * Permite a Dirección marcar a un alumno como entregado directamente sin PIN ni staff de portón
+ * (ej: caso de alumno rezagado/abandonado que se entrega en oficina o con tutor presente).
+ */
+export async function adminBypassDeliverStudentAction(
+  studentId: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, error: 'Sesión no autenticada.' };
+  }
+
+  const callerRole = (session.user as any).role as string | undefined;
+  if (callerRole !== 'SCHOOL_ADMIN') {
+    return { success: false, error: 'Solo Dirección puede ejecutar un bypass manual de custodia.' };
+  }
+
+  const { school, user } = await resolveUserSchool(session.user.email);
+  if (!school?.id || !user?.id) {
+    return { success: false, error: 'Establecimiento no encontrado.' };
+  }
+
+  try {
+    // 1. Buscar sesión activa abierta
+    const activeSession = await prisma.pickupSession.findFirst({
+      where: { schoolId: school.id, status: 'OPEN' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!activeSession) {
+      return { success: false, error: 'No hay ninguna jornada activa abierta.' };
+    }
+
+    // 2. Buscar o crear el evento de entrega del alumno
+    let event = await prisma.pickupEvent.findFirst({
+      where: { sessionId: activeSession.id, studentId },
+    });
+
+    const now = new Date();
+    const deliveryNote = reason?.trim()
+      ? `Bypass Manual de Dirección: ${reason.trim()} (Asumido por ${user.name || user.email})`
+      : `Bypass Manual de Dirección: Retiro asistido por Dirección (Asumido por ${user.name || user.email})`;
+
+    if (event) {
+      await prisma.pickupEvent.update({
+        where: { id: event.id },
+        data: {
+          status: 'IN_TRANSIT',
+          staffConfirmedAt: now,
+          staffId: user.id, // Queda sellado con el ID del Director
+          notes: deliveryNote,
+        },
+      });
+    } else {
+      await prisma.pickupEvent.create({
+        data: {
+          sessionId: activeSession.id,
+          studentId,
+          status: 'IN_TRANSIT',
+          staffConfirmedAt: now,
+          staffId: user.id,
+          notes: deliveryNote,
+        },
+      });
+    }
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/cursos');
+    revalidatePath('/staff');
+    revalidatePath(`/board/${activeSession.sessionCode}`);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[adminBypassDeliverStudentAction] Error:', err);
+    return { success: false, error: 'Error interno al registrar entrega por Dirección.' };
+  }
+}
+
 // ── 3B. ACTUALIZACIÓN MASIVA DE ASISTENCIA DIARIA ──────────────────────────────
 export async function batchUpdateAttendanceAction(
   studentIds: string[],

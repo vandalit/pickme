@@ -598,36 +598,71 @@ export function CursosManager({
                       </td>
 
                       <td>
-                        <button
-                          type="button"
-                          className={styles.filterAttendanceBtn}
-                          style={{
-                            border: '1px solid rgba(56, 189, 248, 0.3)',
-                            background: 'rgba(56, 189, 248, 0.1)',
-                            color: '#38bdf8',
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.6rem',
-                          }}
-                          onClick={() => {
-                            const name = prompt(`Generar Pase de Emergencia para ${s.fullName}\n\nIngresa el nombre de quien retira hoy (ej: Carmen Silva):`);
-                            if (!name?.trim()) return;
-                            const rel = prompt(`Parentesco o relación de ${name} con el alumno (ej: Vecina, Tía):`) || 'Familiar / Autorizado';
-                            
-                            import('@/app/pase/actions').then(async (m) => {
-                              const res = await m.createDailyPassAction(s.id, s.guardianPhone, name, rel);
-                              if (res.success && res.passUrl) {
-                                const fullUrl = `${window.location.origin}${res.passUrl}`;
-                                navigator.clipboard.writeText(fullUrl);
-                                alert(`¡Pase Diario Creado!\n\nPIN para portón: ${res.pinCode}\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`);
-                              } else {
-                                alert(res.error || 'No se pudo crear el pase');
-                              }
-                            });
-                          }}
-                          title="Generar pase temporal de 1 día para un retirador de urgencia o tercero"
-                        >
-                          + Pase Emergencia
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className={styles.filterAttendanceBtn}
+                            style={{
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              background: 'rgba(56, 189, 248, 0.1)',
+                              color: '#38bdf8',
+                              fontSize: '0.725rem',
+                              padding: '0.2rem 0.5rem',
+                            }}
+                            onClick={() => {
+                              const name = prompt(`Generar Pase de Emergencia para ${s.fullName}\n\nIngresa el nombre de quien retira hoy (ej: Carmen Silva):`);
+                              if (!name?.trim()) return;
+                              const rel = prompt(`Parentesco o relación de ${name} con el alumno (ej: Vecina, Tía):`) || 'Familiar / Autorizado';
+                              
+                              import('@/app/pase/actions').then(async (m) => {
+                                const res = await m.createDailyPassAction(s.id, s.guardianPhone, name, rel);
+                                if (res.success && res.passUrl) {
+                                  const fullUrl = `${window.location.origin}${res.passUrl}`;
+                                  navigator.clipboard.writeText(fullUrl);
+                                  alert(`¡Pase Diario Creado!\n\nPIN para portón: ${res.pinCode}\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`);
+                                } else {
+                                  alert(res.error || 'No se pudo crear el pase');
+                                }
+                              });
+                            }}
+                            title="Generar pase temporal de 1 día para un retirador de urgencia o tercero"
+                          >
+                            + Pase Emergencia
+                          </button>
+
+                          {liveSessionCode && (
+                            <button
+                              type="button"
+                              className={styles.filterAttendanceBtn}
+                              style={{
+                                border: '1px solid rgba(74, 222, 128, 0.35)',
+                                background: 'rgba(74, 222, 128, 0.1)',
+                                color: '#4ade80',
+                                fontSize: '0.725rem',
+                                padding: '0.2rem 0.5rem',
+                              }}
+                              onClick={() => {
+                                const confirmBypass = window.confirm(
+                                  `⚠️ CONFIRMACIÓN DE CUSTODIA POR DIRECCIÓN:\n\n¿Confirmas que has entregado personalmente a ${s.fullName} y asumes la responsabilidad como Dirección sin pasar por portería?\n\nEl alumno quedará registrado como ENTREGADO y su animalito desaparecerá tras el cooldown en el monitor.`
+                                );
+                                if (!confirmBypass) return;
+                                const reason = prompt('Motivo del retiro asistido por Dirección (opcional):') || 'Entrega directa en Dirección / Rezagado';
+
+                                import('./actions').then(async (m) => {
+                                  const res = await m.adminBypassDeliverStudentAction(s.id, reason);
+                                  if (res.success) {
+                                    alert(`Custodia cerrada: ${s.fullName} ha sido marcado como entregado bajo la responsabilidad de Dirección.`);
+                                  } else {
+                                    alert(res.error || 'No se pudo registrar la entrega.');
+                                  }
+                                });
+                              }}
+                              title="Bypass de Dirección: Marcar entregado directamente sin PIN de portón (Responsabilidad asumida por Admin)"
+                            >
+                              ✓ Entregar (Bypass)
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       <td>
