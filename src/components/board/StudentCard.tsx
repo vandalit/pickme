@@ -83,7 +83,16 @@ export function StudentCard({
         <span className={styles.publicName}>{publicLabel}</span>
       </div>
 
-      <Badge status={status} size="sm" />
+      {isCompleted ? (
+        <span className={styles.deliveredTag}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Entregado
+        </span>
+      ) : (
+        <Badge status={status} size="sm" />
+      )}
     </article>
   );
 }

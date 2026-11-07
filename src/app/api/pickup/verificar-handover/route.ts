@@ -33,13 +33,29 @@ export async function POST(req: NextRequest) {
     if (eventId) {
       event = await prisma.pickupEvent.findUnique({
         where: { id: eventId },
-        include: { student: true },
+        include: {
+          student: {
+            include: {
+              guardians: {
+                include: { guardian: true },
+              },
+            },
+          },
+        },
       });
     } else if (studentId && sessionId) {
       event = await prisma.pickupEvent.findFirst({
         where: { studentId, sessionId },
         orderBy: { createdAt: 'desc' },
-        include: { student: true },
+        include: {
+          student: {
+            include: {
+              guardians: {
+                include: { guardian: true },
+              },
+            },
+          },
+        },
       });
     }
 
@@ -90,11 +106,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // TRIGGER DE CUSTODIA: Preparar aviso para el apoderado titular
+    const primaryGuardian = event.student.guardians.find((g) => g.isPrimary)?.guardian || event.student.guardians[0]?.guardian;
+    const guardianPhone = primaryGuardian?.whatsappNumber || null;
+    const notificationText = `Hola ${primaryGuardian?.fullName || 'Apoderado'}, tu alumno(a) ${event.student.fullName} fue retirado(a) exitosamente en portón a las ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} hrs.`;
+    const waLink = guardianPhone
+      ? `https://wa.me/${guardianPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(notificationText)}`
+      : null;
+
     return NextResponse.json({
       success: true,
       status: updated.status,
       confirmedAt: updated.staffConfirmedAt,
       message: 'Traspaso físico completado. Alumno entregado a la persona autorizada.',
+      notification: {
+        guardianPhone,
+        guardianName: primaryGuardian?.fullName || null,
+        studentName: event.student.fullName,
+        waLink,
+      },
     });
   } catch (error: any) {
     console.error('Error in /api/pickup/verificar-handover:', error);
