@@ -28,7 +28,7 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
   const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    // 1. Buscar al usuario por correo electrónico
+    // 1. Buscar al usuario por correo electrónico en BD
     const userRecord = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       include: { school: true },
@@ -52,14 +52,76 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
       };
     }
 
-    // 2. Usuario nuevo, sin institución asignada o no registrado en BD -> Requiere Onboarding
+    // 2. Si es cuenta demo preconfigurada (sofia@sanmartin.edu) y no está en BD
+    if (normalizedEmail === 'sofia@sanmartin.edu') {
+      const demoSchool = await prisma.school.findFirst({
+        where: { name: { contains: 'San Martín' } },
+      });
+
+      if (demoSchool) {
+        return {
+          needsOnboarding: false,
+          school: {
+            id: demoSchool.id,
+            name: demoSchool.name,
+            address: demoSchool.address,
+            emergencyPhone: demoSchool.emergencyPhone,
+          },
+          user: {
+            id: 'user-sofia-admin',
+            email: 'sofia@sanmartin.edu',
+            name: 'Sofía Valenzuela',
+            role: 'SCHOOL_ADMIN',
+          },
+        };
+      }
+
+      return {
+        needsOnboarding: false,
+        school: {
+          id: 'demo-school-san-martin',
+          name: 'Colegio San Martín',
+          address: 'Av. Libertador Bernardo O\'Higgins 1234, Santiago',
+          emergencyPhone: '+56991112233',
+        },
+        user: {
+          id: 'user-sofia-admin',
+          email: 'sofia@sanmartin.edu',
+          name: 'Sofía Valenzuela',
+          role: 'SCHOOL_ADMIN',
+        },
+      };
+    }
+
+    // 3. Usuario nuevo o no registrado en BD -> Requiere Onboarding
     return {
       needsOnboarding: true,
       school: null,
       user: null,
     };
   } catch (error) {
-    console.warn('[resolveUserSchool] Error al consultar BD:', error);
+    console.warn('[resolveUserSchool] Error al consultar BD, evaluando fallback seguro:', error);
+
+    // Si la BD no responde y es sofia, permitimos modo demo
+    if (normalizedEmail === 'sofia@sanmartin.edu') {
+      return {
+        needsOnboarding: false,
+        school: {
+          id: 'demo-school-san-martin',
+          name: 'Colegio San Martín',
+          address: 'Av. Libertador Bernardo O\'Higgins 1234, Santiago',
+          emergencyPhone: '+56991112233',
+        },
+        user: {
+          id: 'user-sofia-admin',
+          email: 'sofia@sanmartin.edu',
+          name: 'Sofía Valenzuela',
+          role: 'SCHOOL_ADMIN',
+        },
+      };
+    }
+
+    // Cualquier otra cuenta requiere onboarding
     return {
       needsOnboarding: true,
       school: null,
@@ -67,4 +129,3 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
     };
   }
 }
-
