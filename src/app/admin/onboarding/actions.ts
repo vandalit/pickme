@@ -34,19 +34,13 @@ export async function completeOnboardingAction(
   const normalizedEmail = session.user.email.toLowerCase().trim();
 
   try {
-    // 1. Crear el nuevo colegio
+    // 1. Crear el nuevo colegio completamente limpio (sin cursos prefabricados)
     const newSchool = await prisma.school.create({
       data: {
         name: schoolName,
         address,
         emergencyPhone,
         qrRefreshSecs: 300,
-        classrooms: {
-          create: [
-            { grade: '1° Básico', section: 'A' },
-            { grade: '2° Básico', section: 'A' },
-          ],
-        },
       },
     });
 

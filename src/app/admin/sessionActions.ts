@@ -299,3 +299,52 @@ export async function closeDailySessionAction(sessionId?: string): Promise<Sessi
   }
 }
 
+/**
+ * Elimina el colegio de prueba actual y desvincula al usuario,
+ * permitiéndole recomenzar el Onboarding desde cero con una base de datos limpia.
+ */
+export async function resetMySchoolAction(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userSession = await auth();
+    if (!userSession?.user?.email) {
+      return { success: false, error: 'Sesión no iniciada.' };
+    }
+
+    const { school, user } = await resolveUserSchool(userSession.user.email);
+    if (!school || !user) {
+      return { success: false, error: 'No tienes un colegio vinculado.' };
+    }
+
+    const schoolId = school.id;
+
+    // 1. Desvincular usuarios
+    await prisma.user.updateMany({
+      where: { schoolId },
+      data: { schoolId: null },
+    });
+
+    // 2. Eliminar entidades operativas
+    await prisma.incident.deleteMany({ where: { event: { session: { schoolId } } } });
+    await prisma.pickupEvent.deleteMany({ where: { session: { schoolId } } });
+    await prisma.pickupSession.deleteMany({ where: { schoolId } });
+    await prisma.dailyPass.deleteMany({ where: { schoolId } });
+    await prisma.authorization.deleteMany({ where: { student: { classroom: { schoolId } } } });
+    await prisma.studentGuardian.deleteMany({ where: { student: { classroom: { schoolId } } } });
+    await prisma.transportService.deleteMany({ where: { schoolId } });
+    await prisma.student.deleteMany({ where: { classroom: { schoolId } } });
+    await prisma.classroom.deleteMany({ where: { schoolId } });
+    await prisma.invitation.deleteMany({ where: { schoolId } });
+
+    // 3. Eliminar el colegio
+    await prisma.school.delete({ where: { id: schoolId } });
+
+    revalidatePath('/admin');
+    revalidatePath('/onboarding');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[resetMySchoolAction] Error al resetear colegio:', error);
+    return { success: false, error: 'Error al limpiar los datos del colegio.' };
+  }
+}
+

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { resetMySchoolAction } from '@/app/admin/sessionActions';
 import styles from './ProfileModal.module.css';
 
 interface ProfileModalProps {
@@ -22,6 +23,7 @@ export function ProfileModal({
 }: ProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'help'>('profile');
   const [roleMessage, setRoleMessage] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -92,6 +94,39 @@ export function ProfileModal({
                   Cambiar o reasignar rol
                 </button>
                 {roleMessage && <div className={styles.roleMessage}>{roleMessage}</div>}
+              </div>
+
+              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <button
+                  type="button"
+                  disabled={isResetting}
+                  onClick={async () => {
+                    if (window.confirm('¿Deseas eliminar este colegio y volver al Onboarding inicial? Tu cuenta quedará desvinculada para configurar tu colegio real.')) {
+                      setIsResetting(true);
+                      const res = await resetMySchoolAction();
+                      if (res.success) {
+                        window.location.href = '/onboarding';
+                      } else {
+                        alert(res.error || 'No se pudo reiniciar.');
+                        setIsResetting(false);
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '0.6rem 0.85rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    borderRadius: '6px',
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isResetting ? 'Limpiando colegio...' : '🗑️ Eliminar colegio y volver al Onboarding inicial'}
+                </button>
               </div>
             </div>
           ) : (
