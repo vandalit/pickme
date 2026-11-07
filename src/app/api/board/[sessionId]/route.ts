@@ -78,6 +78,8 @@ export async function GET(
       schoolName: session.school.name,
       sessionCode: session.sessionCode,
       status: session.status,
+      startedAt: session.startedAt,
+      closedAt: session.closedAt,
       counts: { waiting, inProcess, completed, total },
       students,
     });

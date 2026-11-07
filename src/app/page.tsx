@@ -27,8 +27,17 @@ export default function HomePage() {
           </Link>
 
           <nav className={styles.navActions}>
+            <Link href="/board" className={styles.navLink}>
+              Patio TV
+            </Link>
+            <Link href="/staff" className={styles.navLink}>
+              Portón Staff
+            </Link>
+            <Link href="/retirar" className={styles.navLink}>
+              Retiro Móvil
+            </Link>
             <Link href="/admin/simulador" className={styles.navLink}>
-              Simulador Interactivo
+              Simulador
             </Link>
             <Link href="/auth/login" className={styles.loginButton}>
               <span>Acceso Colegio</span>
@@ -254,10 +263,10 @@ export default function HomePage() {
                   — solo el personaje que la familia reconoce.
                 </p>
                 <Link
-                  href="/admin/simulador"
+                  href="/board"
                   className={styles.cardButton}
                 >
-                  <span>Ver en el Simulador</span>
+                  <span>Sintonizar TV Patio</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
@@ -308,10 +317,10 @@ export default function HomePage() {
                   al auxiliar.
                 </p>
                 <Link
-                  href="/admin/simulador"
+                  href="/retirar"
                   className={styles.cardButton}
                 >
-                  <span>Ver en el Simulador</span>
+                  <span>Ir a Retiro Móvil</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
@@ -363,10 +372,10 @@ export default function HomePage() {
                   la entrega. Todo queda registrado.
                 </p>
                 <Link
-                  href="/admin/simulador"
+                  href="/staff"
                   className={styles.cardButton}
                 >
-                  <span>Ver en el Simulador</span>
+                  <span>Abrir Tablet Portón</span>
                   <svg
                     className={styles.cardButtonArrow}
                     viewBox="0 0 24 24"
