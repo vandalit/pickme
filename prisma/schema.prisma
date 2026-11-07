@@ -15,6 +15,12 @@ enum UserRole {
   STAFF
 }
 
+enum UserStatus {
+  PENDING    // Invitado pero no ha aceptado — sin acceso operativo
+  ACTIVE     // Miembro activo con acceso a su panel
+  SUSPENDED  // Deshabilitado por el Admin
+}
+
 enum AuthorizationType {
   PERMANENT
   SINGLE_DAY
@@ -52,38 +58,61 @@ enum StudentStatus {
 // ── ESCUELAS Y USUARIOS ADMINISTRATIVOS ────────────────────────────────────
 
 model School {
-  id             String          @id @default(uuid())
-  name           String
-  address        String?
-  emergencyPhone String?
-  qrRefreshSecs  Int             @default(300) // 5 minutos por defecto
-  defaultExitTime String?        // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id              String          @id @default(uuid())
+  name            String
+  address         String?
+  emergencyPhone  String?
+  qrRefreshSecs   Int             @default(300)
+  defaultExitTime String?         // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
+  timezone        String          @default("America/Santiago") // Zona horaria del colegio para el cron
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  users          User[]
-  classrooms     Classroom[]
-  sessions       PickupSession[]
+  users           User[]
+  classrooms      Classroom[]
+  sessions        PickupSession[]
+  invitations     Invitation[]
 
   @@map("schools")
 }
 
 model User {
   id            String       @id @default(uuid())
-  schoolId      String
+  schoolId      String?      // Nullable: Admin antes de completar onboarding
   email         String       @unique
   name          String
   role          UserRole     @default(STAFF)
+  status        UserStatus   @default(ACTIVE) // PENDING para invitados no aceptados
   googleId      String?      @unique
   avatarUrl     String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school        School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   verifiedEvents PickupEvent[] @relation("StaffEvents")
 
   @@index([schoolId])
   @@map("users")
+}
+
+// ── INVITACIONES DE STAFF ──────────────────────────────────────────────────
+
+model Invitation {
+  id          String    @id @default(uuid())
+  schoolId    String
+  email       String
+  role        UserRole  @default(STAFF)
+  token       String    @unique  // UUID para el link /staff/join?token=xxxx
+  expiresAt   DateTime           // createdAt + 48h
+  acceptedAt  DateTime?          // null = pendiente, timestamp = aceptada
+  createdAt   DateTime  @default(now())
+
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([schoolId])
+  @@index([token])
+  @@map("invitations")
 }
 
 // ── ALUMNOS Y SALONES ──────────────────────────────────────────────────────

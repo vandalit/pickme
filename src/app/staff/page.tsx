@@ -37,7 +37,7 @@ export default async function StaffPage() {
   // Buscar sesión activa del colegio
   const activeSession = await prisma.pickupSession.findFirst({
     where: {
-      schoolId: dbUser.schoolId,
+      schoolId: dbUser.schoolId ?? undefined,
       status: 'OPEN',
     },
     orderBy: { createdAt: 'desc' },

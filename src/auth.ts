@@ -36,6 +36,7 @@ export const authConfig: NextAuthConfig = {
               email: dbUser.email,
               role: dbUser.role,
               schoolId: dbUser.schoolId,
+              userStatus: dbUser.status,
               image: dbUser.avatarUrl ?? undefined,
             }
           }
@@ -74,6 +75,7 @@ export const authConfig: NextAuthConfig = {
 
       const isLoggedIn = !!auth?.user
       const userRole = (auth?.user as any)?.role as string | undefined
+      const userStatus = (auth?.user as any)?.userStatus as string | undefined
 
       const isAdminPath = nextUrl.pathname.startsWith("/admin")
       const isStaffPath = nextUrl.pathname.startsWith("/staff")
@@ -81,6 +83,14 @@ export const authConfig: NextAuthConfig = {
       // Staff autenticado que intenta entrar a /admin → redirigir a /staff
       if (isAdminPath && isLoggedIn && userRole === "STAFF") {
         return Response.redirect(new URL("/staff", nextUrl))
+      }
+
+      // Staff PENDING que intenta entrar a /staff → redirigir a espera de invitación
+      if (isStaffPath && isLoggedIn && userStatus === "PENDING") {
+        // Excepto la propia ruta join para no crear bucle
+        if (!nextUrl.pathname.startsWith("/staff/join")) {
+          return Response.redirect(new URL("/staff/join?pending=1", nextUrl))
+        }
       }
 
       // Rutas /admin y /staff requieren autenticación
@@ -104,6 +114,9 @@ export const authConfig: NextAuthConfig = {
         if ((user as any).schoolId) {
           token.schoolId = (user as any).schoolId
         }
+        if ((user as any).userStatus) {
+          token.userStatus = (user as any).userStatus
+        }
       }
       if (account?.provider === "google" && account.id_token) {
         token.googleIdToken = account.id_token
@@ -117,6 +130,7 @@ export const authConfig: NextAuthConfig = {
               token.role = dbUser.role
               token.sub = dbUser.id
               token.schoolId = dbUser.schoolId
+              token.userStatus = dbUser.status
             }
           } catch (_err) {
             // BD no disponible — mantener rol del token
@@ -133,6 +147,7 @@ export const authConfig: NextAuthConfig = {
         if (token.picture) session.user.image = token.picture as string
         if (token.role) (session.user as any).role = token.role
         if (token.schoolId) (session.user as any).schoolId = token.schoolId
+        if (token.userStatus) (session.user as any).userStatus = token.userStatus
       }
       return session
     },
