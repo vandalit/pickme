@@ -246,31 +246,43 @@
   padding: 0.35rem 0.65rem;
   border-radius: 6px;
   font-size: 0.775rem;
-  font-weight: 700;
-  border: 1px solid transparent;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
   outline: none;
   font-family: inherit;
   transition: all var(--transition-fast);
 }
 
+.statusEnrolled {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.statusEnrolled:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #cbd5e1;
+}
+
 .statusActive {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.35);
-  color: #34d399;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
 }
 
 .statusAbsent {
-  background: rgba(245, 158, 11, 0.18);
-  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
   color: #fbbf24;
 }
 
 .statusWithdrawn {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
   color: #f87171;
 }
 

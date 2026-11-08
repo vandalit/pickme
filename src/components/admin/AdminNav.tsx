@@ -28,7 +28,7 @@ export function AdminNav({
 
   const navItems = [
     {
-      label: 'Salida en Vivo & Launchpad',
+      label: 'Asistencia & Salida en Vivo',
       href: '/admin',
       exact: true,
       icon: (
@@ -38,7 +38,7 @@ export function AdminNav({
       ),
     },
     {
-      label: 'Nómina & Cursos',
+      label: 'Nómina & Matrículas',
       href: '/admin/cursos',
       exact: false,
       icon: (

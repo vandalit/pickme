@@ -56,7 +56,7 @@ export function CursosManager({
   const [students, setStudents] = useState<StudentItem[]>(initialStudents);
   const [liveSessionCode, setLiveSessionCode] = useState<string | null>(activeSessionCode);
   const [selectedClassroomId, setSelectedClassroomId] = useState<string>('ALL');
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [selectedEnrollment, setSelectedEnrollment] = useState<'ALL' | 'ENROLLED' | 'WITHDRAWN'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Modales
@@ -73,12 +73,15 @@ export function CursosManager({
 
   const [isPending, startTransition] = useTransition();
 
-  // Filtrado de alumnos
+  // Filtrado de alumnos en nómina
   const filteredStudents = students.filter((s) => {
     if (selectedClassroomId !== 'ALL' && s.classroomId !== selectedClassroomId) {
       return false;
     }
-    if (selectedStatus !== 'ALL' && s.status !== selectedStatus) {
+    if (selectedEnrollment === 'ENROLLED' && s.status === 'WITHDRAWN') {
+      return false;
+    }
+    if (selectedEnrollment === 'WITHDRAWN' && s.status !== 'WITHDRAWN') {
       return false;
     }
     if (searchQuery.trim()) {
@@ -319,86 +322,8 @@ export function CursosManager({
     });
   };
 
-  // Toggle rápido de 1 clic para marcar ingreso en sala vs sin ingreso (Custodia viva)
-  const handleToggleAttendance = (studentId: string) => {
-    const student = students.find((s) => s.id === studentId);
-    if (!student) return;
-    const newStatus: 'ACTIVE' | 'ABSENT' = student.status === 'ACTIVE' ? 'ABSENT' : 'ACTIVE';
-    handleStatusChange(studentId, newStatus);
-  };
-
-  const activeStudentsCount = students.filter((s) => s.status === 'ACTIVE').length;
-  const absentStudentsCount = students.filter((s) => s.status === 'ABSENT').length;
+  const enrolledStudentsCount = students.filter((s) => s.status !== 'WITHDRAWN').length;
   const withdrawnStudentsCount = students.filter((s) => s.status === 'WITHDRAWN').length;
-
-  // Marcar todos presentes en lote
-  const handleBatchMarkAllPresent = () => {
-    const targetStudents = filteredStudents.filter((s) => s.status !== 'ACTIVE');
-    if (targetStudents.length === 0) return;
-    const targetIds = targetStudents.map((s) => s.id);
-
-    setStudents((prev) =>
-      prev.map((s) => (targetIds.includes(s.id) ? { ...s, status: 'ACTIVE' } : s))
-    );
-
-    startTransition(async () => {
-      await batchUpdateAttendanceAction(targetIds, 'ACTIVE');
-      if (liveSessionCode) {
-        for (const sid of targetIds) {
-          await addLateArrivalToSessionAction(sid);
-        }
-      }
-    });
-  };
-
-  // Enviar a salida / Apertura o Sincronización explícita con el Portón
-  const handleSendToDeparture = () => {
-    if (activeStudentsCount === 0) {
-      alert('No hay alumnos marcados como presentes para convocar a salida.');
-      return;
-    }
-
-    startTransition(async () => {
-      if (!liveSessionCode) {
-        // Iniciar jornada de salida si no estaba abierta
-        const res = await openDailySessionAction();
-        if (res.success && res.sessionCode) {
-          setLiveSessionCode(res.sessionCode);
-          alert(`¡Jornada de salida aperturada (${res.sessionCode})! Los ${activeStudentsCount} alumnos presentes están convocados en portón.`);
-        } else {
-          alert(res.error || 'No se pudo iniciar la jornada de salida.');
-        }
-      } else {
-        // Si ya está abierta, sincronizar todos los alumnos presentes faltantes
-        const activeIds = students.filter((s) => s.status === 'ACTIVE').map((s) => s.id);
-        let addedCount = 0;
-        for (const sid of activeIds) {
-          const res = await addLateArrivalToSessionAction(sid);
-          if (res.success) addedCount++;
-        }
-        alert(`Lista viva sincronizada: ${activeStudentsCount} alumnos presentes activos en el portón.`);
-      }
-    });
-  };
-
-  // Revocar Pase / Detener Salida ("Arrepentimiento de Admin" - Señal de bloqueo a portería)
-  const handleRevokeDeparturePass = () => {
-    if (!liveSessionCode) return;
-    const confirmRevoke = window.confirm(
-      '¿Deseas revocar el pase de salida y suspender temporalmente las entregas en portón?\n\nEl personal de portería verá inmediatamente la sesión cerrada y no podrá validar retiros.'
-    );
-    if (!confirmRevoke) return;
-
-    startTransition(async () => {
-      const res = await closeDailySessionAction();
-      if (res.success) {
-        setLiveSessionCode(null);
-        alert('Pase de salida revocado. La jornada ha sido cerrada y el portón está bloqueado.');
-      } else {
-        alert(res.error || 'No se pudo revocar la jornada de salida.');
-      }
-    });
-  };
 
   // Importar CSV
   const handleImportCsv = () => {
@@ -542,28 +467,15 @@ export function CursosManager({
         ))}
       </div>
 
-      {/* ── GOBERNANZA DE ASISTENCIA DIARIA (CUSTODIA) ── */}
-      <div className={styles.attendanceBar} role="region" aria-label="Control diario de asistencia">
+      {/* ── RESUMEN ADMINISTRATIVO DE NÓMINA ESCOLAR ── */}
+      <div className={styles.attendanceBar} role="region" aria-label="Resumen de nómina escolar">
         <div className={styles.attendanceStats}>
-          <span className={`${styles.statBadge} ${styles.statBadgeActive}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-            <strong>{activeStudentsCount}</strong> Presentes hoy (Convocados a salida)
+          <span className={styles.statBadge}>
+            <strong>{enrolledStudentsCount}</strong> Alumnos Matriculados
           </span>
-
-          <span className={`${styles.statBadge} ${styles.statBadgeAbsent}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <strong>{absentStudentsCount}</strong> Ausentes hoy (Custodia no asumida)
-          </span>
-
           {withdrawnStudentsCount > 0 && (
             <span className={styles.statBadge}>
-              <strong>{withdrawnStudentsCount}</strong> Retirados
+              <strong style={{ color: '#f87171' }}>{withdrawnStudentsCount}</strong> Bajas
             </span>
           )}
         </div>
@@ -572,76 +484,28 @@ export function CursosManager({
           <div className={styles.filterAttendanceGroup}>
             <button
               type="button"
-              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ALL' ? styles.filterAttendanceBtnActive : ''}`}
-              onClick={() => setSelectedStatus('ALL')}
+              className={`${styles.filterAttendanceBtn} ${selectedEnrollment === 'ALL' ? styles.filterAttendanceBtnActive : ''}`}
+              onClick={() => setSelectedEnrollment('ALL')}
             >
-              Todos
+              Todos ({students.length})
             </button>
             <button
               type="button"
-              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ACTIVE' ? styles.filterAttendanceBtnActive : ''}`}
-              onClick={() => setSelectedStatus('ACTIVE')}
+              className={`${styles.filterAttendanceBtn} ${selectedEnrollment === 'ENROLLED' ? styles.filterAttendanceBtnActive : ''}`}
+              onClick={() => setSelectedEnrollment('ENROLLED')}
             >
-              Solo Presentes
+              Matriculados ({enrolledStudentsCount})
             </button>
-            <button
-              type="button"
-              className={`${styles.filterAttendanceBtn} ${selectedStatus === 'ABSENT' ? styles.filterAttendanceBtnActive : ''}`}
-              onClick={() => setSelectedStatus('ABSENT')}
-            >
-              Solo Ausentes
-            </button>
-          </div>
-
-          <button
-            type="button"
-            className={styles.btnBatch}
-            onClick={handleBatchMarkAllPresent}
-            disabled={isPending || absentStudentsCount === 0}
-            title="Marcar todos los alumnos visibles como presentes para la jornada de hoy"
-          >
-            Marcar Todos Presentes Hoy
-          </button>
-
-          <button
-            type="button"
-            className={styles.btnSendLive}
-            onClick={handleSendToDeparture}
-            disabled={isPending}
-            title={
-              liveSessionCode
-                ? 'Sincronizar cambios recientes de alumnos presentes con la cola activa en portón'
-                : 'Aperturar la jornada escolar y transferir formalmente la nómina viva al personal de portería para que puedan validar retiros'
-            }
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-            <span>{liveSessionCode ? 'Sincronizar con Portón' : 'Aperturar Salida (Send)'}</span>
-            {liveSessionCode && (
-              <span className={styles.liveSessionBadge}>
-                <span className={styles.livePulseDot} />
-                {liveSessionCode}
-              </span>
+            {withdrawnStudentsCount > 0 && (
+              <button
+                type="button"
+                className={`${styles.filterAttendanceBtn} ${selectedEnrollment === 'WITHDRAWN' ? styles.filterAttendanceBtnActive : ''}`}
+                onClick={() => setSelectedEnrollment('WITHDRAWN')}
+              >
+                Bajas ({withdrawnStudentsCount})
+              </button>
             )}
-          </button>
-
-          {liveSessionCode && (
-            <button
-              type="button"
-              className={styles.btnRevokePass}
-              onClick={handleRevokeDeparturePass}
-              disabled={isPending}
-              title="Revocar el pase de salida y suspender temporalmente las entregas en portería (Señal de bloqueo a staff)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-              </svg>
-              <span>Revocar Pase / Detener</span>
-            </button>
-          )}
+          </div>
         </div>
       </div>
 
@@ -671,9 +535,7 @@ export function CursosManager({
                   <th>Curso</th>
                   <th>Apoderado Titular</th>
                   <th>Retiradores / Furgón</th>
-                  <th>Pase Rápido</th>
-                  <th>Matrícula (Nómina)</th>
-                  <th>Asistencia Hoy (Custodia)</th>
+                  <th>Matrícula (Estatuto)</th>
                   <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
@@ -723,75 +585,7 @@ export function CursosManager({
                         </span>
                       </td>
 
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            className={styles.filterAttendanceBtn}
-                            style={{
-                              border: '1px solid rgba(56, 189, 248, 0.3)',
-                              background: 'rgba(56, 189, 248, 0.1)',
-                              color: '#38bdf8',
-                              fontSize: '0.725rem',
-                              padding: '0.2rem 0.5rem',
-                            }}
-                            onClick={() => {
-                              const name = prompt(`Generar Pase de Emergencia para ${s.fullName}\n\nIngresa el nombre de quien retira hoy (ej: Carmen Silva):`);
-                              if (!name?.trim()) return;
-                              const rel = prompt(`Parentesco o relación de ${name} con el alumno (ej: Vecina, Tía):`) || 'Familiar / Autorizado';
-                              
-                              import('@/app/pase/actions').then(async (m) => {
-                                const res = await m.createDailyPassAction(s.id, s.guardianPhone, name, rel);
-                                if (res.success && res.passUrl) {
-                                  const fullUrl = `${window.location.origin}${res.passUrl}`;
-                                  navigator.clipboard.writeText(fullUrl);
-                                  alert(`¡Pase Diario Creado!\n\nPIN para portón: ${res.pinCode}\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`);
-                                } else {
-                                  alert(res.error || 'No se pudo crear el pase');
-                                }
-                              });
-                            }}
-                            title="Generar pase temporal de 1 día para un retirador de urgencia o tercero"
-                          >
-                            + Pase Emergencia
-                          </button>
-
-                          {liveSessionCode && (
-                            <button
-                              type="button"
-                              className={styles.filterAttendanceBtn}
-                              style={{
-                                border: '1px solid rgba(74, 222, 128, 0.35)',
-                                background: 'rgba(74, 222, 128, 0.1)',
-                                color: '#4ade80',
-                                fontSize: '0.725rem',
-                                padding: '0.2rem 0.5rem',
-                              }}
-                              onClick={() => {
-                                const confirmBypass = window.confirm(
-                                  `⚠️ CONFIRMACIÓN DE CUSTODIA POR DIRECCIÓN:\n\n¿Confirmas que has entregado personalmente a ${s.fullName} y asumes la responsabilidad como Dirección sin pasar por portería?\n\nEl alumno quedará registrado como ENTREGADO y su animalito desaparecerá tras el cooldown en el monitor.`
-                                );
-                                if (!confirmBypass) return;
-                                const reason = prompt('Motivo del retiro asistido por Dirección (opcional):') || 'Entrega directa en Dirección / Rezagado';
-
-                                import('./actions').then(async (m) => {
-                                  const res = await m.adminBypassDeliverStudentAction(s.id, reason);
-                                  if (res.success) {
-                                    alert(`Custodia cerrada: ${s.fullName} ha sido marcado como entregado bajo la responsabilidad de Dirección.`);
-                                  } else {
-                                    alert(res.error || 'No se pudo registrar la entrega.');
-                                  }
-                                });
-                              }}
-                              title="Bypass de Dirección: Marcar entregado directamente sin PIN de portón (Responsabilidad asumida por Admin)"
-                            >
-                              ✓ Entregar (Bypass)
-                            </button>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* ── COLUMNA 1: MATRÍCULA (NÓMINA ESCOLAR) ── */}
+                      {/* ── COLUMNA MATRÍCULA (SUTIL Y FRENTE A ACCIONES) ── */}
                       <td>
                         <select
                           value={s.status === 'WITHDRAWN' ? 'WITHDRAWN' : 'ENROLLED'}
@@ -803,13 +597,13 @@ export function CursosManager({
                                 handleStatusChange(s.id, 'WITHDRAWN');
                               }
                             } else {
-                              handleStatusChange(s.id, 'ABSENT');
+                              handleStatusChange(s.id, 'ACTIVE');
                             }
                           }}
                           className={`${styles.statusSelect} ${
                             s.status === 'WITHDRAWN'
                               ? styles.statusWithdrawn
-                              : styles.statusActive
+                              : styles.statusEnrolled
                           }`}
                           title="Estatuto del alumno en la institución (Matriculado regular o Dado de baja)"
                         >
@@ -818,40 +612,7 @@ export function CursosManager({
                         </select>
                       </td>
 
-                      {/* ── COLUMNA 2: ASISTENCIA VIVA DE HOY (TOGGLE DE 1 CLIC) ── */}
-                      <td>
-                        {s.status === 'WITHDRAWN' ? (
-                          <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
-                            Sin custodia (Baja)
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => handleToggleAttendance(s.id)}
-                            className={`${styles.attendanceToggleBtn} ${
-                              s.status === 'ACTIVE'
-                                ? styles.attendanceToggleActive
-                                : styles.attendanceToggleAbsent
-                            }`}
-                            title={
-                              s.status === 'ACTIVE'
-                                ? '🟢 Ingreso confirmado (En sala). Clic para desmarcar.'
-                                : '⚪ Sin ingreso a sala. Clic para marcar ingreso a clases.'
-                            }
-                            aria-label={`Asistencia de ${s.fullName}: ${
-                              s.status === 'ACTIVE' ? 'Presente en sala' : 'Sin ingreso'
-                            }`}
-                          >
-                            <span className={styles.toggleDot} />
-                            <span className={styles.toggleLabel}>
-                              {s.status === 'ACTIVE' ? '✓ En Sala' : 'Sin ingreso'}
-                            </span>
-                          </button>
-                        )}
-                      </td>
-
-                      {/* ── COLUMNA 3: ACCIONES (CRUD EDICIÓN Y ELIMINACIÓN) ── */}
+                      {/* ── COLUMNA ACCIONES: EDITAR Y ELIMINAR (CRUD) ── */}
                       <td>
                         <div className={styles.rowActionsGroup}>
                           <button
