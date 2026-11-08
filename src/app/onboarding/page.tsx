@@ -1,7 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
+import { resolveUserSchool } from '@/lib/userSchool';
 import styles from './page.module.css';
 import OnboardingCards from './OnboardingCards';
 
@@ -17,16 +17,12 @@ export default async function OnboardingPage() {
 
   const email = session.user.email.toLowerCase().trim();
 
-  // Si ya tiene escuela vinculada, redirigir a su panel
-  const dbUser = await prisma.user.findUnique({
-    where: { email },
-    include: { school: true },
-  });
+  // Si ya tiene escuela vinculada, redirigir a su panel correspondiente
+  const { needsOnboarding, school, user } = await resolveUserSchool(email);
 
-  if (dbUser?.schoolId) {
-    // Redirigir según rol
-    if (dbUser.role === 'SCHOOL_ADMIN') redirect('/admin');
-    if (dbUser.role === 'STAFF') redirect('/staff');
+  if (!needsOnboarding && school) {
+    if (user?.role === 'STAFF') redirect('/staff');
+    redirect('/admin');
   }
 
   return (

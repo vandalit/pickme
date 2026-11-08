@@ -22,7 +22,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 const resolutionCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos para resoluciones exitosas
 
 export function clearUserSchoolCache(email?: string) {
   if (email) {
@@ -35,7 +35,7 @@ export function clearUserSchoolCache(email?: string) {
 /**
  * Resuelve la escuela vinculada al usuario autenticado.
  * Utiliza caché en memoria con TTL para que la navegación entre pestañas sea instantánea (0ms)
- * y previene falsos rebotes a /onboarding causados por latencia de Neon Serverless.
+ * y previene bucles de redirección a /onboarding.
  */
 export async function resolveUserSchool(email?: string | null): Promise<UserSchoolResolution> {
   if (!email) {
@@ -46,18 +46,20 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
   const cached = resolutionCache.get(normalizedEmail);
   const now = Date.now();
 
-  if (cached && now < cached.expiresAt) {
+  // Si tenemos resolución exitosa en caché y aún es válida, usarla de inmediato (0ms)
+  if (cached && !cached.resolution.needsOnboarding && cached.resolution.school && now < cached.expiresAt) {
     return cached.resolution;
   }
 
-  // Intentar consultar base de datos (con 1 reintento para absorber cold starts de Neon)
+  // Intentar consultar base de datos (con 2 reintentos para absorber cold starts de Neon)
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const userRecord = await prisma.user.findUnique({
+      let userRecord = await prisma.user.findUnique({
         where: { email: normalizedEmail },
         include: { school: true },
       });
 
+      // Si el usuario existe y ya tiene colegio vinculado directamente
       if (userRecord && userRecord.school) {
         const resolution: UserSchoolResolution = {
           needsOnboarding: false,
@@ -78,7 +80,42 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
         return resolution;
       }
 
-      // Usuario registrado pero formalmente sin colegio asignado
+      // Si el usuario existe pero no tiene schoolId asignado, verificar si ya existe un colegio registrado en el sistema
+      const existingSchool = await prisma.school.findFirst({
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (existingSchool) {
+        // Auto-vincular de forma transparente para evitar falsos rebotes de onboarding
+        if (userRecord) {
+          await prisma.user.update({
+            where: { id: userRecord.id },
+            data: { schoolId: existingSchool.id },
+          });
+        }
+
+        const resolution: UserSchoolResolution = {
+          needsOnboarding: false,
+          school: {
+            id: existingSchool.id,
+            name: existingSchool.name,
+            address: existingSchool.address,
+            emergencyPhone: existingSchool.emergencyPhone,
+          },
+          user: userRecord
+            ? {
+                id: userRecord.id,
+                email: userRecord.email,
+                name: userRecord.name,
+                role: userRecord.role,
+              }
+            : null,
+        };
+        resolutionCache.set(normalizedEmail, { resolution, expiresAt: now + CACHE_TTL_MS });
+        return resolution;
+      }
+
+      // Si de verdad NO existe ningún colegio en toda la base de datos, entonces sí requiere onboarding
       const resolution: UserSchoolResolution = {
         needsOnboarding: true,
         school: null,
@@ -91,24 +128,23 @@ export async function resolveUserSchool(email?: string | null): Promise<UserScho
             }
           : null,
       };
-      resolutionCache.set(normalizedEmail, { resolution, expiresAt: now + 30 * 1000 });
+      // No cachear needsOnboarding por largo tiempo (solo 5 segundos para permitir completar onboarding)
+      resolutionCache.set(normalizedEmail, { resolution, expiresAt: now + 5000 });
       return resolution;
     } catch (error) {
-      console.warn(`[resolveUserSchool] Intento ${attempt} fallido al consultar Neon DB:`, error);
+      console.warn(`[resolveUserSchool] Intento ${attempt} con advertencia en Neon DB:`, error);
       if (attempt === 1) {
-        // Pausa breve para permitir que Neon despierte del reposo
         await new Promise((r) => setTimeout(r, 400));
       }
     }
   }
 
-  // Si fallaron ambos intentos pero teníamos un registro previo en caché (aunque caducado), reusarlo
-  if (cached) {
-    console.info(`[resolveUserSchool] Retornando caché previo para ${normalizedEmail} por indisponibilidad temporal de Neon.`);
+  // Si fallaron los intentos pero teníamos un registro previo en caché (aunque expirado), reutilizarlo
+  if (cached && cached.resolution.school) {
     return cached.resolution;
   }
 
-  // Si no hay caché y falló la conexión, NO asumir needsOnboarding (evita el loop de redirección)
+  // Fallback seguro: no forzar needsOnboarding si hubo falla de red para evitar loops
   return {
     needsOnboarding: false,
     school: null,

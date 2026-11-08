@@ -15,6 +15,7 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolvedParams = searchParams ? await searchParams : {}
   const errorParam = resolvedParams.error
+  const targetRedirect = resolvedParams.callbackUrl || "/admin"
 
   let errorMessage: string | null = null
   if (errorParam === "CredentialsSignin") {
@@ -75,7 +76,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <form
           action={async () => {
             "use server"
-            await signIn("google", { redirectTo: "/onboarding" })
+            await signIn("google", { redirectTo: targetRedirect })
           }}
         >
           <button type="submit" className={styles.googleBtn}>
@@ -115,7 +116,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               await signIn("credentials", {
                 email,
                 password,
-                redirectTo: "/onboarding",
+                redirectTo: targetRedirect,
               })
             } catch (error) {
               if (isRedirectError(error)) {

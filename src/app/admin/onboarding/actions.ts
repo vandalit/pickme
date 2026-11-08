@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { clearUserSchoolCache } from '@/lib/userSchool';
 
 export interface OnboardingState {
   error?: string;
@@ -66,6 +67,7 @@ export async function completeOnboardingAction(
       },
     });
 
+    clearUserSchoolCache(normalizedEmail);
     revalidatePath('/admin');
     revalidatePath('/admin/cursos');
   } catch (error: any) {
