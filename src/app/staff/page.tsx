@@ -28,12 +28,6 @@ export default async function StaffPage() {
     redirect('/auth/login?error=NoSchool');
   }
 
-  // Bloquear SCHOOL_ADMIN de /staff (solo staff operativo aquí)
-  // Admin redirige a su panel propio si accede por error
-  if (dbUser.role === 'SCHOOL_ADMIN') {
-    redirect('/admin');
-  }
-
   // Buscar sesión activa del colegio
   const activeSession = await prisma.pickupSession.findFirst({
     where: {

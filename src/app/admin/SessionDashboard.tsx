@@ -353,41 +353,6 @@ export function SessionDashboard({
                   </button>
                 </div>
               </article>
-
-              {/* Terminal 3: Afiche QR / Anuncio Picker */}
-              <article className={styles.launchCard}>
-                <div className={styles.launchCardTop}>
-                  <div className={`${styles.launchIconWrapper} ${styles.iconPicker}`}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="5" y="2" width="14" height="20" rx="2" />
-                      <path d="M12 18h.01" />
-                    </svg>
-                  </div>
-                  <div className={styles.launchMeta}>
-                    <span className={styles.launchBadge}>Capa 1 · Apoderados & Pickers</span>
-                    <h3 className={styles.launchCardTitle}>Punto de Llegada Móvil</h3>
-                    <p className={styles.launchCardDesc}>
-                      Enlace que escanean los apoderados en portería para identificarse sin descargar apps.
-                    </p>
-                  </div>
-                </div>
-                <div className={styles.launchActions}>
-                  <Link
-                    href={`/retirar?session=${activeSession.sessionCode}`}
-                    target="_blank"
-                    className={styles.openLinkBtn}
-                  >
-                    <span>Simular Retiro Picker ↗</span>
-                  </Link>
-                  <button
-                    type="button"
-                    className={styles.copyUrlBtn}
-                    onClick={() => handleCopy('picker', `/retirar?session=${activeSession.sessionCode}`)}
-                  >
-                    {copiedLinkKey === 'picker' ? '¡Copiado!' : 'Copiar URL'}
-                  </button>
-                </div>
-              </article>
             </div>
           </section>
 
