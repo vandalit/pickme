@@ -1,64 +1,46 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { auth, signOut } from '@/auth';
-import { AdminNav } from '@/components/admin/AdminNav';
+import { auth } from '@/auth';
 import { resolveUserSchool } from '@/lib/userSchool';
+import { TableSkeleton } from '@/components/admin/TableSkeleton';
 import { CursosManager, ClassroomItem, StudentItem } from './CursosManager';
 import styles from '../page.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCursosPage() {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect('/auth/login');
-  }
-
-  // 1. Resolver el colegio asociado a la cuenta
-  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
-  if (needsOnboarding || !resolvedSchool) {
-    redirect('/onboarding');
-  }
-
-  const userName = session.user.name || 'Director(a)';
-  let schoolName = resolvedSchool?.name || 'Mi Establecimiento';
-  let activeSessionCode: string | null = null;
-
+async function CursosTableLoader({ schoolId, schoolName }: { schoolId: string; schoolName: string }) {
   let classroomsList: ClassroomItem[] = [];
   let studentsList: StudentItem[] = [];
+  let activeSessionCode: string | null = null;
 
   try {
-    if (resolvedSchool?.id) {
-      const school = await prisma.school.findUnique({
-        where: { id: resolvedSchool.id },
-        include: {
-          classrooms: {
-            include: {
-              students: {
-                include: {
-                  guardians: { include: { guardian: true } },
-                  authorizations: { include: { picker: true } },
-                },
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      include: {
+        classrooms: {
+          include: {
+            students: {
+              include: {
+                guardians: { include: { guardian: true } },
+                authorizations: { include: { picker: true } },
               },
             },
-            orderBy: [{ grade: 'asc' }, { section: 'asc' }],
           },
-          sessions: {
-            where: { status: 'OPEN' },
-            take: 1,
-          },
+          orderBy: [{ grade: 'asc' }, { section: 'asc' }],
         },
-      });
+        sessions: {
+          where: { status: 'OPEN' },
+          take: 1,
+        },
+      },
+    });
 
-      if (school) {
-        schoolName = school.name;
-        if (school.sessions[0]) {
-          activeSessionCode = school.sessions[0].sessionCode;
-        }
+    if (school) {
+      if (school.sessions[0]) {
+        activeSessionCode = school.sessions[0].sessionCode;
+      }
 
-        // Mapear salones
       classroomsList = school.classrooms.map((c) => ({
         id: c.id,
         grade: c.grade,
@@ -66,7 +48,6 @@ export default async function AdminCursosPage() {
         studentCount: c.students.length,
       }));
 
-      // Mapear alumnos
       school.classrooms.forEach((c) => {
         c.students.forEach((s) => {
           const primaryGuardian = s.guardians.find((g) => g.isPrimary)?.guardian || s.guardians[0]?.guardian;
@@ -97,42 +78,44 @@ export default async function AdminCursosPage() {
         });
       });
     }
-  }
-} catch (error) {
-    console.warn('[AdminCursos] Error al consultar datos en BD:', error);
-  }
-
-  async function handleSignOut() {
-    'use server';
-    await signOut({ redirectTo: '/auth/login' });
+  } catch (error) {
+    console.warn('[CursosTableLoader] Error al consultar datos en BD:', error);
   }
 
   return (
-    <div className={styles.container}>
-      <AdminNav
-        userName={userName}
-        schoolName={schoolName}
-        activeSessionCode={activeSessionCode}
-        onSignOut={handleSignOut}
-      />
+    <CursosManager
+      initialClassrooms={classroomsList}
+      initialStudents={studentsList}
+      schoolName={schoolName}
+      activeSessionCode={activeSessionCode}
+    />
+  );
+}
 
-      <main className={styles.main}>
-        <section className={styles.sectionBlock}>
-          <div className={styles.sectionHeader}>
-            <h1 className={styles.sectionTitle}>Nómina & Matrículas</h1>
-            <p className={styles.sectionDesc}>
-              Registro maestro de alumnos matriculados, edición de datos, salones y apoderados titulares.
-            </p>
-          </div>
+export default async function AdminCursosPage() {
+  const session = await auth();
 
-          <CursosManager
-            initialClassrooms={classroomsList}
-            initialStudents={studentsList}
-            schoolName={schoolName}
-            activeSessionCode={activeSessionCode}
-          />
-        </section>
-      </main>
-    </div>
+  if (!session?.user?.email) {
+    redirect('/auth/login');
+  }
+
+  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
+  if (needsOnboarding || !resolvedSchool) {
+    redirect('/onboarding');
+  }
+
+  return (
+    <section className={styles.sectionBlock}>
+      <div className={styles.sectionHeader}>
+        <h1 className={styles.sectionTitle}>Nómina & Matrículas</h1>
+        <p className={styles.sectionDesc}>
+          Registro maestro de alumnos matriculados, edición de datos, salones y apoderados titulares.
+        </p>
+      </div>
+
+      <Suspense fallback={<TableSkeleton />}>
+        <CursosTableLoader schoolId={resolvedSchool.id} schoolName={resolvedSchool.name} />
+      </Suspense>
+    </section>
   );
 }

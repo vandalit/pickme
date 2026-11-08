@@ -1,30 +1,14 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { auth, signOut } from '@/auth';
-import { AdminNav } from '@/components/admin/AdminNav';
+import { auth } from '@/auth';
 import { resolveUserSchool } from '@/lib/userSchool';
+import { TableSkeleton } from '@/components/admin/TableSkeleton';
 import { SessionDashboard, DashboardRosterItem } from './SessionDashboard';
-import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboardPage() {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect('/auth/login');
-  }
-
-  // 1. Resolver el colegio asociado a la cuenta del usuario
-  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
-  if (needsOnboarding || !resolvedSchool) {
-    redirect('/onboarding');
-  }
-
-  const userName = session.user.name || 'Director(a)';
-  const schoolName = resolvedSchool.name;
-
+async function DashboardLoader({ schoolId }: { schoolId: string }) {
   let isSessionOpen = false;
   let activeSessionData: {
     id: string;
@@ -48,20 +32,19 @@ export default async function AdminDashboardPage() {
   let roster: DashboardRosterItem[] = [];
 
   try {
-    // 2. Resumen de la escuela
     const [totalClassrooms, activeStudentsCount, inactiveStudentsCount] = await Promise.all([
       prisma.classroom.count({
-        where: { schoolId: resolvedSchool.id },
+        where: { schoolId },
       }),
       prisma.student.count({
         where: {
-          classroom: { schoolId: resolvedSchool.id },
+          classroom: { schoolId },
           status: 'ACTIVE',
         },
       }),
       prisma.student.count({
         where: {
-          classroom: { schoolId: resolvedSchool.id },
+          classroom: { schoolId },
           status: { in: ['ABSENT', 'WITHDRAWN'] },
         },
       }),
@@ -73,10 +56,9 @@ export default async function AdminDashboardPage() {
       inactiveStudents: inactiveStudentsCount,
     };
 
-    // 3. Buscar sesión activa (status: OPEN)
     const activeSession = await prisma.pickupSession.findFirst({
       where: {
-        schoolId: resolvedSchool.id,
+        schoolId,
         status: 'OPEN',
       },
       orderBy: { createdAt: 'desc' },
@@ -134,33 +116,35 @@ export default async function AdminDashboardPage() {
       });
     }
   } catch (error) {
-    console.warn('[Admin] Error consultando estado en base de datos:', error);
-  }
-
-  // Server Action: Cerrar sesión de usuario
-  async function handleSignOut() {
-    'use server';
-    await signOut({ redirectTo: '/auth/login' });
+    console.warn('[DashboardLoader] Error consultando estado en base de datos:', error);
   }
 
   return (
-    <div className={styles.container}>
-      <AdminNav
-        userName={userName}
-        schoolName={schoolName}
-        activeSessionCode={activeSessionData?.sessionCode || 'En Pausa'}
-        onSignOut={handleSignOut}
-      />
+    <SessionDashboard
+      isSessionOpen={isSessionOpen}
+      activeSession={activeSessionData}
+      schoolSummary={schoolSummary}
+      funnelCounts={funnelCounts}
+      roster={roster}
+    />
+  );
+}
 
-      <main className={styles.main}>
-        <SessionDashboard
-          isSessionOpen={isSessionOpen}
-          activeSession={activeSessionData}
-          schoolSummary={schoolSummary}
-          funnelCounts={funnelCounts}
-          roster={roster}
-        />
-      </main>
-    </div>
+export default async function AdminDashboardPage() {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    redirect('/auth/login');
+  }
+
+  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
+  if (needsOnboarding || !resolvedSchool) {
+    redirect('/onboarding');
+  }
+
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DashboardLoader schoolId={resolvedSchool.id} />
+    </Suspense>
   );
 }

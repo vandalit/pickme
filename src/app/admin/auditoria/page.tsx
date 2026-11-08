@@ -1,32 +1,16 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { auth, signOut } from '@/auth';
-import { AdminNav } from '@/components/admin/AdminNav';
+import { auth } from '@/auth';
 import { resolveUserSchool } from '@/lib/userSchool';
+import { TableSkeleton } from '@/components/admin/TableSkeleton';
 import { generatePlainTextAuditLog } from '@/lib/auditLogFormatter';
 import { AuditoriaTable, AuditRecord, ClosedSessionLog } from './AuditoriaTable';
 import styles from '../page.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminAuditoriaPage() {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect('/auth/login');
-  }
-
-  // 1. Resolver el colegio asociado a la cuenta
-  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
-  if (needsOnboarding || !resolvedSchool) {
-    redirect('/admin/onboarding');
-  }
-
-  const userName = session.user.name || 'Director(a)';
-  const schoolName = resolvedSchool.name;
-  let activeSessionCode: string | null = null;
-
+async function AuditoriaTableLoader({ schoolId }: { schoolId: string }) {
   let metrics = {
     totalSessions: 0,
     totalEvents: 0,
@@ -41,45 +25,39 @@ export default async function AdminAuditoriaPage() {
   try {
     const [totalSessions, openSession, events, closedSessionsRaw] = await Promise.all([
       prisma.pickupSession.count({
-        where: { schoolId: resolvedSchool.id },
+        where: { schoolId },
       }),
       prisma.pickupSession.findFirst({
-        where: { schoolId: resolvedSchool.id, status: 'OPEN' },
+        where: { schoolId, status: 'OPEN' },
         orderBy: { createdAt: 'desc' },
       }),
       prisma.pickupEvent.findMany({
-        where: { session: { schoolId: resolvedSchool.id } },
+        where: { session: { schoolId } },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
         include: {
           session: true,
           student: { include: { classroom: true } },
           picker: true,
           staff: true,
         },
-        orderBy: { updatedAt: 'desc' },
-        take: 200,
       }),
       prisma.pickupSession.findMany({
-        where: { schoolId: resolvedSchool.id, status: 'CLOSED' },
+        where: { schoolId, status: 'CLOSED' },
+        orderBy: { closedAt: 'desc' },
+        take: 20,
         include: {
-          school: {
-            select: { name: true, address: true },
-          },
           events: {
             include: {
               student: { include: { classroom: true } },
               picker: true,
               staff: true,
             },
+            orderBy: { createdAt: 'asc' },
           },
         },
-        orderBy: { closedAt: 'desc' },
-        take: 30,
       }),
     ]);
-
-    if (openSession) {
-      activeSessionCode = openSession.sessionCode;
-    }
 
     if (closedSessionsRaw.length > 0) {
       closedSessionLogs = closedSessionsRaw.map((s) => ({
@@ -89,7 +67,7 @@ export default async function AdminAuditoriaPage() {
         closedAt: s.closedAt ? s.closedAt.toISOString() : s.createdAt.toISOString(),
         totalEvents: s.events.length,
         completedCount: s.events.filter(
-          (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED' || e.status === 'HANDOVER'
+          (e) => e.status === 'IN_TRANSIT' || e.status === 'ARRIVED' || (e.status as string) === 'HANDOVER'
         ).length,
         plainText: generatePlainTextAuditLog(s as any),
       }));
@@ -138,40 +116,43 @@ export default async function AdminAuditoriaPage() {
       });
     }
   } catch (error) {
-    console.warn('[AdminAuditoria] Usando logs resilientes de respaldo:', error);
-  }
-
-  async function handleSignOut() {
-    'use server';
-    await signOut({ redirectTo: '/auth/login' });
+    console.warn('[AuditoriaTableLoader] Usando logs de respaldo:', error);
   }
 
   return (
-    <div className={styles.container}>
-      <AdminNav
-        userName={userName}
-        schoolName={schoolName}
-        activeSessionCode={activeSessionCode}
-        onSignOut={handleSignOut}
-      />
+    <AuditoriaTable
+      metrics={metrics}
+      logs={auditLogs}
+      closedSessionLogs={closedSessionLogs}
+    />
+  );
+}
 
-      <main className={styles.main}>
-        <section className={styles.sectionBlock}>
-          <div className={styles.sectionHeader}>
-            <h1 className={styles.sectionTitle}>Libro de Auditoría Forense y Cadena de Custodia</h1>
-            <p className={styles.sectionDesc}>
-              Bitácora cronológica inmutable respaldada en PostgreSQL con trazabilidad completa de
-              traspasos físicos, códigos verificados e integridad de custodia.
-            </p>
-          </div>
+export default async function AdminAuditoriaPage() {
+  const session = await auth();
 
-          <AuditoriaTable
-            metrics={metrics}
-            logs={auditLogs}
-            closedSessionLogs={closedSessionLogs}
-          />
-        </section>
-      </main>
-    </div>
+  if (!session?.user?.email) {
+    redirect('/auth/login');
+  }
+
+  const { needsOnboarding, school: resolvedSchool } = await resolveUserSchool(session.user.email);
+  if (needsOnboarding || !resolvedSchool) {
+    redirect('/onboarding');
+  }
+
+  return (
+    <section className={styles.sectionBlock}>
+      <div className={styles.sectionHeader}>
+        <h1 className={styles.sectionTitle}>Libro de Auditoría Forense y Cadena de Custodia</h1>
+        <p className={styles.sectionDesc}>
+          Bitácora cronológica inmutable respaldada en PostgreSQL con trazabilidad completa de
+          traspasos físicos, códigos verificados e integridad de custodia.
+        </p>
+      </div>
+
+      <Suspense fallback={<TableSkeleton />}>
+        <AuditoriaTableLoader schoolId={resolvedSchool.id} />
+      </Suspense>
+    </section>
   );
 }

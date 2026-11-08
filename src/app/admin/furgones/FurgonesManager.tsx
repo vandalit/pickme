@@ -231,3 +231,4 @@ export function FurgonesManager({ initialTransports, unassignedStudents }: Furgo
     </div>
   );
 }
+

@@ -242,7 +242,7 @@ export function AsistenciaManager({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M20 6L9 17l-5-5" />
             </svg>
-            <strong>{presentCount}</strong> Presentes hoy (En custodia)
+            <strong>{presentCount}</strong> Presentes
           </span>
 
           <span className={`${styles.statBadge} ${styles.statBadgeAbsent}`}>
@@ -251,7 +251,7 @@ export function AsistenciaManager({
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <strong>{absentCount}</strong> Sin ingreso hoy
+            <strong>{absentCount}</strong> Ausentes
           </span>
         </div>
 
@@ -276,7 +276,7 @@ export function AsistenciaManager({
               className={`${styles.filterAttendanceBtn} ${statusFilter === 'ABSENT' ? styles.filterAttendanceBtnActive : ''}`}
               onClick={() => setStatusFilter('ABSENT')}
             >
-              Solo Sin Ingreso ({absentCount})
+              Solo Ausentes ({absentCount})
             </button>
           </div>
 
@@ -435,16 +435,16 @@ export function AsistenciaManager({
                             }`}
                             title={
                               s.status === 'ACTIVE'
-                                ? '🟢 Ingreso registrado (Presente en sala). Clic para marcar ausente.'
-                                : '⚪ Sin ingreso hoy. Clic para registrar llegada a clases.'
+                                ? '🟢 Presente en la jornada. Clic para marcar ausente.'
+                                : '⚪ Ausente hoy. Clic para registrar presencia.'
                             }
                             aria-label={`Asistencia de ${s.fullName}: ${
-                              s.status === 'ACTIVE' ? 'Presente en sala' : 'Sin ingreso'
+                              s.status === 'ACTIVE' ? 'Presente' : 'Ausente'
                             }`}
                           >
                             <span className={styles.toggleDot} />
                             <span className={styles.toggleLabel}>
-                              {s.status === 'ACTIVE' ? '✓ En Colegio (Presente)' : 'Sin ingreso (Ausente)'}
+                              {s.status === 'ACTIVE' ? '✓ Presente' : 'Ausente'}
                             </span>
                           </button>
                         )}
