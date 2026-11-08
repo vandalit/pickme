@@ -4,6 +4,8 @@ import React, { useState, useTransition } from 'react';
 import {
   createClassroomAction,
   createStudentAction,
+  updateStudentAction,
+  deleteStudentAction,
   updateStudentStatusAction,
   batchUpdateAttendanceAction,
   importStudentsCsvAction,
@@ -31,6 +33,9 @@ export interface StudentItem {
   guardianName: string;
   guardianPhone: string;
   authorizedPickers: string;
+  pickerName?: string;
+  pickerRelationship?: string;
+  pickerPhone?: string;
   status: 'ACTIVE' | 'ABSENT' | 'WITHDRAWN';
 }
 
@@ -57,6 +62,8 @@ export function CursosManager({
   // Modales
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentItem | null>(null);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
 
   // Estados de modales
@@ -159,6 +166,9 @@ export function CursosManager({
           colorId: res.student.colorId,
           guardianName: payload.guardianName,
           guardianPhone: payload.guardianPhone,
+          pickerName: payload.pickerName || '',
+          pickerRelationship: payload.pickerRelationship || '',
+          pickerPhone: payload.pickerPhone || '',
           authorizedPickers: payload.pickerName
             ? `${payload.pickerName} (${payload.pickerRelationship || 'Autorizado'})`
             : 'Solo apoderado titular',
@@ -174,6 +184,112 @@ export function CursosManager({
         setIsStudentModalOpen(false);
       } else {
         setModalError(res.error || 'Error al registrar alumno');
+      }
+    });
+  };
+
+  // ── ACCIONES CRUD: EDICIÓN Y ELIMINACIÓN DE ALUMNO ──
+  const handleOpenEditStudent = (student: StudentItem) => {
+    setModalError(null);
+    setEditingStudent(student);
+    setIsEditStudentModalOpen(true);
+  };
+
+  const handleUpdateStudent = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setModalError(null);
+    const formData = new FormData(e.currentTarget);
+
+    const payload = {
+      studentId: editingStudent.id,
+      fullName: (formData.get('fullName') as string).trim(),
+      classroomId: formData.get('classroomId') as string,
+      guardianName: (formData.get('guardianName') as string).trim(),
+      guardianPhone: (formData.get('guardianPhone') as string).trim(),
+      pickerName: (formData.get('pickerName') as string)?.trim() || undefined,
+      pickerRelationship: (formData.get('pickerRelationship') as string)?.trim() || undefined,
+      pickerPhone: (formData.get('pickerPhone') as string)?.trim() || undefined,
+    };
+
+    startTransition(async () => {
+      const res = await updateStudentAction(payload);
+      if (res.success) {
+        const targetClass = classrooms.find((c) => c.id === payload.classroomId);
+        const classroomName = targetClass ? `${targetClass.grade} ${targetClass.section}` : editingStudent.classroomName;
+        const wasClassChange = editingStudent.classroomId !== payload.classroomId;
+
+        setStudents((prev) =>
+          prev.map((s) => {
+            if (s.id !== editingStudent.id) return s;
+            const updatedInitials = payload.fullName
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((w) => w[0]?.toUpperCase() + '.')
+              .join('') || s.initials;
+
+            return {
+              ...s,
+              fullName: payload.fullName,
+              initials: updatedInitials,
+              classroomId: payload.classroomId,
+              classroomName,
+              guardianName: payload.guardianName,
+              guardianPhone: payload.guardianPhone,
+              pickerName: payload.pickerName || '',
+              pickerRelationship: payload.pickerRelationship || '',
+              pickerPhone: payload.pickerPhone || '',
+              authorizedPickers: payload.pickerName
+                ? `${payload.pickerName} (${payload.pickerRelationship || 'Familiar Autorizado'})`
+                : 'Solo apoderado titular',
+            };
+          })
+        );
+
+        if (wasClassChange) {
+          setClassrooms((prev) =>
+            prev.map((c) => {
+              if (c.id === editingStudent.classroomId) return { ...c, studentCount: Math.max(0, c.studentCount - 1) };
+              if (c.id === payload.classroomId) return { ...c, studentCount: c.studentCount + 1 };
+              return c;
+            })
+          );
+        }
+
+        setIsEditStudentModalOpen(false);
+        setEditingStudent(null);
+      } else {
+        setModalError(res.error || 'Error al actualizar el alumno.');
+      }
+    });
+  };
+
+  const handleDeleteStudent = (studentId: string, studentName: string) => {
+    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${studentName} de la nómina?`);
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      const res = await deleteStudentAction(studentId);
+      if (res.success) {
+        const targetStudent = students.find((s) => s.id === studentId);
+        setStudents((prev) => prev.filter((s) => s.id !== studentId));
+        if (targetStudent) {
+          setClassrooms((prev) =>
+            prev.map((c) =>
+              c.id === targetStudent.classroomId ? { ...c, studentCount: Math.max(0, c.studentCount - 1) } : c
+            )
+          );
+        }
+      } else if (res.hasHistory) {
+        const withdrawConfirm = window.confirm(
+          `${res.error}\n\n¿Deseas marcar a ${studentName} como 'Retirado (Baja)' en lugar de eliminarlo?`
+        );
+        if (withdrawConfirm) {
+          handleStatusChange(studentId, 'WITHDRAWN');
+        }
+      } else {
+        alert(res.error || 'No se pudo eliminar el alumno.');
       }
     });
   };
@@ -558,6 +674,7 @@ export function CursosManager({
                   <th>Pase Rápido</th>
                   <th>Matrícula (Nómina)</th>
                   <th>Asistencia Hoy (Custodia)</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -732,6 +849,41 @@ export function CursosManager({
                             </span>
                           </button>
                         )}
+                      </td>
+
+                      {/* ── COLUMNA 3: ACCIONES (CRUD EDICIÓN Y ELIMINACIÓN) ── */}
+                      <td>
+                        <div className={styles.rowActionsGroup}>
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => handleOpenEditStudent(s)}
+                            className={styles.editRowBtn}
+                            title={`Editar datos de ${s.fullName}`}
+                            aria-label={`Editar datos de ${s.fullName}`}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => handleDeleteStudent(s.id, s.fullName)}
+                            className={styles.deleteRowBtn}
+                            title={`Eliminar a ${s.fullName} de la nómina`}
+                            aria-label={`Eliminar a ${s.fullName} de la nómina`}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -910,6 +1062,144 @@ export function CursosManager({
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={isPending}>
                   {isPending ? 'Asignando Avatar...' : 'Guardar Alumno'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: EDITAR ALUMNO (CRUD EDICIÓN) ── */}
+      {isEditStudentModalOpen && editingStudent && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="modalEditStudentTitle">
+          <div className={styles.modalCard}>
+            <div className={styles.modalHeader}>
+              <h3 id="modalEditStudentTitle" className={styles.modalTitle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Editar Datos de Alumno
+              </h3>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => {
+                  setIsEditStudentModalOpen(false);
+                  setEditingStudent(null);
+                }}
+                aria-label="Cerrar modal"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {modalError && <div className={styles.errorBox}>{modalError}</div>}
+
+            <form onSubmit={handleUpdateStudent} className={styles.modalForm}>
+              <div className={styles.field}>
+                <label className={styles.label}>Nombre Completo del Alumno *</label>
+                <input
+                  name="fullName"
+                  type="text"
+                  required
+                  defaultValue={editingStudent.fullName}
+                  placeholder="ej: Tomás Ignacio Muñoz Gómez"
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Curso Asignado *</label>
+                <select name="classroomId" required defaultValue={editingStudent.classroomId} className={styles.select}>
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.grade} {c.section}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Nombre Apoderado Titular *</label>
+                <input
+                  name="guardianName"
+                  type="text"
+                  required
+                  defaultValue={editingStudent.guardianName}
+                  placeholder="ej: Pamela Soto Herrera"
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>WhatsApp Apoderado Titular *</label>
+                <input
+                  name="guardianPhone"
+                  type="tel"
+                  required
+                  defaultValue={editingStudent.guardianPhone}
+                  placeholder="+56912345678"
+                  className={styles.input}
+                />
+              </div>
+
+              <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.75rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
+                  Retirador Autorizado Recurrente (Opcional):
+                </span>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>Nombre Retirador Adicional</label>
+                  <input
+                    name="pickerName"
+                    type="text"
+                    defaultValue={editingStudent.pickerName || ''}
+                    placeholder="ej: Roberto Muñoz (Tío)"
+                    className={styles.input}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Parentesco</label>
+                    <input
+                      name="pickerRelationship"
+                      type="text"
+                      defaultValue={editingStudent.pickerRelationship || ''}
+                      placeholder="ej: Tío / Vecino / Chofer"
+                      className={styles.input}
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>WhatsApp Retirador</label>
+                    <input
+                      name="pickerPhone"
+                      type="tel"
+                      defaultValue={editingStudent.pickerPhone || ''}
+                      placeholder="+56987654321"
+                      className={styles.input}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  onClick={() => {
+                    setIsEditStudentModalOpen(false);
+                    setEditingStudent(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={isPending}>
+                  {isPending ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
               </div>
             </form>

@@ -181,6 +181,264 @@ export async function createStudentAction(data: {
   }
 }
 
+// ── 2.B ACTUALIZAR DATOS DE ALUMNO Y APODERADOS (CRUD EDICIÓN) ─────────────────
+export async function updateStudentAction(data: {
+  studentId: string;
+  fullName: string;
+  classroomId: string;
+  guardianName: string;
+  guardianPhone: string;
+  pickerName?: string;
+  pickerRelationship?: string;
+  pickerPhone?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, error: 'Sesión no autenticada.' };
+  }
+
+  const { school } = await resolveUserSchool(session.user.email);
+  if (!school?.id) {
+    return { success: false, error: 'Establecimiento educacional no encontrado.' };
+  }
+
+  const cleanFullName = data.fullName.trim();
+  const cleanGuardianName = data.guardianName.trim();
+  const cleanGuardianPhone = data.guardianPhone.trim().replace(/\s+/g, '');
+
+  if (!data.studentId || !cleanFullName || !data.classroomId || !cleanGuardianName || !cleanGuardianPhone) {
+    return { success: false, error: 'Todos los campos obligatorios deben ser completados.' };
+  }
+
+  try {
+    const existingStudent = await prisma.student.findFirst({
+      where: {
+        id: data.studentId,
+        classroom: { schoolId: school.id },
+      },
+      include: {
+        guardians: { where: { isPrimary: true }, include: { guardian: true } },
+        authorizations: { where: { type: 'PERMANENT' }, include: { picker: true } },
+      },
+    });
+
+    if (!existingStudent) {
+      return { success: false, error: 'Alumno no encontrado en este establecimiento.' };
+    }
+
+    // Si cambia de curso, verificar avatar en el nuevo curso para evitar colisiones
+    let animalId = existingStudent.animalId;
+    let colorId = existingStudent.colorId;
+
+    if (existingStudent.classroomId !== data.classroomId) {
+      const collision = await prisma.student.findFirst({
+        where: {
+          classroomId: data.classroomId,
+          animalId,
+          colorId,
+          id: { not: data.studentId },
+        },
+      });
+
+      if (collision) {
+        const existingInNewClass = await prisma.student.findMany({
+          where: { classroomId: data.classroomId },
+          select: { animalId: true, colorId: true },
+        });
+        const newAvatar = assignNextAvailableAvatar(existingInNewClass);
+        animalId = newAvatar.animalId;
+        colorId = newAvatar.colorId;
+      }
+    }
+
+    const initials = extractInitials(cleanFullName);
+
+    // 1. Actualizar o asociar apoderado titular
+    let primaryGuardianRecord = existingStudent.guardians[0]?.guardian;
+    if (primaryGuardianRecord) {
+      if (primaryGuardianRecord.whatsappNumber === cleanGuardianPhone) {
+        await prisma.guardian.update({
+          where: { id: primaryGuardianRecord.id },
+          data: { fullName: cleanGuardianName },
+        });
+      } else {
+        let newGuardian = await prisma.guardian.findUnique({
+          where: { whatsappNumber: cleanGuardianPhone },
+        });
+        if (!newGuardian) {
+          newGuardian = await prisma.guardian.create({
+            data: {
+              fullName: cleanGuardianName,
+              whatsappNumber: cleanGuardianPhone,
+            },
+          });
+        } else {
+          await prisma.guardian.update({
+            where: { id: newGuardian.id },
+            data: { fullName: cleanGuardianName },
+          });
+        }
+
+        await prisma.studentGuardian.deleteMany({
+          where: { studentId: data.studentId, isPrimary: true },
+        });
+        await prisma.studentGuardian.create({
+          data: {
+            studentId: data.studentId,
+            guardianId: newGuardian.id,
+            isPrimary: true,
+          },
+        });
+        primaryGuardianRecord = newGuardian;
+      }
+    } else {
+      let newGuardian = await prisma.guardian.findUnique({
+        where: { whatsappNumber: cleanGuardianPhone },
+      });
+      if (!newGuardian) {
+        newGuardian = await prisma.guardian.create({
+          data: {
+            fullName: cleanGuardianName,
+            whatsappNumber: cleanGuardianPhone,
+          },
+        });
+      }
+      await prisma.studentGuardian.create({
+        data: {
+          studentId: data.studentId,
+          guardianId: newGuardian.id,
+          isPrimary: true,
+        },
+      });
+      primaryGuardianRecord = newGuardian;
+    }
+
+    // 2. Actualizar datos del estudiante
+    await prisma.student.update({
+      where: { id: data.studentId },
+      data: {
+        fullName: cleanFullName,
+        initials,
+        classroomId: data.classroomId,
+        animalId,
+        colorId,
+      },
+    });
+
+    // 3. Retirador recurrente (Picker)
+    const cleanPickerName = data.pickerName?.trim();
+    const cleanPickerPhone = data.pickerPhone?.trim().replace(/\s+/g, '');
+    const cleanPickerRel = data.pickerRelationship?.trim() || 'Familiar Autorizado';
+    const existingPermanentAuth = existingStudent.authorizations.find((a) => a.type === 'PERMANENT');
+
+    if (cleanPickerName && (cleanPickerPhone || cleanGuardianPhone)) {
+      const pickerTargetPhone = cleanPickerPhone || cleanGuardianPhone;
+      let picker = await prisma.picker.findUnique({
+        where: { whatsappNumber: pickerTargetPhone },
+      });
+
+      if (!picker) {
+        picker = await prisma.picker.create({
+          data: {
+            fullName: cleanPickerName,
+            relationship: cleanPickerRel,
+            whatsappNumber: pickerTargetPhone,
+          },
+        });
+      } else {
+        await prisma.picker.update({
+          where: { id: picker.id },
+          data: {
+            fullName: cleanPickerName,
+            relationship: cleanPickerRel,
+          },
+        });
+      }
+
+      if (existingPermanentAuth) {
+        await prisma.authorization.update({
+          where: { id: existingPermanentAuth.id },
+          data: {
+            pickerId: picker.id,
+            guardianId: primaryGuardianRecord.id,
+            status: 'ACTIVE',
+          },
+        });
+      } else {
+        await prisma.authorization.create({
+          data: {
+            studentId: data.studentId,
+            pickerId: picker.id,
+            guardianId: primaryGuardianRecord.id,
+            type: 'PERMANENT',
+            status: 'ACTIVE',
+          },
+        });
+      }
+    } else if (!cleanPickerName && existingPermanentAuth) {
+      await prisma.authorization.delete({
+        where: { id: existingPermanentAuth.id },
+      });
+    }
+
+    revalidatePath('/admin/cursos');
+    return { success: true };
+  } catch (err: any) {
+    console.error('[updateStudentAction] Error al actualizar alumno:', err);
+    return { success: false, error: err.message || 'Error al actualizar el alumno en la base de datos.' };
+  }
+}
+
+// ── 2.C ELIMINAR ALUMNO (CRUD ELIMINACIÓN) ──────────────────────────────────────
+export async function deleteStudentAction(
+  studentId: string
+): Promise<{ success: boolean; error?: string; hasHistory?: boolean }> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, error: 'Sesión no autenticada.' };
+  }
+
+  const { school } = await resolveUserSchool(session.user.email);
+  if (!school?.id) {
+    return { success: false, error: 'Establecimiento educacional no encontrado.' };
+  }
+
+  try {
+    const student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        classroom: { schoolId: school.id },
+      },
+      include: {
+        events: { select: { id: true } },
+      },
+    });
+
+    if (!student) {
+      return { success: false, error: 'Alumno no encontrado en este establecimiento.' };
+    }
+
+    // Proteger trazabilidad forense: no se eliminan físicamente alumnos con historial
+    if (student.events && student.events.length > 0) {
+      return {
+        success: false,
+        hasHistory: true,
+        error: `El alumno cuenta con ${student.events.length} registro(s) de custodia en la bitácora escolar. Por trazabilidad legal y auditoría, no se puede eliminar físicamente; en su lugar, cámbialo a 'Retirado (Baja)'.`,
+      };
+    }
+
+    await prisma.student.delete({
+      where: { id: studentId },
+    });
+
+    revalidatePath('/admin/cursos');
+    return { success: true };
+  } catch (err: any) {
+    console.error('[deleteStudentAction] Error al eliminar alumno:', err);
+    return { success: false, error: 'Error al eliminar el alumno de la base de datos.' };
+  }
+}
+
 // ── 3. ACTUALIZAR ESTADO DEL ALUMNO (ACTIVO / AUSENTE HOY / RETIRADO) ──────────
 export async function updateStudentStatusAction(
   studentId: string,

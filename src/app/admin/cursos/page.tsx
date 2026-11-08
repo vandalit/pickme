@@ -69,7 +69,10 @@ export default async function AdminCursosPage() {
       // Mapear alumnos
       school.classrooms.forEach((c) => {
         c.students.forEach((s) => {
-          const primaryGuardian = s.guardians[0]?.guardian;
+          const primaryGuardian = s.guardians.find((g) => g.isPrimary)?.guardian || s.guardians[0]?.guardian;
+          const permanentAuth = s.authorizations.find((a) => a.type === 'PERMANENT') || s.authorizations[0];
+          const primaryPicker = permanentAuth?.picker;
+
           const pickersText =
             s.authorizations
               .map((a) => `${a.picker.fullName} (${a.picker.relationship})`)
@@ -86,6 +89,9 @@ export default async function AdminCursosPage() {
             guardianName: primaryGuardian?.fullName || 'Por registrar',
             guardianPhone: primaryGuardian?.whatsappNumber || 'Sin número',
             authorizedPickers: pickersText,
+            pickerName: primaryPicker?.fullName || '',
+            pickerRelationship: primaryPicker?.relationship || '',
+            pickerPhone: primaryPicker?.whatsappNumber || '',
             status: ((s as any).status as 'ACTIVE' | 'ABSENT' | 'WITHDRAWN') || 'ACTIVE',
           });
         });
