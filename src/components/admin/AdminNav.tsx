@@ -28,7 +28,7 @@ export function AdminNav({
 
   const navItems = [
     {
-      label: 'Asistencia & Salida en Vivo',
+      label: 'Salida en Vivo & Launchpad',
       href: '/admin',
       exact: true,
       icon: (
@@ -38,7 +38,18 @@ export function AdminNav({
       ),
     },
     {
-      label: 'Nómina & Matrículas',
+      label: 'Asistencia',
+      href: '/admin/asistencia',
+      exact: false,
+      icon: (
+        <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 11l3 3L22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Nómina & Cursos',
       href: '/admin/cursos',
       exact: false,
       icon: (
@@ -47,6 +58,19 @@ export function AdminNav({
           <circle cx="9" cy="7" r="4" />
           <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Transportes & Furgones',
+      href: '/admin/furgones',
+      exact: false,
+      icon: (
+        <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="1" y="3" width="15" height="13" />
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
       ),
     },

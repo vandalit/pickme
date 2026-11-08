@@ -119,9 +119,9 @@ export default async function AdminCursosPage() {
       <main className={styles.main}>
         <section className={styles.sectionBlock}>
           <div className={styles.sectionHeader}>
-            <h1 className={styles.sectionTitle}>Nómina Institucional de Alumnos y Cursos</h1>
+            <h1 className={styles.sectionTitle}>Nómina & Matrículas</h1>
             <p className={styles.sectionDesc}>
-              Gobernanza completa de salones, avatares anónimos automáticos sin colisiones, apoderados y gestión de asistencia.
+              Registro maestro de alumnos matriculados, edición de datos, salones y apoderados titulares.
             </p>
           </div>
 
