@@ -8,6 +8,7 @@ import {
   addLateArrivalToSessionAction,
 } from '@/app/admin/sessionActions';
 import { getColor } from '@/lib/avatars';
+import { useDialog } from '@/hooks/useDialog';
 import styles from './AsistenciaManager.module.css';
 
 export interface ClassroomItem {
@@ -53,6 +54,7 @@ export function AsistenciaManager({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [isPending, startTransition] = useTransition();
+  const { showAlert, showConfirm, showPrompt, dialogElement } = useDialog();
 
   // Filtrar solo los alumnos matriculados (excluye alumnos dados de baja)
   const activeRoster = students.filter((s) => s.status !== 'WITHDRAWN');
@@ -90,7 +92,7 @@ export function AsistenciaManager({
 
     // Si el alumno ya fue entregado hoy, no se puede revertir a ausente sin cerrar custodia
     if (student.custodyStatus === 'IN_TRANSIT' || student.custodyStatus === 'ARRIVED') {
-      alert(`No se puede modificar la asistencia: ${student.fullName} ya fue entregado físicamente hoy en portería.`);
+      void showAlert(`No se puede modificar la asistencia: ${student.fullName} ya fue entregado físicamente hoy en portería.`);
       return;
     }
 
@@ -105,7 +107,7 @@ export function AsistenciaManager({
     startTransition(async () => {
       const res = await updateStudentStatusAction(studentId, newStatus);
       if (!res.success) {
-        alert(res.error || 'Error al actualizar asistencia');
+        await showAlert(res.error || 'Error al actualizar asistencia');
         // Revertir
         setStudents((prev) =>
           prev.map((s) => (s.id === studentId ? { ...s, status: student.status } : s))
@@ -144,7 +146,7 @@ export function AsistenciaManager({
   // Enviar a salida / Apertura de Jornada con los alumnos presentes
   const handleSendToDeparture = () => {
     if (presentCount === 0) {
-      alert('No hay alumnos marcados como presentes hoy para abrir la salida.');
+      void showAlert('No hay alumnos marcados como presentes hoy para abrir la salida.');
       return;
     }
 
@@ -153,25 +155,32 @@ export function AsistenciaManager({
         const res = await openDailySessionAction();
         if (res.success && res.sessionCode) {
           setLiveSessionCode(res.sessionCode);
-          alert(`¡Jornada de salida aperturada (${res.sessionCode})! Los ${presentCount} alumnos presentes fueron transferidos a la cola de portería.`);
+          await showAlert(
+            `¡Jornada de salida aperturada (${res.sessionCode})! Los ${presentCount} alumnos presentes fueron transferidos a la cola de portería.`,
+            'Jornada iniciada'
+          );
         } else {
-          alert(res.error || 'No se pudo iniciar la jornada de salida.');
+          await showAlert(res.error || 'No se pudo iniciar la jornada de salida.');
         }
       } else {
         const activeIds = students.filter((s) => s.status === 'ACTIVE').map((s) => s.id);
         for (const sid of activeIds) {
           await addLateArrivalToSessionAction(sid);
         }
-        alert(`Lista viva sincronizada: ${presentCount} alumnos presentes convocados en portón.`);
+        await showAlert(
+          `Lista viva sincronizada: ${presentCount} alumnos presentes convocados en portón.`,
+          'Lista enviada'
+        );
       }
     });
   };
 
   // Revocar Pase / Detener Salida
-  const handleRevokeDeparturePass = () => {
+  const handleRevokeDeparturePass = async () => {
     if (!liveSessionCode) return;
-    const confirmRevoke = window.confirm(
-      '¿Deseas revocar el pase de salida y suspender temporalmente las entregas en portón?\n\nEl personal de portería verá inmediatamente la sesión cerrada.'
+    const confirmRevoke = await showConfirm(
+      '¿Deseas revocar el pase de salida y suspender temporalmente las entregas en portón?\n\nEl personal de portería verá inmediatamente la sesión cerrada.',
+      'Detener jornada'
     );
     if (!confirmRevoke) return;
 
@@ -179,11 +188,90 @@ export function AsistenciaManager({
       const res = await closeDailySessionAction();
       if (res.success) {
         setLiveSessionCode(null);
-        alert('Jornada de salida detenida. El portón ha sido cerrado.');
+        await showAlert('Jornada de salida detenida. El portón ha sido cerrado.');
       } else {
-        alert(res.error || 'No se pudo detener la jornada.');
+        await showAlert(res.error || 'No se pudo detener la jornada.');
       }
     });
+  };
+
+  const handleCreateEmergencyPass = async (student: StudentAttendanceItem) => {
+    const name = await showPrompt(
+      `Ingresa el nombre de quien retira hoy a ${student.fullName}.`,
+      'Generar pase de emergencia',
+      '',
+      'Ej: Carmen Silva'
+    );
+    if (!name?.trim()) return;
+
+    const relationship =
+      (await showPrompt(
+        `Indica el parentesco o relación de ${name} con el alumno.`,
+        'Relación con el alumno',
+        'Familiar / Autorizado',
+        'Ej: Vecina, tía'
+      )) || 'Familiar / Autorizado';
+
+    try {
+      const { createDailyPassAction } = await import('@/app/pase/actions');
+      const result = await createDailyPassAction(
+        student.id,
+        student.guardianPhone,
+        name.trim(),
+        relationship.trim()
+      );
+      if (!result.success || !result.passUrl) {
+        await showAlert(result.error || 'No se pudo crear el pase.');
+        return;
+      }
+
+      const fullUrl = `${window.location.origin}${result.passUrl}`;
+      await navigator.clipboard.writeText(fullUrl);
+      await showAlert(
+        `Pase diario creado. PIN para portón: ${result.pinCode}\n\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`,
+        'Pase de emergencia creado'
+      );
+    } catch (error) {
+      console.error('[AsistenciaManager] Error al crear el pase de emergencia:', error);
+      await showAlert('No se pudo crear o copiar el pase de emergencia. Inténtalo nuevamente.');
+    }
+  };
+
+  const handleAdminBypass = async (student: StudentAttendanceItem) => {
+    const confirmed = await showConfirm(
+      `¿Confirmas que has entregado personalmente a ${student.fullName} y asumes la responsabilidad como Dirección sin pasar por portería?\n\nEl alumno quedará registrado como entregado y desaparecerá del monitor tras el tiempo de espera.`,
+      'Confirmación de custodia por Dirección'
+    );
+    if (!confirmed) return;
+
+    const reason =
+      (await showPrompt(
+        'Ingresa el motivo del retiro asistido por Dirección.',
+        'Motivo del retiro',
+        'Entrega directa en Dirección / Rezagado',
+        'Motivo (opcional)'
+      )) || 'Entrega directa en Dirección / Rezagado';
+
+    try {
+      const { adminBypassDeliverStudentAction } = await import('../cursos/actions');
+      const result = await adminBypassDeliverStudentAction(student.id, reason.trim());
+      if (result.success) {
+        setStudents((prev) =>
+          prev.map((item) =>
+            item.id === student.id ? { ...item, custodyStatus: 'IN_TRANSIT' } : item
+          )
+        );
+        await showAlert(
+          `Custodia cerrada: ${student.fullName} ha sido marcado como entregado.`,
+          'Entrega registrada'
+        );
+      } else {
+        await showAlert(result.error || 'No se pudo registrar la entrega.');
+      }
+    } catch (error) {
+      console.error('[AsistenciaManager] Error al registrar la entrega directa:', error);
+      await showAlert('No se pudo registrar la entrega. Inténtalo nuevamente.');
+    }
   };
 
   return (
@@ -464,22 +552,7 @@ export function AsistenciaManager({
                               borderRadius: '6px',
                               cursor: 'pointer',
                             }}
-                            onClick={() => {
-                              const name = prompt(`Generar Pase de Emergencia para ${s.fullName}\n\nIngresa el nombre de quien retira hoy (ej: Carmen Silva):`);
-                              if (!name?.trim()) return;
-                              const rel = prompt(`Parentesco o relación de ${name} con el alumno (ej: Vecina, Tía):`) || 'Familiar / Autorizado';
-                              
-                              import('@/app/pase/actions').then(async (m) => {
-                                const res = await m.createDailyPassAction(s.id, s.guardianPhone, name, rel);
-                                if (res.success && res.passUrl) {
-                                  const fullUrl = `${window.location.origin}${res.passUrl}`;
-                                  navigator.clipboard.writeText(fullUrl);
-                                  alert(`¡Pase Diario Creado!\n\nPIN para portón: ${res.pinCode}\nEnlace copiado al portapapeles:\n${fullUrl}\n\nCompártelo por WhatsApp al retirador temporal.`);
-                                } else {
-                                  alert(res.error || 'No se pudo crear el pase');
-                                }
-                              });
-                            }}
+                            onClick={() => void handleCreateEmergencyPass(s)}
                             title="Generar pase temporal de 1 día para un retirador de urgencia o tercero"
                           >
                             + Pase Emergencia
@@ -497,27 +570,7 @@ export function AsistenciaManager({
                                 borderRadius: '6px',
                                 cursor: 'pointer',
                               }}
-                              onClick={() => {
-                                const confirmBypass = window.confirm(
-                                  `⚠️ CONFIRMACIÓN DE CUSTODIA POR DIRECCIÓN:\n\n¿Confirmas que has entregado personalmente a ${s.fullName} y asumes la responsabilidad como Dirección sin pasar por portería?\n\nEl alumno quedará registrado como ENTREGADO y su animalito desaparecerá tras el cooldown en el monitor.`
-                                );
-                                if (!confirmBypass) return;
-                                const reason = prompt('Motivo del retiro asistido por Dirección (opcional):') || 'Entrega directa en Dirección / Rezagado';
-
-                                import('../cursos/actions').then(async (m) => {
-                                  const res = await m.adminBypassDeliverStudentAction(s.id, reason);
-                                  if (res.success) {
-                                    alert(`Custodia cerrada: ${s.fullName} ha sido marcado como entregado.`);
-                                    setStudents((prev) =>
-                                      prev.map((item) =>
-                                        item.id === s.id ? { ...item, custodyStatus: 'IN_TRANSIT' } : item
-                                      )
-                                    );
-                                  } else {
-                                    alert(res.error || 'No se pudo registrar la entrega.');
-                                  }
-                                });
-                              }}
+                              onClick={() => void handleAdminBypass(s)}
                               title="Bypass de Dirección: Marcar entregado directamente sin PIN de portón (Responsabilidad asumida por Admin)"
                             >
                               ✓ Entregar (Bypass)
@@ -533,7 +586,7 @@ export function AsistenciaManager({
           </div>
         )}
       </div>
+      {dialogElement}
     </div>
   );
 }
-

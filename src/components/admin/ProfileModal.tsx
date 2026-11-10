@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { resetMySchoolAction } from '@/app/admin/sessionActions';
+import { useDialog } from '@/hooks/useDialog';
 import styles from './ProfileModal.module.css';
 
 interface ProfileModalProps {
@@ -24,6 +25,7 @@ export function ProfileModal({
   const [activeTab, setActiveTab] = useState<'profile' | 'help'>('profile');
   const [roleMessage, setRoleMessage] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const { showAlert, showConfirm, dialogElement } = useDialog();
 
   if (!isOpen) return null;
 
@@ -101,13 +103,16 @@ export function ProfileModal({
                   type="button"
                   disabled={isResetting}
                   onClick={async () => {
-                    if (window.confirm('¿Deseas eliminar este colegio y volver al Onboarding inicial? Tu cuenta quedará desvinculada para configurar tu colegio real.')) {
+                    if (await showConfirm(
+                      '¿Deseas eliminar este colegio y volver al Onboarding inicial? Tu cuenta quedará desvinculada para configurar tu colegio real.',
+                      'Eliminar colegio'
+                    )) {
                       setIsResetting(true);
                       const res = await resetMySchoolAction();
                       if (res.success) {
                         window.location.href = '/onboarding';
                       } else {
-                        alert(res.error || 'No se pudo reiniciar.');
+                        await showAlert(res.error || 'No se pudo reiniciar.');
                         setIsResetting(false);
                       }
                     }
@@ -164,8 +169,8 @@ export function ProfileModal({
             </div>
           )}
         </div>
+          {dialogElement}
+        </div>
       </div>
-    </div>
   );
 }
-

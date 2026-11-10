@@ -29,7 +29,7 @@ export default function StaffContent({
   activeSessionId,
   onSignOut,
 }: StaffContentProps) {
-  const [currentTab, setCurrentTab] = useState<StaffFilterTab>('IN_PROCESS');
+  const [currentTab, setCurrentTab] = useState<StaffFilterTab>('ALL');
   const [events, setEvents] = useState<StaffEventItem[]>([]);
   const [counts, setCounts] = useState({
     inProcess: 0,
@@ -159,4 +159,3 @@ export default function StaffContent({
     </>
   );
 }
-

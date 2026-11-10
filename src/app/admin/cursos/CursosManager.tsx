@@ -13,6 +13,7 @@ import {
 import { addLateArrivalToSessionAction, openDailySessionAction, closeDailySessionAction } from '@/app/admin/sessionActions';
 import { CSV_TEMPLATE_EXAMPLE } from '@/lib/csvImporter';
 import { getAnimal, getColor } from '@/lib/avatars';
+import { useDialog } from '@/hooks/useDialog';
 import styles from './CursosManager.module.css';
 
 export interface ClassroomItem {
@@ -99,6 +100,7 @@ export function CursosManager({
   const [csvFeedback, setCsvFeedback] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
+  const { showAlert, showConfirm, dialogElement } = useDialog();
 
   // Filtrado de alumnos en nómina
   const filteredStudents = students.filter((s) => {
@@ -317,8 +319,11 @@ export function CursosManager({
     saveStudentChanges(payload);
   };
 
-  const handleDeleteStudent = (studentId: string, studentName: string) => {
-    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${studentName} de la nómina?`);
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    const confirmed = await showConfirm(
+      `¿Estás seguro de que deseas eliminar permanentemente a ${studentName} de la nómina?`,
+      'Eliminar alumno'
+    );
     if (!confirmed) return;
 
     startTransition(async () => {
@@ -334,14 +339,15 @@ export function CursosManager({
           );
         }
       } else if (res.hasHistory) {
-        const withdrawConfirm = window.confirm(
-          `${res.error}\n\n¿Deseas marcar a ${studentName} como 'Retirado (Baja)' en lugar de eliminarlo?`
+        const withdrawConfirm = await showConfirm(
+          `${res.error}\n\n¿Deseas marcar a ${studentName} como 'Retirado (Baja)' en lugar de eliminarlo?`,
+          'El alumno tiene historial'
         );
         if (withdrawConfirm) {
           handleStatusChange(studentId, 'WITHDRAWN');
         }
       } else {
-        alert(res.error || 'No se pudo eliminar el alumno.');
+        await showAlert(res.error || 'No se pudo eliminar el alumno.');
       }
     });
   };
@@ -359,7 +365,7 @@ export function CursosManager({
     startTransition(async () => {
       const res = await updateStudentStatusAction(studentId, newStatus);
       if (!res.success) {
-        alert(res.error || 'Error al actualizar estado');
+        await showAlert(res.error || 'Error al actualizar estado');
         return;
       }
 
@@ -642,9 +648,14 @@ export function CursosManager({
                           onChange={(e) => {
                             const val = e.target.value;
                             if (val === 'WITHDRAWN') {
-                              if (window.confirm(`¿Dar de baja a ${s.fullName} de la nómina del establecimiento?`)) {
-                                handleStatusChange(s.id, 'WITHDRAWN');
-                              }
+                              void showConfirm(
+                                `¿Dar de baja a ${s.fullName} de la nómina del establecimiento?`,
+                                'Confirmar baja'
+                              ).then((confirmed) => {
+                                if (confirmed) {
+                                  handleStatusChange(s.id, 'WITHDRAWN');
+                                }
+                              });
                             } else {
                               handleStatusChange(s.id, 'ACTIVE');
                             }
@@ -1141,6 +1152,7 @@ export function CursosManager({
           </div>
         </div>
       )}
+      {dialogElement}
     </div>
   );
 }

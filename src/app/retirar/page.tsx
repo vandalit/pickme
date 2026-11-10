@@ -8,6 +8,7 @@ import {
   StepHandoverDisplay,
   AuthorizedStudent,
 } from '@/components/picker';
+import { useDialog } from '@/hooks/useDialog';
 import styles from './page.module.css';
 
 function RetirarContent() {
@@ -35,6 +36,7 @@ function RetirarContent() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const { showAlert, dialogElement } = useDialog();
 
   // 1. Buscar autorizaciones por teléfono
   const handleLookup = async (lookupPhone: string, lookupSession: string) => {
@@ -80,8 +82,8 @@ function RetirarContent() {
       } else {
         setStep('select');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error de conexión.');
     } finally {
       setIsLoading(false);
     }
@@ -120,8 +122,10 @@ function RetirarContent() {
       });
 
       setStep('handover');
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      await showAlert(
+        err instanceof Error ? err.message : 'No fue posible solicitar la entrega.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -219,6 +223,7 @@ function RetirarContent() {
       <footer className={styles.footer}>
         PickMe — Cadena de Custodia Digital Escolar
       </footer>
+      {dialogElement}
     </main>
   );
 }
@@ -230,4 +235,3 @@ export default function RetirarPage() {
     </Suspense>
   );
 }
-

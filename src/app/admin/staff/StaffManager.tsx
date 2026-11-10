@@ -8,6 +8,7 @@ import {
   acceptInvitationAction,
   rejectInvitationAction,
 } from './actions';
+import { useDialog } from '@/hooks/useDialog';
 import styles from './StaffManager.module.css';
 
 export interface StaffMember {
@@ -43,6 +44,7 @@ export function StaffManager({
   const [error, setError] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { showConfirm, dialogElement } = useDialog();
 
   const handleAdd = () => {
     setError(null);
@@ -96,8 +98,8 @@ export function StaffManager({
     });
   };
 
-  const handleDelete = (userId: string, memberName: string) => {
-    if (!window.confirm(`¿Eliminar a ${memberName} del equipo de portón?`)) return;
+  const handleDelete = async (userId: string, memberName: string) => {
+    if (!(await showConfirm(`¿Eliminar a ${memberName} del equipo de portón?`, 'Eliminar miembro'))) return;
     startTransition(async () => {
       const result = await deleteStaffMemberAction(userId);
       if (!result.success) {
@@ -119,8 +121,8 @@ export function StaffManager({
     });
   };
 
-  const handleRejectInvite = (invitationId: string) => {
-    if (!window.confirm('¿Rechazar esta solicitud de acceso?')) return;
+  const handleRejectInvite = async (invitationId: string) => {
+    if (!(await showConfirm('¿Rechazar esta solicitud de acceso?', 'Rechazar solicitud'))) return;
     startTransition(async () => {
       const result = await rejectInvitationAction(invitationId);
       if (!result.success) {
@@ -333,6 +335,7 @@ export function StaffManager({
           </tbody>
         </table>
       )}
+      {dialogElement}
     </section>
   );
 }

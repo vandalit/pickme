@@ -233,6 +233,17 @@ export function StaffHeader({
         <button
           type="button"
           role="tab"
+          aria-selected={currentTab === 'ALL'}
+          className={`${styles.tab} ${currentTab === 'ALL' ? styles.active : ''}`}
+          onClick={() => onSelectTab('ALL')}
+        >
+          <span>Todos</span>
+          <span className={styles.tabPill}>{counts.total}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
           aria-selected={currentTab === 'IN_PROCESS'}
           className={`${styles.tab} ${currentTab === 'IN_PROCESS' ? styles.active : ''}`}
           onClick={() => onSelectTab('IN_PROCESS')}
@@ -263,16 +274,6 @@ export function StaffHeader({
           <span className={styles.tabPill}>{counts.completed}</span>
         </button>
 
-        <button
-          type="button"
-          role="tab"
-          aria-selected={currentTab === 'ALL'}
-          className={`${styles.tab} ${currentTab === 'ALL' ? styles.active : ''}`}
-          onClick={() => onSelectTab('ALL')}
-        >
-          <span>Todos</span>
-          <span className={styles.tabPill}>{counts.total}</span>
-        </button>
       </nav>
     </header>
   );

@@ -1,0 +1,67 @@
+.dialog {
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.dialog p {
+  white-space: pre-line;
+}
+
+.input {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-md, 8px);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary, #f8fafc);
+  font: inherit;
+}
+
+.input:focus {
+  border-color: var(--color-brand-light, #4ade80);
+  outline: 2px solid rgba(74, 222, 128, 0.2);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 40px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md, 8px);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.primaryButton {
+  border: 1px solid var(--color-brand, #4ade80);
+  background: var(--color-brand, #4ade80);
+  color: #0b0e18;
+}
+
+.primaryButton:hover {
+  background: var(--color-brand-light, #86efac);
+}
+
+.secondaryButton {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.secondaryButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--color-brand-light, #4ade80);
+  outline-offset: 2px;
+}
