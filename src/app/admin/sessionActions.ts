@@ -96,7 +96,7 @@ export async function openDailySessionAction(): Promise<SessionActionResult> {
       return {
         success: false,
         error:
-          'No tienes alumnos activos matriculados. Ingresa alumnos en el menú "Cursos y Alumnos" o importa una plantilla CSV antes de iniciar la jornada.',
+          'No hay alumnos marcados presentes para esta jornada. Registra la asistencia antes de intentar abrirla.',
       };
     }
 

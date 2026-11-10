@@ -33,6 +33,7 @@ export interface SessionDashboardProps {
   } | null;
   schoolSummary: {
     totalClassrooms: number;
+    enrolledStudents: number;
     activeStudents: number;
     inactiveStudents: number;
   };
@@ -163,7 +164,7 @@ export function SessionDashboard({
             </div>
             <div className={styles.metricItem}>
               <span className={styles.metricVal}>{schoolSummary.activeStudents}</span>
-              <span className={styles.metricLbl}>Alumnos Activos</span>
+              <span className={styles.metricLbl}>Presentes hoy</span>
             </div>
             <div className={styles.metricItem}>
               <span className={styles.metricVal} style={{ color: '#94a3b8' }}>
@@ -190,14 +191,18 @@ export function SessionDashboard({
             >
               <div>
                 <p style={{ margin: 0, fontWeight: 600, color: '#e2e8f0', fontSize: '0.9rem' }}>
-                  Tu colegio aún no tiene alumnos matriculados
+                  {schoolSummary.enrolledStudents === 0
+                    ? 'Tu colegio aún no tiene alumnos matriculados'
+                    : 'Hay alumnos matriculados, pero ninguno figura presente hoy'}
                 </p>
                 <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: '0.8rem' }}>
-                  Para iniciar una jornada de salida, primero debes crear tus cursos o importar la nómina escolar.
+                  {schoolSummary.enrolledStudents === 0
+                    ? 'Para iniciar una jornada de salida, primero debes crear tus cursos o importar la nómina escolar.'
+                    : 'Los alumnos nuevos quedan ausentes hasta registrar su asistencia. Marca presentes a quienes asistirán hoy para iniciar la jornada.'}
                 </p>
               </div>
               <Link
-                href="/admin/cursos"
+                href={schoolSummary.enrolledStudents === 0 ? '/admin/cursos' : '/admin/asistencia'}
                 style={{
                   background: 'var(--color-brand, #6366f1)',
                   color: '#ffffff',
@@ -209,7 +214,7 @@ export function SessionDashboard({
                   whiteSpace: 'nowrap',
                 }}
               >
-                Ir a Nómina & Cursos →
+                {schoolSummary.enrolledStudents === 0 ? 'Ir a Nómina & Cursos →' : 'Ir a Asistencia →'}
               </Link>
             </div>
           )}
@@ -731,4 +736,3 @@ export function SessionDashboard({
     </div>
   );
 }
-

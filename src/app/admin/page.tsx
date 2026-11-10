@@ -18,6 +18,7 @@ async function DashboardLoader({ schoolId }: { schoolId: string }) {
 
   let schoolSummary = {
     totalClassrooms: 0,
+    enrolledStudents: 0,
     activeStudents: 0,
     inactiveStudents: 0,
   };
@@ -32,9 +33,20 @@ async function DashboardLoader({ schoolId }: { schoolId: string }) {
   let roster: DashboardRosterItem[] = [];
 
   try {
-    const [totalClassrooms, activeStudentsCount, inactiveStudentsCount] = await Promise.all([
+    const [
+      totalClassrooms,
+      enrolledStudentsCount,
+      activeStudentsCount,
+      inactiveStudentsCount,
+    ] = await Promise.all([
       prisma.classroom.count({
         where: { schoolId },
+      }),
+      prisma.student.count({
+        where: {
+          classroom: { schoolId },
+          status: { not: 'WITHDRAWN' },
+        },
       }),
       prisma.student.count({
         where: {
@@ -52,6 +64,7 @@ async function DashboardLoader({ schoolId }: { schoolId: string }) {
 
     schoolSummary = {
       totalClassrooms,
+      enrolledStudents: enrolledStudentsCount,
       activeStudents: activeStudentsCount,
       inactiveStudents: inactiveStudentsCount,
     };
