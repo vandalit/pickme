@@ -1,10 +1,11 @@
 'use server';
 
-import { auth } from '@/auth';
+import { auth, unstable_update } from '@/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { clearUserSchoolCache } from '@/lib/userSchool';
+import { ACTIVE_SCHOOL_COOKIE } from '@/lib/userSchool';
+import { cookies } from 'next/headers';
 
 export interface OnboardingState {
   error?: string;
@@ -36,38 +37,61 @@ export async function completeOnboardingAction(
 
   try {
     // 1. Crear el nuevo colegio con sus dos cursos base iniciales por diseño
-    const newSchool = await prisma.school.create({
-      data: {
-        name: schoolName,
-        address,
-        emergencyPhone,
-        qrRefreshSecs: 300,
-        classrooms: {
-          create: [
-            { grade: '1° Básico', section: 'A' },
-            { grade: '2° Básico', section: 'A' },
-          ],
+    const newSchool = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { email: normalizedEmail },
+        include: { memberships: { where: { status: 'ACTIVE' } } },
+      });
+      if (!user) throw new Error('Authenticated user not found in the database.');
+      const canCreateSchool =
+        user.memberships.some((membership) => ['SCHOOL_ADMIN', 'SUPERADMIN'].includes(membership.role)) ||
+        (!user.memberships.length && user.onboardingRole === 'SCHOOL_ADMIN');
+      if (!canCreateSchool) {
+        throw new Error('Only a school administrator can create another school.');
+      }
+
+      const school = await tx.school.create({
+        data: {
+          name: schoolName,
+          address,
+          emergencyPhone,
+          qrRefreshSecs: 300,
+          classrooms: {
+            create: [
+              { grade: '1° Básico', section: 'A' },
+              { grade: '2° Básico', section: 'A' },
+            ],
+          },
         },
-      },
+      });
+
+      const membership = await tx.schoolMembership.create({
+        data: {
+          userId: user.id,
+          schoolId: school.id,
+          role: 'SCHOOL_ADMIN',
+          status: 'ACTIVE',
+          periods: { create: { role: 'SCHOOL_ADMIN' } },
+        },
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { name: adminName, onboardingRole: null },
+      });
+
+      return { ...school, membership };
     });
 
-    // 2. Asociar al usuario autenticado como SCHOOL_ADMIN de este colegio
-    await prisma.user.upsert({
-      where: { email: normalizedEmail },
-      create: {
-        email: normalizedEmail,
-        name: adminName,
-        role: 'SCHOOL_ADMIN',
-        schoolId: newSchool.id,
-      },
-      update: {
-        name: adminName,
-        role: 'SCHOOL_ADMIN',
-        schoolId: newSchool.id,
-      },
+    const cookieStore = await cookies();
+    cookieStore.set(ACTIVE_SCHOOL_COOKIE, newSchool.id, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.VERCEL === '1',
+      path: '/',
     });
+    await unstable_update({});
 
-    clearUserSchoolCache(normalizedEmail);
     revalidatePath('/admin');
     revalidatePath('/admin/cursos');
   } catch (error: any) {
@@ -80,4 +104,3 @@ export async function completeOnboardingAction(
   // Redirigir a la gestión de cursos con el nuevo colegio configurado
   redirect('/admin/cursos?onboarded=1');
 }
-

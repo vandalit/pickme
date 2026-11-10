@@ -5,6 +5,21 @@ const { assignNextAvailableAvatar } = require('../../dist/lib/avatarAssigner');
 
 const TEST_SCHOOL_NAME = 'Colegio QA Automatizado';
 
+function getLocalTestDatabaseUrl() {
+  const username = process.env.POSTGRES_USER || 'pickme_user';
+  const password = process.env.POSTGRES_PASSWORD || 'pickme_password';
+  const database = process.env.POSTGRES_DB || 'pickme_db';
+  const connectionString = process.env.LOCAL_DATABASE_URL
+    || `postgresql://${encodeURIComponent(username)}:${encodeURIComponent(password)}@localhost:5432/${encodeURIComponent(database)}?schema=public`;
+
+  const hostname = new URL(connectionString).hostname;
+  if (!['localhost', '127.0.0.1', '::1', 'db'].includes(hostname)) {
+    throw new Error('Integration tests require a local PostgreSQL host.');
+  }
+
+  return connectionString;
+}
+
 async function cleanupTestSchool(prisma) {
   const school = await prisma.school.findFirst({ where: { name: TEST_SCHOOL_NAME } });
   if (!school) return;
@@ -93,8 +108,17 @@ async function setupTestSchool(prisma) {
     });
 
     const guardian = await prisma.guardian.upsert({
-      where: { whatsappNumber: row.guardianPhone },
-      create: { fullName: row.guardianName, whatsappNumber: row.guardianPhone },
+      where: {
+        schoolId_whatsappNumber: {
+          schoolId: school.id,
+          whatsappNumber: row.guardianPhone,
+        },
+      },
+      create: {
+        schoolId: school.id,
+        fullName: row.guardianName,
+        whatsappNumber: row.guardianPhone,
+      },
       update: { fullName: row.guardianName },
     });
 
@@ -105,8 +129,14 @@ async function setupTestSchool(prisma) {
     if (row.pickerName) {
       const pickerPhone = `+5698000${String(student.id).slice(0, 4)}`;
       const picker = await prisma.picker.upsert({
-        where: { whatsappNumber: pickerPhone },
+        where: {
+          schoolId_whatsappNumber: {
+            schoolId: school.id,
+            whatsappNumber: pickerPhone,
+          },
+        },
         create: {
+          schoolId: school.id,
           whatsappNumber: pickerPhone,
           fullName: row.pickerName,
           relationship: row.pickerRelationship || 'Familiar Autorizado',
@@ -134,6 +164,7 @@ async function setupTestSchool(prisma) {
 
 module.exports = {
   TEST_SCHOOL_NAME,
+  getLocalTestDatabaseUrl,
   setupTestSchool,
   cleanupTestSchool,
 };

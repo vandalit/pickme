@@ -7,9 +7,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { studentId, sessionId, pickerPhone } = body;
 
-    if (!studentId || !sessionId) {
+    if (!studentId || !sessionId || !pickerPhone) {
       return NextResponse.json(
-        { error: 'Faltan parámetros requeridos (studentId, sessionId).' },
+        { error: 'Faltan parámetros requeridos (studentId, sessionId, phone).' },
         { status: 400 }
       );
     }
@@ -48,22 +48,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Buscar si hay un pickerId asociado a este teléfono
-    let pickerId: string | null = null;
-    if (pickerPhone) {
-      const cleanPhone = pickerPhone.replace(/[\s-]/g, '');
-      const picker = await prisma.picker.findFirst({
-        where: {
-          OR: [
-            { whatsappNumber: cleanPhone },
-            { whatsappNumber: { contains: cleanPhone.slice(-8) } },
-          ],
-        },
-      });
-      if (picker) {
-        pickerId = picker.id;
-      }
+    // 3. Verificar que el teléfono pertenece a un tutor o picker autorizado en este colegio.
+    const cleanPhone = String(pickerPhone).replace(/[\s-]/g, '');
+    if (cleanPhone.replace(/\D/g, '').length < 8) {
+      return NextResponse.json(
+        { error: 'Ingresa un número telefónico válido.' },
+        { status: 400 }
+      );
     }
+
+    const phoneMatch = {
+      OR: [
+        { whatsappNumber: cleanPhone },
+        { whatsappNumber: { contains: cleanPhone.slice(-8) } },
+      ],
+    };
+    const [guardianLink, authorizedPicker] = await Promise.all([
+      prisma.studentGuardian.findFirst({
+        where: {
+          studentId: student.id,
+          guardian: {
+            schoolId: session.schoolId,
+            ...phoneMatch,
+          },
+        },
+        select: { guardianId: true },
+      }),
+      prisma.picker.findFirst({
+        where: {
+          schoolId: session.schoolId,
+          ...phoneMatch,
+          authorizations: {
+            some: { studentId: student.id, status: 'ACTIVE' },
+          },
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!guardianLink && !authorizedPicker) {
+      return NextResponse.json(
+        { error: 'Este número no está autorizado para retirar a este alumno en este colegio.' },
+        { status: 403 }
+      );
+    }
+    const pickerId = authorizedPicker?.id ?? null;
 
     // 4. Generar Handover Code seguro de 6 dígitos
     const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -120,7 +149,7 @@ export async function POST(req: NextRequest) {
       classroom: `${student.classroom.grade} ${student.classroom.section}`,
       message: 'Llegada anunciada. El personal de portón está preparando la entrega.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/pickup/solicitar:', error);
     return NextResponse.json(
       { error: 'Error interno al solicitar entrega.' },
@@ -128,4 +157,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

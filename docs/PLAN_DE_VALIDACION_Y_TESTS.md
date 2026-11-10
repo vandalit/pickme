@@ -5,13 +5,18 @@
 **Regla de Oro**: Commits locales pequeños y verificados — *Prohibido ejecutar `git push`*.  
 **Objetivo**: Validar metódicamente cada flujo, punto de contacto y regla de negocio para asegurar que PickMe sea un SaaS completamente funcional y robusto, eliminando cualquier residuo de maqueta desconectada.
 
+> Para registrar pruebas manuales y resultados de cada sesión, usar el [Checklist operativo de validación del MVP](CHECKLIST_VALIDACION_MVP.md). Este documento conserva el plan funcional original.
+
+> **Aviso de vigencia:** las cuentas y datos de ejemplo descritos en la matriz histórica de más abajo no están confirmados como existentes ni como seguros para probar. No recrearlos en Neon/Production. Usar la matriz de entornos y datos de prueba de [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md).
+
 ---
 
 ## 1. Principios de Validación del Ecosistema
 
 1. **Separación Estricta de Entornos**:
    - El **Sandbox de Simulación** (`/admin/simulador`) corre únicamente en memoria local con datos de Sofía Valenzuela / Colegio San Martín. No abre ventanas a rutas de producción de PostgreSQL.
-   - La **Operación Real** (`/admin`, `/board/[sessionId]`, `/staff`, `/retirar`) opera sobre PostgreSQL Neon con sesiones reales, códigos temporales y auditoría inmutable.
+   - La **Operación desplegada en Vercel** (`/admin`, `/board/[sessionId]`, `/staff`, `/retirar`) usa el PostgreSQL Neon configurado para ese entorno. La validación local usa PostgreSQL Docker separado; no asumir que ambas bases tienen los mismos datos.
+   - Antes de probar login o consistencia de datos, completar la matriz local / Vercel Preview / Vercel Production del [checklist](CHECKLIST_VALIDACION_MVP.md). La URL de Vercel debe verificarse en su dashboard.
 2. **Cero Pantallas Vacías o Descontextualizadas**:
    - Toda ruta compartible debe validar la existencia y vigencia de la sesión escolar (`SessionStatus = 'OPEN'`).
    - El Home (`/`) no debe exponer enlaces huérfanos a sesiones hardcodeadas.
@@ -70,7 +75,6 @@
 
 ## 3. Matriz de Datos de Prueba
 
-* **Archivo Mock**: `public/nomina_alumnos_mock.csv` (10 alumnos, 2 cursos: `1° Básico A` y `2° Básico B`).
-* **Alumno de Prueba Manual Existente**: Tomas Ignacio Sepúlveda Cortés (`1 basico A`, Pamelsa Soto, `+56124568789`, Zorro Naranja).
-* **Colegio de Prueba Activo en Neon**: `colegio prueba` (Director: `van.fablab@gmail.com`).
-* **Colegio Demo Pre-cargado**: `Colegio San Martín` (Directora: `sofia@sanmartin.edu`).
+* **Fixtures de prueba**: no asumir que el CSV o las cuentas demo históricas siguen disponibles o pertenecen a un entorno aislado.
+* Crear datos de prueba únicamente en PostgreSQL local o Vercel Preview después de confirmar el destino en el [checklist](CHECKLIST_VALIDACION_MVP.md).
+* No incluir nombres, teléfonos ni correos reales en este plan; consultar [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md) para el inventario agregado.

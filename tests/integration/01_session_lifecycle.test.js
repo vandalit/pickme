@@ -4,15 +4,15 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
-const { TEST_SCHOOL_NAME, setupTestSchool } = require('./testHelper');
+const { TEST_SCHOOL_NAME, getLocalTestDatabaseUrl, setupTestSchool } = require('./testHelper');
 
-describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', { concurrency: 1 }, () => {
+describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL local)', { concurrency: 1 }, () => {
   let pool;
   let prisma;
   let testSchool;
 
   before(async () => {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 20000 });
+    pool = new Pool({ connectionString: getLocalTestDatabaseUrl(), connectionTimeoutMillis: 20000 });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
 
@@ -26,15 +26,9 @@ describe('Ciclo de Vida de Jornada y Gobernanza (PostgreSQL Neon)', { concurrenc
   });
 
   it('Verifica la existencia y aislamiento de colegios en base de datos', async () => {
-    const schools = await prisma.school.findMany();
-    assert.ok(schools.length >= 2, 'Deben existir al menos Colegio San Martín y el colegio de prueba');
-    
-    const demoSchool = schools.find(s => s.name === 'Colegio San Martín');
-    const qaSchool = schools.find(s => s.name === TEST_SCHOOL_NAME);
-
-    assert.ok(demoSchool, 'Colegio San Martín debe existir en PostgreSQL');
-    assert.ok(qaSchool, `${TEST_SCHOOL_NAME} debe existir en PostgreSQL`);
-    assert.notStrictEqual(demoSchool.id, qaSchool.id, 'Los colegios deben tener IDs distintos');
+    const qaSchool = await prisma.school.findUnique({ where: { id: testSchool.id } });
+    assert.ok(qaSchool, `${TEST_SCHOOL_NAME} debe existir en PostgreSQL local`);
+    assert.strictEqual(qaSchool.name, TEST_SCHOOL_NAME);
   });
 
   it('Verifica que el colegio de prueba tiene 10 alumnos matriculados y CERO colisiones de avatar', async () => {

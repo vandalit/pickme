@@ -39,6 +39,28 @@ export interface StudentItem {
   status: 'ACTIVE' | 'ABSENT' | 'WITHDRAWN';
 }
 
+interface CreateStudentPayload {
+  fullName: string;
+  classroomId: string;
+  guardianName: string;
+  guardianPhone: string;
+  pickerName?: string;
+  pickerRelationship?: string;
+  pickerPhone?: string;
+  status: 'ABSENT';
+}
+
+interface UpdateStudentPayload {
+  studentId: string;
+  fullName: string;
+  classroomId: string;
+  guardianName: string;
+  guardianPhone: string;
+  pickerName?: string;
+  pickerRelationship?: string;
+  pickerPhone?: string;
+}
+
 interface CursosManagerProps {
   initialClassrooms: ClassroomItem[];
   initialStudents: StudentItem[];
@@ -65,6 +87,11 @@ export function CursosManager({
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentItem | null>(null);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [guardianConflict, setGuardianConflict] = useState<
+    | { operation: 'create'; payload: CreateStudentPayload; existingName: string }
+    | { operation: 'update'; payload: UpdateStudentPayload; existingName: string }
+    | null
+  >(null);
 
   // Estados de modales
   const [modalError, setModalError] = useState<string | null>(null);
@@ -136,28 +163,17 @@ export function CursosManager({
     });
   };
 
-  // Crear Alumno
-  const handleCreateStudent = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setModalError(null);
-    const formData = new FormData(e.currentTarget);
-
-    const payload = {
-      fullName: formData.get('fullName') as string,
-      classroomId: formData.get('classroomId') as string,
-      guardianName: formData.get('guardianName') as string,
-      guardianPhone: formData.get('guardianPhone') as string,
-      pickerName: (formData.get('pickerName') as string) || undefined,
-      pickerRelationship: (formData.get('pickerRelationship') as string) || undefined,
-      pickerPhone: (formData.get('pickerPhone') as string) || undefined,
-      status: 'ABSENT' as const, // Nace matriculado pero SIN ingreso hoy (custodia estricta)
-    };
-
+  const saveNewStudent = (payload: CreateStudentPayload, reuseExistingGuardian = false) => {
     startTransition(async () => {
-      const res = await createStudentAction(payload);
+      const res = await createStudentAction({ ...payload, reuseExistingGuardian });
+      if (res.guardianConflict) {
+        setGuardianConflict({ operation: 'create', payload, existingName: res.guardianConflict.existingName });
+        return;
+      }
       if (res.success && res.student) {
         const cls = classrooms.find((c) => c.id === payload.classroomId);
         const classroomName = cls ? `${cls.grade} ${cls.section}` : 'General';
+        const guardianName = res.guardianName ?? payload.guardianName;
 
         const newStudent: StudentItem = {
           id: res.student.id,
@@ -167,7 +183,7 @@ export function CursosManager({
           classroomName,
           animalId: res.student.animalId,
           colorId: res.student.colorId,
-          guardianName: payload.guardianName,
+          guardianName,
           guardianPhone: payload.guardianPhone,
           pickerName: payload.pickerName || '',
           pickerRelationship: payload.pickerRelationship || '',
@@ -184,11 +200,32 @@ export function CursosManager({
             c.id === payload.classroomId ? { ...c, studentCount: c.studentCount + 1 } : c
           )
         );
+        setGuardianConflict(null);
         setIsStudentModalOpen(false);
       } else {
         setModalError(res.error || 'Error al registrar alumno');
       }
     });
+  };
+
+  // Crear Alumno
+  const handleCreateStudent = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setModalError(null);
+    const formData = new FormData(e.currentTarget);
+
+    const payload: CreateStudentPayload = {
+      fullName: formData.get('fullName') as string,
+      classroomId: formData.get('classroomId') as string,
+      guardianName: formData.get('guardianName') as string,
+      guardianPhone: formData.get('guardianPhone') as string,
+      pickerName: (formData.get('pickerName') as string) || undefined,
+      pickerRelationship: (formData.get('pickerRelationship') as string) || undefined,
+      pickerPhone: (formData.get('pickerPhone') as string) || undefined,
+      status: 'ABSENT' as const, // Nace matriculado pero SIN ingreso hoy (custodia estricta)
+    };
+
+    saveNewStudent(payload);
   };
 
   // ── ACCIONES CRUD: EDICIÓN Y ELIMINACIÓN DE ALUMNO ──
@@ -198,33 +235,26 @@ export function CursosManager({
     setIsEditStudentModalOpen(true);
   };
 
-  const handleUpdateStudent = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editingStudent) return;
-    setModalError(null);
-    const formData = new FormData(e.currentTarget);
-
-    const payload = {
-      studentId: editingStudent.id,
-      fullName: (formData.get('fullName') as string).trim(),
-      classroomId: formData.get('classroomId') as string,
-      guardianName: (formData.get('guardianName') as string).trim(),
-      guardianPhone: (formData.get('guardianPhone') as string).trim(),
-      pickerName: (formData.get('pickerName') as string)?.trim() || undefined,
-      pickerRelationship: (formData.get('pickerRelationship') as string)?.trim() || undefined,
-      pickerPhone: (formData.get('pickerPhone') as string)?.trim() || undefined,
-    };
-
+  const saveStudentChanges = (payload: UpdateStudentPayload, reuseExistingGuardian = false) => {
     startTransition(async () => {
-      const res = await updateStudentAction(payload);
+      const res = await updateStudentAction({ ...payload, reuseExistingGuardian });
+      if (res.guardianConflict) {
+        setGuardianConflict({ operation: 'update', payload, existingName: res.guardianConflict.existingName });
+        return;
+      }
       if (res.success) {
+        const studentBeingEdited = students.find((student) => student.id === payload.studentId);
+        if (!studentBeingEdited) {
+          setModalError('No se pudo actualizar la vista. Recarga la nómina e inténtalo nuevamente.');
+          return;
+        }
         const targetClass = classrooms.find((c) => c.id === payload.classroomId);
-        const classroomName = targetClass ? `${targetClass.grade} ${targetClass.section}` : editingStudent.classroomName;
-        const wasClassChange = editingStudent.classroomId !== payload.classroomId;
+        const classroomName = targetClass ? `${targetClass.grade} ${targetClass.section}` : studentBeingEdited.classroomName;
+        const wasClassChange = studentBeingEdited.classroomId !== payload.classroomId;
 
         setStudents((prev) =>
           prev.map((s) => {
-            if (s.id !== editingStudent.id) return s;
+            if (s.id !== studentBeingEdited.id) return s;
             const updatedInitials = payload.fullName
               .split(/\s+/)
               .filter(Boolean)
@@ -238,7 +268,7 @@ export function CursosManager({
               initials: updatedInitials,
               classroomId: payload.classroomId,
               classroomName,
-              guardianName: payload.guardianName,
+              guardianName: res.guardianName ?? payload.guardianName,
               guardianPhone: payload.guardianPhone,
               pickerName: payload.pickerName || '',
               pickerRelationship: payload.pickerRelationship || '',
@@ -253,19 +283,38 @@ export function CursosManager({
         if (wasClassChange) {
           setClassrooms((prev) =>
             prev.map((c) => {
-              if (c.id === editingStudent.classroomId) return { ...c, studentCount: Math.max(0, c.studentCount - 1) };
+              if (c.id === studentBeingEdited.classroomId) return { ...c, studentCount: Math.max(0, c.studentCount - 1) };
               if (c.id === payload.classroomId) return { ...c, studentCount: c.studentCount + 1 };
               return c;
             })
           );
         }
 
+        setGuardianConflict(null);
         setIsEditStudentModalOpen(false);
         setEditingStudent(null);
       } else {
         setModalError(res.error || 'Error al actualizar el alumno.');
       }
     });
+  };
+
+  const handleUpdateStudent = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setModalError(null);
+    const formData = new FormData(e.currentTarget);
+    const payload: UpdateStudentPayload = {
+      studentId: editingStudent.id,
+      fullName: (formData.get('fullName') as string).trim(),
+      classroomId: formData.get('classroomId') as string,
+      guardianName: (formData.get('guardianName') as string).trim(),
+      guardianPhone: (formData.get('guardianPhone') as string).trim(),
+      pickerName: (formData.get('pickerName') as string)?.trim() || undefined,
+      pickerRelationship: (formData.get('pickerRelationship') as string)?.trim() || undefined,
+      pickerPhone: (formData.get('pickerPhone') as string)?.trim() || undefined,
+    };
+    saveStudentChanges(payload);
   };
 
   const handleDeleteStudent = (studentId: string, studentName: string) => {
@@ -968,6 +1017,48 @@ export function CursosManager({
         </div>
       )}
 
+      {guardianConflict && (
+        <div className={styles.modalOverlay} role="alertdialog" aria-modal="true" aria-labelledby="guardianConflictTitle">
+          <div className={styles.modalCard} style={{ maxWidth: 480 }}>
+            <div className={styles.modalHeader}>
+              <h3 id="guardianConflictTitle" className={styles.modalTitle}>
+                Número ya asociado a un apoderado
+              </h3>
+            </div>
+            <p className={styles.modalDescription}>
+              Este número ya está asociado en este colegio a <strong>{guardianConflict.existingName}</strong>.
+              {guardianConflict.operation === 'create'
+                ? ' Si continúas, el alumno se vinculará a ese mismo registro y se conservará ese nombre.'
+                : ' Si continúas, se vinculará este alumno a ese registro y se conservarán sus datos actuales.'}
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.btnSecondary}
+                onClick={() => setGuardianConflict(null)}
+                disabled={isPending}
+              >
+                Volver y revisar
+              </button>
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                disabled={isPending}
+                onClick={() => {
+                  if (guardianConflict.operation === 'create') {
+                    saveNewStudent(guardianConflict.payload, true);
+                  } else {
+                    saveStudentChanges(guardianConflict.payload, true);
+                  }
+                }}
+              >
+                {isPending ? 'Guardando...' : 'Vincular al apoderado existente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: IMPORTAR EXCEL / CSV ── */}
       {isCsvModalOpen && (
         <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="modalCsvTitle">
@@ -1053,4 +1144,3 @@ export function CursosManager({
     </div>
   );
 }
-

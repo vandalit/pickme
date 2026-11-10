@@ -1,5 +1,7 @@
 # 📋 PickMe — Plan de Ingeniería: MVP Productivo y Operativo
 
+> **Plan histórico con especificaciones obsoletas.** No usar como configuración vigente sin cotejar con README y [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md). Se identificó, entre otras discrepancias, un fallback de credenciales inseguro que ya no existe en el código.
+
 **Objetivo:** Transformar PickMe de un prototipo de presentación con datos estáticos a un **SaaS Operativo Real de Salida Escolar y Cadena de Custodia**, operable por colegios reales, con cuentas de usuario reales, gobernanza de nómina, despacho dinámico de sesiones y flujo de retiro en vivo.
 
 ---
@@ -12,7 +14,7 @@ Para asegurar que el sistema sea 100% go-live sin costos mensuales ni tarjetas d
 |---|---|---|---|
 | **PostgreSQL** | Base de datos relacional y auditoría | **Neon Serverless PostgreSQL** (Free tier permanente, 0.5 GiB, compute serverless que duerme sin costo). | ✅ 100% Viable (Ya aprovisionado) |
 | **Hosting / Deploy** | Servidor web y Server Actions | **Vercel Hobby Tier** (Free permanente, soporte nativo de Next.js App Router). | ✅ 100% Viable |
-| **Google OAuth** | Login institucional de directores | **Google Cloud Console OAuth 2.0 Client** (Free permanente). Si no se configuran tokens, NextAuth Credentials funciona como fallback universal con cualquier correo institucional. | ✅ 100% Viable |
+| **Google OAuth** | Login institucional de directores | Google Cloud Console OAuth 2.0. El acceso por contraseña/Credentials está deshabilitado hasta implementar autenticación segura; cada host necesita un callback autorizado. | Pendiente validar por entorno |
 | **Sincronización en Vivo** | Conexión TV ➔ Móvil ➔ Portón | **SSE (Server-Sent Events) + Polling Reactivo nativo** en Next.js. Elimina la necesidad de planes de pago de Pusher/Ably, costo $0 permanente y menor latencia en Vercel. | ✅ 100% Viable (Cero dependencias) |
 | **Notificaciones WhatsApp** | Aviso al apoderado de entrega | **Estrategia Híbrida Inteligente**:<br>1. *Simulador y Webhook reactivo*: Notificación en vivo en el sistema.<br>2. *WhatsApp Direct Link (`wa.me`)*: Genera el enlace oficial preformateado y firmado de custodia a costo $0 y sin requerir cuentas de pago de Twilio o aprobación comercial de Meta. | ✅ 100% Viable (Sin barrera de entrada) |
 
@@ -108,4 +110,3 @@ Para asegurar que el sistema sea 100% go-live sin costos mensuales ni tarjetas d
 
 Comenzaremos por el núcleo de datos: **FASE 1 (Onboarding de cuenta) y FASE 2 (CRUD de Cursos, Alumnos y Asignador de Avatares en `/admin/cursos`)**.
 Con esto, cualquier usuario que entre al sistema podrá dar de alta su colegio, armar sus cursos y poblar su nómina con avatares reales.
-

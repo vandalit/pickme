@@ -1,62 +1,65 @@
-# Guía de Despliegue en Vercel — PickMe MVP
+# Despliegue en Vercel — PickMe
 
-Esta guía detalla los pasos exactos para publicar **PickMe** en Vercel con base de datos PostgreSQL remota (Neon o Supabase) y Google OAuth activo para tu caso de estudio / portafolio.
+## Arquitectura acordada
 
----
+- **Local:** PostgreSQL 16 del servicio Docker; la app usa `LOCAL_DATABASE_URL`.
+- **Vercel:** Neon PostgreSQL remoto; la app usa `DATABASE_URL`.
+- Los entornos no comparten ni sincronizan datos. Production y Preview deben apuntar a bases o branches Neon separados.
+- La URL configurada actualmente en Vercel no se puede inferir desde el repositorio. Verificarla en el dashboard antes de validar datos o login.
 
-## 1. Requisitos Previos
+## 1. Variables de entorno
 
-1. Cuenta en [Vercel](https://vercel.com).
-2. Base de datos PostgreSQL remota. **Recomendación:** [Neon.tech](https://neon.tech) (gratis, serverless, pooling nativo) o [Supabase](https://supabase.com).
-3. Proyecto en [Google Cloud Console](https://console.cloud.google.com/) para OAuth 2.0 (opcional para el demo, ya que el sistema incluye bypass de evaluador).
+En **Settings > Environment Variables**, configurar por alcance:
 
----
+| Variable | Production | Preview | Obligatoria |
+|---|---|---|---|
+| `DATABASE_URL` | Pooler Neon de Production | Pooler Neon de Preview, separado de Production | Sí |
+| `AUTH_SECRET` | Secreto propio del entorno | Secreto de Preview distinto | Sí |
+| `AUTH_GOOGLE_ID` | Cliente OAuth aprobado | Cliente OAuth aprobado para Preview | Sí |
+| `AUTH_GOOGLE_SECRET` | Secreto OAuth de Production | Secreto OAuth correspondiente | Sí |
+| `NEXTAUTH_URL` | URL estable de Production | URL estable de Preview | Según configuración |
+| `NEXT_PUBLIC_APP_URL` | URL pública de Production | URL pública de Preview | Sí |
 
-## 2. Preparar Base de Datos Remota (Neon / Supabase)
+No copiar valores secretos a documentación, issues o logs. Confirmar que ambos entornos tienen variables y bases deliberadamente configuradas; no asumir que heredaron el mismo destino.
 
-1. Crea un proyecto en Neon o Supabase llamado `pickme-db`.
-2. Obtén la cadena de conexión con **Connection Pooling**:
-   * **Neon:** Usa la URL del pooler (terminada en `-pooler`).
-   * **Supabase:** Usa el puerto `6543` (Transaction Pooler).
-3. Ejecuta las migraciones y la siembra de datos desde tu terminal local hacia la base remota:
-   ```bash
-   DATABASE_URL="postgresql://usuario:pass@host-pooler.neon.tech/pickme_db?sslmode=require" npx prisma migrate deploy
-   DATABASE_URL="postgresql://usuario:pass@host-pooler.neon.tech/pickme_db?sslmode=require" npm run db:seed
-   ```
+## 2. Google OAuth
 
----
+Google no autentica “desde Vercel” como proveedor distinto: el login se inicia desde el host actual y vuelve a su callback. Autorizar en Google Cloud las URI exactas:
 
-## 3. Variables de Entorno en Vercel Dashboard
+- Local: `http://localhost:3000/api/auth/callback/google`
+- Production: `https://<dominio-produccion>/api/auth/callback/google`
+- Preview: callback del dominio estable de Preview que se probará.
 
-Ve a **Settings > Environment Variables** en tu proyecto de Vercel y añade:
+Un dominio Preview diferente requiere que su callback esté autorizado. Validar login local, Preview y Production por separado. Esta documentación no confirma cuáles callback URI están configuradas en Google Cloud.
 
-| Variable | Valor / Ejemplo | Obligatoria |
-|---|---|:---:|
-| `DATABASE_URL` | `postgresql://...neon.tech/pickme_db?sslmode=require` | **SÍ** |
-| `AUTH_SECRET` | Genera una clave segura de 32+ caracteres (`openssl rand -base64 32`) | **SÍ** |
-| `NEXTAUTH_URL` | `https://tu-proyecto.vercel.app` | **SÍ** |
-| `NEXT_PUBLIC_APP_URL` | `https://tu-proyecto.vercel.app` | **SÍ** |
-| `GOOGLE_CLIENT_ID` | Obtenido de Google Cloud Console | Opcional (Demo activo) |
-| `GOOGLE_CLIENT_SECRET` | Obtenido de Google Cloud Console | Opcional (Demo activo) |
-| `NEXT_PUBLIC_PUSHER_KEY` | `mock_pusher_key` (o credencial Pusher real) | Opcional |
-| `NEXT_PUBLIC_PUSHER_CLUSTER` | `us2` | Opcional |
+## 3. Migraciones
 
----
+Antes de cambiar una base existente:
 
-## 4. Configuración de Google OAuth (Google Cloud Console)
+1. Identificar explícitamente el entorno y su URL de destino sin publicar credenciales.
+2. Obtener respaldo y revisar el estado de `_prisma_migrations`.
+3. Revisar la migración y el resultado esperado en una base local desechable.
+4. Ejecutar solo migraciones versionadas con el destino remoto explícito:
 
-Si activas Google OAuth oficial:
-1. En Google Cloud Console > **APIs & Services > Credentials**.
-2. En tu **OAuth 2.0 Client ID**, añade a **Authorized redirect URIs**:
-   * `https://tu-proyecto.vercel.app/api/auth/callback/google`
-   * `http://localhost:3000/api/auth/callback/google` (para dev)
+```bash
+PICKME_DATABASE_TARGET=remote DATABASE_URL="<URL_POOLER_NEON>" npx prisma migrate deploy
+```
 
----
+No ejecutar `prisma db push` en una base con datos. No ejecutar el seed en Neon/Vercel: elimina los datos de las tablas antes de sembrar fixtures y ahora exige confirmación explícita, además de rechazar destinos remotos.
 
-## 5. Build & Optimización Serverless (Ya configurados en el repo)
+## 4. Build y operación
 
-El repositorio ya cuenta con las configuraciones necesarias:
-* `package.json` incluye `"postinstall": "prisma generate"` para compilar el cliente Prisma automáticamente en los servidores de Vercel.
-* `src/lib/db.ts` cuenta con límites de conexión configurados para funciones serverless (`max: 5` en producción) para evitar saturar el pool de PostgreSQL.
-* `src/middleware.ts` protege las rutas `/admin/*` y redirige a `/auth/login`.
+- `package.json` genera Prisma Client en `postinstall`.
+- En Vercel, la aplicación selecciona `DATABASE_URL`; localmente selecciona `LOCAL_DATABASE_URL`.
+- `src/lib/db.ts` limita el pool de producción a cinco conexiones.
+- Las migraciones no se consideran aplicadas solo porque el build haya pasado; confirmar el estado por entorno.
 
+## 5. Verificación requerida antes de pruebas funcionales
+
+- Registrar el nombre del proyecto/branch Neon y el alcance Vercel (Preview o Production), nunca la URL completa.
+- Verificar aislamiento de Preview respecto de Production.
+- Confirmar migración aplicada y respaldada.
+- Confirmar callback Google del host exacto.
+- Empezar por login; luego validar alta de usuario y consistencia de datos.
+
+Ver [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md) para el inventario de discrepancias y decisiones abiertas.

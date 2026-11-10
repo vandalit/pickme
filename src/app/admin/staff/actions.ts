@@ -29,7 +29,7 @@ export async function createStaffInvitationAction(
     return { success: false, error: 'No tienes una sesión activa.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo un Director puede emitir invitaciones.' };
   }
@@ -45,8 +45,14 @@ export async function createStaffInvitationAction(
   }
 
   // Verificar si ya es usuario activo
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existingUser && existingUser.schoolId === school.id && existingUser.status === 'ACTIVE') {
+  const existingMembership = await prisma.schoolMembership.findFirst({
+    where: {
+      schoolId: school.id,
+      status: 'ACTIVE',
+      user: { email: normalizedEmail },
+    },
+  });
+  if (existingMembership) {
     return { success: false, error: 'Este usuario ya es miembro activo del colegio.' };
   }
 
@@ -80,7 +86,7 @@ export async function acceptInvitationAction(invitationId: string): Promise<Staf
     return { success: false, error: 'No tienes una sesión activa.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo un Director puede aprobar solicitudes.' };
   }
@@ -98,27 +104,58 @@ export async function acceptInvitationAction(invitationId: string): Promise<Staf
     return { success: false, error: 'Invitación no encontrada.' };
   }
 
-  // Marcar invitación aceptada
-  await prisma.invitation.update({
-    where: { id: invitationId },
-    data: { acceptedAt: new Date() },
-  });
+  await prisma.$transaction(async (tx) => {
+    const user = await tx.user.upsert({
+      where: { email: invite.email },
+      update: {},
+      create: {
+        email: invite.email,
+        name: invite.email.split('@')[0],
+        onboardingRole: invite.role,
+      },
+    });
 
-  // Vincular o actualizar usuario
-  await prisma.user.upsert({
-    where: { email: invite.email },
-    update: {
-      schoolId: school.id,
-      role: invite.role,
-      status: 'ACTIVE',
-    },
-    create: {
-      email: invite.email,
-      name: invite.email.split('@')[0],
-      schoolId: school.id,
-      role: invite.role,
-      status: 'ACTIVE',
-    },
+    const existingMembership = await tx.schoolMembership.findUnique({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: school.id },
+      },
+    });
+    if (
+      existingMembership?.status === 'ACTIVE' &&
+      existingMembership.role !== invite.role
+    ) {
+      await tx.membershipPeriod.updateMany({
+        where: { membershipId: existingMembership.id, endedAt: null },
+        data: { endedAt: new Date() },
+      });
+    }
+
+    const membership = await tx.schoolMembership.upsert({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: school.id },
+      },
+      update: { role: invite.role, status: 'ACTIVE' },
+      create: {
+        userId: user.id,
+        schoolId: school.id,
+        role: invite.role,
+        status: 'ACTIVE',
+      },
+    });
+
+    const openPeriod = await tx.membershipPeriod.findFirst({
+      where: { membershipId: membership.id, endedAt: null },
+    });
+    if (!openPeriod) {
+      await tx.membershipPeriod.create({
+        data: { membershipId: membership.id, role: membership.role },
+      });
+    }
+
+    await tx.invitation.update({
+      where: { id: invitationId },
+      data: { acceptedAt: new Date() },
+    });
   });
 
   revalidatePath('/admin/staff');
@@ -134,7 +171,7 @@ export async function rejectInvitationAction(invitationId: string): Promise<Staf
     return { success: false, error: 'No tienes una sesión activa.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo un Director puede rechazar solicitudes.' };
   }
@@ -173,7 +210,7 @@ export async function createStaffMemberAction(
     return { success: false, error: 'No tienes una sesión de usuario activa.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo un Director puede registrar personal de portón.' };
   }
@@ -188,26 +225,53 @@ export async function createStaffMemberAction(
     return { success: false, error: 'Nombre y correo son obligatorios.' };
   }
 
-  // Verificar que no exista ya con ese email
-  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existing) {
-    if (existing.schoolId !== school.id) {
-      return { success: false, error: 'Ese correo ya está registrado en otra institución.' };
-    }
-    if (existing.role === 'STAFF') {
-      return { success: false, error: 'Ese correo ya está registrado como personal de portón.' };
-    }
-    return { success: false, error: 'Ese correo ya existe con otro rol en tu institución.' };
-  }
+  const activated = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.upsert({
+      where: { email: normalizedEmail },
+      update: {},
+      create: {
+        email: normalizedEmail,
+        name: name.trim(),
+        onboardingRole: 'STAFF',
+      },
+    });
 
-  await prisma.user.create({
-    data: {
-      schoolId: school.id,
-      email: normalizedEmail,
-      name: name.trim(),
-      role: 'STAFF',
-    },
+    const existing = await tx.schoolMembership.findUnique({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: school.id },
+      },
+    });
+    if (existing?.status === 'ACTIVE') {
+      return false;
+    }
+
+    const membership = await tx.schoolMembership.upsert({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: school.id },
+      },
+      update: { role: 'STAFF', status: 'ACTIVE' },
+      create: {
+        userId: user.id,
+        schoolId: school.id,
+        role: 'STAFF',
+        status: 'ACTIVE',
+      },
+    });
+
+    const openPeriod = await tx.membershipPeriod.findFirst({
+      where: { membershipId: membership.id, endedAt: null },
+    });
+    if (!openPeriod) {
+      await tx.membershipPeriod.create({
+        data: { membershipId: membership.id, role: membership.role },
+      });
+    }
+    return true;
   });
+
+  if (!activated) {
+    return { success: false, error: 'Ese correo ya está registrado como miembro activo en tu institución.' };
+  }
 
   revalidatePath('/admin/staff');
   return { success: true };
@@ -223,7 +287,7 @@ export async function deleteStaffMemberAction(userId: string): Promise<StaffActi
     return { success: false, error: 'No tienes una sesión de usuario activa.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo un Director puede eliminar personal de portón.' };
   }
@@ -233,17 +297,25 @@ export async function deleteStaffMemberAction(userId: string): Promise<StaffActi
     return { success: false, error: 'No se encontró el colegio asociado a tu cuenta.' };
   }
 
-  const target = await prisma.user.findFirst({
-    where: { id: userId, schoolId: school.id, role: 'STAFF' },
+  const target = await prisma.schoolMembership.findFirst({
+    where: { userId, schoolId: school.id, role: 'STAFF', status: 'ACTIVE' },
   });
 
   if (!target) {
     return { success: false, error: 'No se encontró ese miembro en tu equipo.' };
   }
 
-  await prisma.user.delete({ where: { id: target.id } });
+  await prisma.$transaction([
+    prisma.membershipPeriod.updateMany({
+      where: { membershipId: target.id, endedAt: null },
+      data: { endedAt: new Date() },
+    }),
+    prisma.schoolMembership.update({
+      where: { id: target.id },
+      data: { status: 'SUSPENDED' },
+    }),
+  ]);
 
   revalidatePath('/admin/staff');
   return { success: true };
 }
-

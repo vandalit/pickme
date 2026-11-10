@@ -317,13 +317,8 @@ export async function resetMySchoolAction(): Promise<{ success: boolean; error?:
 
     const schoolId = school.id;
 
-    // 1. Desvincular usuarios
-    await prisma.user.updateMany({
-      where: { schoolId },
-      data: { schoolId: null },
-    });
-
-    // 2. Eliminar entidades operativas
+    // Eliminar entidades operativas. Las identidades globales sobreviven; las
+    // membresías de este colegio se eliminan por cascada al borrar la escuela.
     await prisma.incident.deleteMany({ where: { event: { session: { schoolId } } } });
     await prisma.pickupEvent.deleteMany({ where: { session: { schoolId } } });
     await prisma.pickupSession.deleteMany({ where: { schoolId } });
@@ -335,7 +330,7 @@ export async function resetMySchoolAction(): Promise<{ success: boolean; error?:
     await prisma.classroom.deleteMany({ where: { schoolId } });
     await prisma.invitation.deleteMany({ where: { schoolId } });
 
-    // 3. Eliminar el colegio
+    // Eliminar el colegio
     await prisma.school.delete({ where: { id: schoolId } });
 
     revalidatePath('/admin');
@@ -347,4 +342,3 @@ export async function resetMySchoolAction(): Promise<{ success: boolean; error?:
     return { success: false, error: 'Error al limpiar los datos del colegio.' };
   }
 }
-

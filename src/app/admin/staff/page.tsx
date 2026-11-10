@@ -15,8 +15,9 @@ async function StaffTableLoader({ schoolId }: { schoolId: string }) {
 
   try {
     const [staffUsers, pendingInvites] = await Promise.all([
-      prisma.user.findMany({
+      prisma.schoolMembership.findMany({
         where: { schoolId, role: 'STAFF', status: 'ACTIVE' },
+        include: { user: true },
         orderBy: { createdAt: 'asc' },
       }),
       prisma.invitation.findMany({
@@ -25,11 +26,11 @@ async function StaffTableLoader({ schoolId }: { schoolId: string }) {
       }),
     ]);
 
-    staffMembers = staffUsers.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      createdAt: u.createdAt.toISOString(),
+    staffMembers = staffUsers.map(({ user, createdAt }) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: createdAt.toISOString(),
     }));
 
     invitations = pendingInvites.map((i) => ({
@@ -59,7 +60,7 @@ export default async function AdminStaffPage() {
   }
 
   // Solo SCHOOL_ADMIN puede acceder
-  const userRole = (session.user as any).role as string | undefined;
+  const userRole = session.user.role;
   if (userRole === 'STAFF') {
     redirect('/staff');
   }

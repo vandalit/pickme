@@ -1,9 +1,11 @@
 'use server';
 
-import { auth } from '@/auth';
+import { auth, unstable_update } from '@/auth';
 import { prisma } from '@/lib/db';
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { ACTIVE_SCHOOL_COOKIE } from '@/lib/userSchool';
 
 export interface JoinActionResult {
   success: boolean;
@@ -29,6 +31,18 @@ export async function requestJoinSchoolAction(schoolId: string): Promise<JoinAct
     return { success: false, error: 'El colegio seleccionado no existe.' };
   }
 
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return { success: false, error: 'No se encontró tu identidad de usuario. Vuelve a iniciar sesión.' };
+  }
+
+  const existingMembership = await prisma.schoolMembership.findUnique({
+    where: { userId_schoolId: { userId: user.id, schoolId } },
+  });
+  if (existingMembership?.status === 'ACTIVE') {
+    return { success: false, error: 'Ya perteneces a este colegio.' };
+  }
+
   // Verificar si ya tiene una invitación para este colegio
   const existingInvite = await prisma.invitation.findFirst({
     where: {
@@ -45,29 +59,26 @@ export async function requestJoinSchoolAction(schoolId: string): Promise<JoinAct
   const token = randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días para solicitudes
 
-  await prisma.invitation.create({
-    data: {
-      schoolId,
-      email,
-      role: 'STAFF',
-      token,
-      expiresAt,
-    },
-  });
-
-  // Asegurar que el usuario tenga status PENDING en este momento
-  await prisma.user.upsert({
-    where: { email },
-    update: {
-      role: 'STAFF',
-      status: 'PENDING',
-    },
-    create: {
-      email,
-      name: session.user.name || email.split('@')[0],
-      role: 'STAFF',
-      status: 'PENDING',
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.schoolMembership.upsert({
+      where: { userId_schoolId: { userId: user.id, schoolId } },
+      update: { role: 'STAFF', status: 'PENDING' },
+      create: {
+        userId: user.id,
+        schoolId,
+        role: 'STAFF',
+        status: 'PENDING',
+      },
+    });
+    await tx.invitation.create({
+      data: {
+        schoolId,
+        email,
+        role: 'STAFF',
+        token,
+        expiresAt,
+      },
+    });
   });
 
   revalidatePath('/staff/join');
@@ -110,30 +121,72 @@ export async function acceptTokenInvitationAction(token: string): Promise<JoinAc
     };
   }
 
+  const authenticatedName = session.user?.name || email.split('@')[0];
+
   // Activar y vincular al usuario
-  await prisma.user.upsert({
-    where: { email },
-    update: {
-      schoolId: invite.schoolId,
-      role: invite.role,
-      status: 'ACTIVE',
-    },
-    create: {
-      email,
-      name: session.user.name || email.split('@')[0],
-      schoolId: invite.schoolId,
-      role: invite.role,
-      status: 'ACTIVE',
-    },
+  await prisma.$transaction(async (tx) => {
+    const user = await tx.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
+        name: authenticatedName,
+        onboardingRole: invite.role,
+      },
+    });
+
+    const existingMembership = await tx.schoolMembership.findUnique({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: invite.schoolId },
+      },
+    });
+    if (
+      existingMembership?.status === 'ACTIVE' &&
+      existingMembership.role !== invite.role
+    ) {
+      await tx.membershipPeriod.updateMany({
+        where: { membershipId: existingMembership.id, endedAt: null },
+        data: { endedAt: new Date() },
+      });
+    }
+
+    const membership = await tx.schoolMembership.upsert({
+      where: {
+        userId_schoolId: { userId: user.id, schoolId: invite.schoolId },
+      },
+      update: { role: invite.role, status: 'ACTIVE' },
+      create: {
+        userId: user.id,
+        schoolId: invite.schoolId,
+        role: invite.role,
+        status: 'ACTIVE',
+      },
+    });
+
+    const openPeriod = await tx.membershipPeriod.findFirst({
+      where: { membershipId: membership.id, endedAt: null },
+    });
+    if (!openPeriod) {
+      await tx.membershipPeriod.create({
+        data: { membershipId: membership.id, role: membership.role },
+      });
+    }
+
+    await tx.invitation.update({
+      where: { id: invite.id },
+      data: { acceptedAt: new Date() },
+    });
   });
 
-  // Marcar invitación como aceptada
-  await prisma.invitation.update({
-    where: { id: invite.id },
-    data: { acceptedAt: new Date() },
+  const cookieStore = await cookies();
+  cookieStore.set(ACTIVE_SCHOOL_COOKIE, invite.schoolId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.VERCEL === '1',
+    path: '/',
   });
+  await unstable_update({});
 
   revalidatePath('/staff');
   return { success: true, redirectTo: '/staff' };
 }
-

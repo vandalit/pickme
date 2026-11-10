@@ -6,11 +6,13 @@
 - Real-time es crítico para el board y las notificaciones de staff
 - La base de datos necesita soporte para relaciones complejas y auditoría
 
+> **Documento histórico pendiente de conciliación.** Contiene alternativas (Supabase, Twilio, magic links, Pusher) que no son necesariamente la arquitectura activa. Para bases por entorno, seguir [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md) y README. No usar este documento para configurar ambientes hasta actualizarlo.
+
 ---
 
 ## Stack Principal
 
-### Frontend — Next.js 15 (App Router)
+### Frontend — Next.js 16 (App Router)
 
 **Por qué Next.js:**
 - Múltiples vistas con comportamientos radicalmente distintos en una sola codebase:
@@ -53,8 +55,9 @@
 - **Apoderado y Picker**: Magic Link (link con token de un solo uso enviado por WhatsApp)
   - Sin contraseña, sin cuenta nueva, solo WhatsApp
   - El link expira en 15 minutos
-- **Staff y Admin**: Email + contraseña o magic link (a definir)
-- Sesiones en JWT, sin cookies complejas
+- **Staff y Admin**: Google Workspace OAuth institucional, con auto-provisioning del usuario.
+- El acceso con contraseña queda diferido hasta implementar almacenamiento de hashes, verificación y recuperación segura.
+- Sesiones en JWT.
 
 ### WhatsApp — Twilio API for WhatsApp (MVP) → Meta Cloud API (V2)
 

@@ -11,10 +11,10 @@
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │ FASE 0: Arquitectura Base, Dockerización & Modelo de Datos             │
-│  [X] Migración de prototipo inicial a POC/                             │
+│  [X] POC histórico aislado; runtime actual usa `src/`                  │
 │  [X] Actualización y alineación de PRD, SDD y Roadmap                  │
-│  [ ] Configuración Docker multi-stage (Next.js standalone + Postgres)  │
-│  [ ] Prisma Schema definitivo con migraciones y seed de prueba         │
+│  [x] Configuración Docker multi-stage (Next.js standalone + Postgres)  │
+│  [x] Prisma Schema y migraciones presentes; validar contra entornos    │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -49,14 +49,14 @@
 ## Detalle de Hitos Inmediatos (Fase 0 y Fase 1)
 
 ### Hito 0.1 — Entorno Docker y Persistencia
-- [ ] Dockerfile multi-stage optimizado para Next.js 16 con `output: 'standalone'`.
-- [ ] `docker-compose.yml` con servicios `web` (Next.js) y `db` (PostgreSQL 16) con healthcheck.
-- [ ] Variables de entorno `.env.example` limpias.
+- [x] Dockerfile multi-stage para Next.js 16 con `output: 'standalone'`.
+- [x] `docker-compose.yml` con servicios `web` (Next.js) y `db` (PostgreSQL 16) con healthcheck.
+- [x] `.env.example` documenta la URL local de Docker; falta completar la validación manual de entornos.
 
 ### Hito 0.2 — Modelo de Datos (Prisma)
-- [ ] Archivo `prisma/schema.prisma` implementando la taxonomía: School, User, Classroom, Student, Guardian, Picker, Authorization, PickupSession, PickupEvent, Incident.
-- [ ] Migración inicial `init` ejecutada dentro de PostgreSQL.
-- [ ] Script de Seed con colegio de prueba ("Escuela Primaria San Martín") con 20 alumnos en 2 cursos.
+- [x] `prisma/schema.prisma` y migración inicial presentes.
+- [ ] Confirmar por separado el estado de migraciones y divergencia de tablas en PostgreSQL local y Neon; no aplicar cambios durante el diagnóstico.
+- [x] Existe seed con fixtures; es destructivo y está protegido para ejecución local explícita. No usar en bases con datos que se quieran conservar.
 
 ### Hito 1.1 — Arquitectura de Información y Scaffolding UI
 - [ ] Estructura limpia en `src/` con carpetas:

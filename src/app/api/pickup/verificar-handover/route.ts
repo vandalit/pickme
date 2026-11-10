@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
+import { resolveUserSchool } from '@/lib/userSchool';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { eventId, studentId, sessionId, enteredCode, staffId } = body;
+    const { eventId, studentId, sessionId, enteredCode } = body;
 
     if (!enteredCode) {
       return NextResponse.json(
@@ -14,18 +15,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolver usuario staff autenticado si no fue provisto explícitamente
-    let effectiveStaffId = staffId || null;
-    if (!effectiveStaffId) {
-      const userSession = await auth();
-      if (userSession?.user?.email) {
-        const staffUser = await prisma.user.findUnique({
-          where: { email: userSession.user.email.toLowerCase().trim() },
-        });
-        if (staffUser) {
-          effectiveStaffId = staffUser.id;
-        }
-      }
+    const userSession = await auth();
+    if (!userSession?.user?.email) {
+      return NextResponse.json({ error: 'Debes iniciar sesión como personal del colegio.' }, { status: 401 });
+    }
+    const { school, membership, user } = await resolveUserSchool(userSession.user.email);
+    if (
+      !school ||
+      !membership ||
+      membership.status !== 'ACTIVE' ||
+      !user ||
+      !['STAFF', 'SCHOOL_ADMIN'].includes(membership.role)
+    ) {
+      return NextResponse.json({ error: 'No tienes autorización activa para confirmar entregas.' }, { status: 403 });
     }
 
     // Buscar el evento correspondiente
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
       event = await prisma.pickupEvent.findUnique({
         where: { id: eventId },
         include: {
+          session: { select: { schoolId: true } },
           student: {
             include: {
               guardians: {
@@ -48,6 +51,7 @@ export async function POST(req: NextRequest) {
         where: { studentId, sessionId },
         orderBy: { createdAt: 'desc' },
         include: {
+          session: { select: { schoolId: true } },
           student: {
             include: {
               guardians: {
@@ -64,6 +68,10 @@ export async function POST(req: NextRequest) {
         { error: 'No se encontró el evento de retiro correspondiente.' },
         { status: 404 }
       );
+    }
+
+    if (event.session.schoolId !== school.id) {
+      return NextResponse.json({ error: 'El evento no pertenece a tu colegio activo.' }, { status: 403 });
     }
 
     // Verificar si ya fue entregado
@@ -102,7 +110,7 @@ export async function POST(req: NextRequest) {
       data: {
         status: 'IN_TRANSIT',
         staffConfirmedAt: new Date(),
-        staffId: effectiveStaffId || event.staffId,
+        staffId: user.id,
       },
     });
 
@@ -134,4 +142,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

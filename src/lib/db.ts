@@ -2,9 +2,27 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://pickme_user:pickme_password@localhost:5432/pickme_db?schema=public';
+const useRemoteDatabase =
+  process.env.VERCEL === '1' || process.env.PICKME_DATABASE_TARGET === 'remote';
+if (
+  process.env.PICKME_DATABASE_TARGET &&
+  process.env.PICKME_DATABASE_TARGET !== 'local' &&
+  process.env.PICKME_DATABASE_TARGET !== 'remote'
+) {
+  throw new Error("PICKME_DATABASE_TARGET must be 'local' or 'remote'.");
+}
+const connectionString = useRemoteDatabase
+  ? process.env.DATABASE_URL
+  : process.env.LOCAL_DATABASE_URL ??
+    'postgresql://pickme_user:pickme_password@localhost:5432/pickme_db?schema=public';
+
+if (!connectionString) {
+  throw new Error(
+    useRemoteDatabase
+      ? 'DATABASE_URL is required for the Vercel/remote database.'
+      : 'LOCAL_DATABASE_URL is required for local development.'
+  );
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

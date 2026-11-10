@@ -16,9 +16,9 @@ enum UserRole {
 }
 
 enum UserStatus {
-  PENDING    // Invitado pero no ha aceptado — sin acceso operativo
-  ACTIVE     // Miembro activo con acceso a su panel
-  SUSPENDED  // Deshabilitado por el Admin
+  PENDING // Invitado pero no ha aceptado — sin acceso operativo
+  ACTIVE // Miembro activo con acceso a su panel
+  SUSPENDED // Deshabilitado por el Admin
 }
 
 enum AuthorizationType {
@@ -41,76 +41,107 @@ enum SessionStatus {
 }
 
 enum CustodyStatus {
-  WAITING       // Alumno esperando en patio/aula
-  IN_PROCESS    // Picker validado en portón, personal preparando entrega
-  HANDOVER      // Handover Code de 6 dígitos generado, traspaso en curso
-  IN_TRANSIT    // Traspaso completado por staff, en viaje hacia hogar
-  ARRIVED       // Apoderado confirmó llegada (Custodia cerrada)
-  ALERT         // Retardo severo, intento denegado o problema reportado
+  WAITING // Alumno esperando en patio/aula
+  IN_PROCESS // Picker validado en portón, personal preparando entrega
+  HANDOVER // Handover Code de 6 dígitos generado, traspaso en curso
+  IN_TRANSIT // Traspaso completado por staff, en viaje hacia hogar
+  ARRIVED // Apoderado confirmó llegada (Custodia cerrada)
+  ALERT // Retardo severo, intento denegado o problema reportado
 }
 
 enum StudentStatus {
-  ACTIVE        // Matriculado activo para la jornada de salida
-  ABSENT        // Ausente hoy (licencia / inasistencia: no proyecta en TV ni genera alertas)
-  WITHDRAWN     // Retirado de la institución / dado de baja
+  ACTIVE // Matriculado activo para la jornada de salida
+  ABSENT // Ausente hoy (licencia / inasistencia: no proyecta en TV ni genera alertas)
+  WITHDRAWN // Retirado de la institución / dado de baja
 }
 
 // ── ESCUELAS Y USUARIOS ADMINISTRATIVOS ────────────────────────────────────
 
 model School {
-  id              String          @id @default(uuid())
+  id              String   @id @default(uuid())
   name            String
   address         String?
   emergencyPhone  String?
-  qrRefreshSecs   Int             @default(300)
-  pinLength       Int             @default(3)     // 2, 3 o 6 dígitos para validación rápida
-  defaultExitTime String?         // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
-  timezone        String          @default("America/Santiago") // Zona horaria del colegio para el cron
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  qrRefreshSecs   Int      @default(300)
+  pinLength       Int      @default(3) // 2, 3 o 6 dígitos para validación rápida
+  defaultExitTime String? // HH:MM en 24h, ej: "15:30" — apertura automática de jornada
+  timezone        String   @default("America/Santiago") // Zona horaria del colegio para el cron
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  users           User[]
-  classrooms      Classroom[]
-  sessions        PickupSession[]
-  invitations     Invitation[]
-  transports      TransportService[]
-  dailyPasses     DailyPass[]
+  memberships SchoolMembership[]
+  classrooms  Classroom[]
+  sessions    PickupSession[]
+  invitations Invitation[]
+  transports  TransportService[]
+  dailyPasses DailyPass[]
+  guardians   Guardian[]
+  pickers     Picker[]
 
   @@map("schools")
 }
 
 model User {
-  id            String       @id @default(uuid())
-  schoolId      String?      // Nullable: Admin antes de completar onboarding
-  email         String       @unique
+  id            String    @id @default(uuid())
+  email         String    @unique
   name          String
-  role          UserRole     @default(STAFF)
-  status        UserStatus   @default(ACTIVE) // PENDING para invitados no aceptados
-  googleId      String?      @unique
+  googleId      String?   @unique
   avatarUrl     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  onboardingRole UserRole?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  school        School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  verifiedEvents PickupEvent[] @relation("StaffEvents")
+  memberships   SchoolMembership[]
+  verifiedEvents PickupEvent[]       @relation("StaffEvents")
 
-  @@index([schoolId])
   @@map("users")
+}
+
+model SchoolMembership {
+  id        String     @id @default(uuid())
+  userId    String
+  schoolId  String
+  role      UserRole
+  status    UserStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school  School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  periods MembershipPeriod[]
+
+  @@unique([userId, schoolId])
+  @@index([schoolId, role, status])
+  @@map("school_memberships")
+}
+
+model MembershipPeriod {
+  id           String    @id @default(uuid())
+  membershipId String
+  role         UserRole
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  createdAt    DateTime  @default(now())
+
+  membership SchoolMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([membershipId, startedAt])
+  @@map("membership_periods")
 }
 
 // ── INVITACIONES DE STAFF ──────────────────────────────────────────────────
 
 model Invitation {
-  id          String    @id @default(uuid())
-  schoolId    String
-  email       String
-  role        UserRole  @default(STAFF)
-  token       String    @unique  // UUID para el link /staff/join?token=xxxx
-  expiresAt   DateTime           // createdAt + 48h
-  acceptedAt  DateTime?          // null = pendiente, timestamp = aceptada
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(uuid())
+  schoolId   String
+  email      String
+  role       UserRole  @default(STAFF)
+  token      String    @unique // UUID para el link /staff/join?token=xxxx
+  expiresAt  DateTime // createdAt + 48h
+  acceptedAt DateTime? // null = pendiente, timestamp = aceptada
+  createdAt  DateTime  @default(now())
 
-  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([email])
   @@index([schoolId])
@@ -121,35 +152,35 @@ model Invitation {
 // ── ALUMNOS Y SALONES ──────────────────────────────────────────────────────
 
 model Classroom {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   schoolId  String
-  grade     String    // Ej: "1° Básico"
-  section   String    // Ej: "A"
-  createdAt DateTime  @default(now())
+  grade     String // Ej: "1° Básico"
+  section   String // Ej: "A"
+  createdAt DateTime @default(now())
 
-  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students  Student[]
+  school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students Student[]
 
   @@unique([schoolId, grade, section])
   @@map("classrooms")
 }
 
 model Student {
-  id             String          @id @default(uuid())
-  classroomId    String
-  fullName       String          // Solo visible en Layer 2 (Admin)
-  initials       String          // Ej: "S.M." para Layer 1 (Staff)
-  animalId       String          // Ej: "cocodrilo"
-  colorId        String          // Ej: "amarillo"
-  status         StudentStatus   @default(ACTIVE) // ACTIVE, ABSENT, WITHDRAWN
-  avatarConfig   Json?           // Opciones de avatar humanizado si aplica
-  homeAddress    String?         // Dirección de entrega
-  homeLatitude   Float?
-  homeLongitude  Float?
-  transportId    String?         // Asignación opcional a furgón escolar
-  createdAt      DateTime        @default(now())
+  id            String        @id @default(uuid())
+  classroomId   String
+  fullName      String // Solo visible en Layer 2 (Admin)
+  initials      String // Ej: "S.M." para Layer 1 (Staff)
+  animalId      String // Ej: "cocodrilo"
+  colorId       String // Ej: "amarillo"
+  status        StudentStatus @default(ACTIVE) // ACTIVE, ABSENT, WITHDRAWN
+  avatarConfig  Json? // Opciones de avatar humanizado si aplica
+  homeAddress   String? // Dirección de entrega
+  homeLatitude  Float?
+  homeLongitude Float?
+  transportId   String? // Asignación opcional a furgón escolar
+  createdAt     DateTime      @default(now())
 
-  classroom      Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroom      Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   transport      TransportService? @relation(fields: [transportId], references: [id], onDelete: SetNull)
   guardians      StudentGuardian[]
   authorizations Authorization[]
@@ -164,63 +195,71 @@ model Student {
 // ── APODERADOS, PICKERS Y AUTORIZACIONES ───────────────────────────────────
 
 model Guardian {
-  id             String            @id @default(uuid())
-  whatsappNumber String            @unique
+  id             String   @id @default(uuid())
+  schoolId       String
+  whatsappNumber String
   fullName       String
   idDocumentHash String?
   familyToken    String?
-  createdAt      DateTime          @default(now())
+  createdAt      DateTime @default(now())
 
+  school         School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   students       StudentGuardian[]
   authorizations Authorization[]
   dailyPasses    DailyPass[]
 
+  @@unique([schoolId, whatsappNumber])
   @@index([familyToken])
+  @@index([schoolId])
   @@map("guardians")
 }
 
 model StudentGuardian {
   studentId  String
   guardianId String
-  isPrimary  Boolean  @default(false)
+  isPrimary  Boolean @default(false)
 
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  guardian   Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
 
   @@id([studentId, guardianId])
   @@map("student_guardians")
 }
 
 model Picker {
-  id             String          @id @default(uuid())
-  whatsappNumber String          @unique
+  id             String   @id @default(uuid())
+  schoolId       String
+  whatsappNumber String
   fullName       String
-  relationship   String          // "Tío", "Chofer Transporte", "Vecina"
+  relationship   String // "Tío", "Chofer Transporte", "Vecina"
   idDocumentHash String?
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime @default(now())
 
+  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   authorizations Authorization[]
   events         PickupEvent[]
 
+  @@unique([schoolId, whatsappNumber])
+  @@index([schoolId])
   @@map("pickers")
 }
 
 model Authorization {
-  id          String              @id @default(uuid())
-  studentId   String
-  pickerId    String
-  guardianId  String
-  type        AuthorizationType   @default(PERMANENT)
-  status      AuthorizationStatus @default(ACTIVE)
-  validFrom   DateTime            @default(now())
-  validUntil  DateTime?
-  legalProof  Json?               // { method: "BUTTON" | "VIDEO", ip: "...", signature: "..." }
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id         String              @id @default(uuid())
+  studentId  String
+  pickerId   String
+  guardianId String
+  type       AuthorizationType   @default(PERMANENT)
+  status     AuthorizationStatus @default(ACTIVE)
+  validFrom  DateTime            @default(now())
+  validUntil DateTime?
+  legalProof Json? // { method: "BUTTON" | "VIDEO", ip: "...", signature: "..." }
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
 
-  student     Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  picker      Picker              @relation(fields: [pickerId], references: [id], onDelete: Cascade)
-  guardian    Guardian            @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  picker   Picker   @relation(fields: [pickerId], references: [id], onDelete: Cascade)
+  guardian Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
 
   @@index([studentId, pickerId, status])
   @@map("authorizations")
@@ -229,47 +268,47 @@ model Authorization {
 // ── SESIONES Y EVENTOS DE CUSTODIA (AUDITORÍA) ─────────────────────────────
 
 model PickupSession {
-  id             String         @id @default(uuid())
-  schoolId       String
-  sessionCode    String         // Código alfanumérico visible: "K7-4X2"
-  status         SessionStatus  @default(DRAFT)
-  startedAt      DateTime?
-  closedAt       DateTime?
-  createdAt      DateTime       @default(now())
+  id          String        @id @default(uuid())
+  schoolId    String
+  sessionCode String // Código alfanumérico visible: "K7-4X2"
+  status      SessionStatus @default(DRAFT)
+  startedAt   DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime      @default(now())
 
-  school         School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  events         PickupEvent[]
+  school School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  events PickupEvent[]
 
   @@index([schoolId, status])
   @@map("pickup_sessions")
 }
 
 model PickupEvent {
-  id             String         @id @default(uuid())
+  id             String        @id @default(uuid())
   sessionId      String
   studentId      String
   pickerId       String?
   staffId        String?
-  status         CustodyStatus  @default(WAITING)
-  handoverCode   String?        // Código de 6 dígitos generado
+  status         CustodyStatus @default(WAITING)
+  handoverCode   String? // Código de 6 dígitos generado
   handoverExpiry DateTime?
 
   // Timeline inmutable
-  pickerScannedAt   DateTime?
-  staffConfirmedAt  DateTime?
-  inTransitAt       DateTime?
-  arrivedAt         DateTime?
-  alertTriggeredAt  DateTime?
+  pickerScannedAt  DateTime?
+  staffConfirmedAt DateTime?
+  inTransitAt      DateTime?
+  arrivedAt        DateTime?
+  alertTriggeredAt DateTime?
 
-  notes             String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  session        PickupSession  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
-  student        Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  picker         Picker?        @relation(fields: [pickerId], references: [id], onDelete: SetNull)
-  staff          User?          @relation("StaffEvents", fields: [staffId], references: [id], onDelete: SetNull)
-  incidents      Incident[]
+  session   PickupSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  student   Student       @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  picker    Picker?       @relation(fields: [pickerId], references: [id], onDelete: SetNull)
+  staff     User?         @relation("StaffEvents", fields: [staffId], references: [id], onDelete: SetNull)
+  incidents Incident[]
 
   @@index([sessionId, status])
   @@index([studentId])
@@ -277,15 +316,15 @@ model PickupEvent {
 }
 
 model Incident {
-  id             String       @id @default(uuid())
+  id             String    @id @default(uuid())
   eventId        String
-  type           String       // "UNAUTHORIZED_ATTEMPT" | "DELAY_WARNING" | "GUARDIAN_REPORTED"
+  type           String // "UNAUTHORIZED_ATTEMPT" | "DELAY_WARNING" | "GUARDIAN_REPORTED"
   description    String
   resolvedAt     DateTime?
   resolutionNote String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime  @default(now())
 
-  event          PickupEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event PickupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
   @@map("incidents")
@@ -294,14 +333,14 @@ model Incident {
 // ── TRANSPORTES ESCOLARES / FURGONES (RETIRO RECURRENTE EN LOTE) ─────────────
 
 model TransportService {
-  id                  String    @id @default(uuid())
-  schoolId            String
-  name                String    // Ej: "Furgón Escolar Tío Pedro"
-  plateNumber         String?   // Ej: "BZ-8429"
-  driverName          String    // Ej: "Pedro Morales"
-  driverPhone         String    // WhatsApp de Don Pedro
-  weeklyToken         String    @unique @default(uuid()) // Token semanal renovable
-  tokenExpiresAt      DateTime
+  id             String   @id @default(uuid())
+  schoolId       String
+  name           String // Ej: "Furgón Escolar Tío Pedro"
+  plateNumber    String? // Ej: "BZ-8429"
+  driverName     String // Ej: "Pedro Morales"
+  driverPhone    String // WhatsApp de Don Pedro
+  weeklyToken    String   @unique @default(uuid()) // Token semanal renovable
+  tokenExpiresAt DateTime
 
   // Soporte de Chofer de Reemplazo temporal por el día
   tempDriverName      String?
@@ -309,11 +348,11 @@ model TransportService {
   tempDriverToken     String?   @unique
   tempDriverExpiresAt DateTime?
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  school              School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students            Student[]
+  school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students Student[]
 
   @@index([schoolId])
   @@map("transport_services")
@@ -322,22 +361,22 @@ model TransportService {
 // ── PASES DIARIOS DE EMERGENCIA (CASO CARMEN SILVA / TERCEROS) ───────────────
 
 model DailyPass {
-  id            String    @id @default(uuid())
-  schoolId      String
-  studentId     String
-  guardianId    String    // Apoderado titular que delega la custodia hoy
-  pickerName    String    // Nombre de quien retira (ej: "Carmen Silva")
-  relationship  String    // Parentesco / Vínculo (ej: "Vecina / Amiga de la familia")
-  passToken     String    @unique @default(uuid()) // Token para pickme.app/pase/[passToken]
-  pinCode       String    // PIN configurable (2, 3 o 6 dígitos)
-  validForDate  DateTime  // Fecha para la cual es válido (expira al final del día)
-  isRevoked     Boolean   @default(false) // Revocable en tiempo real por el apoderado
-  usedAt        DateTime? // Se sella cuando portería valida la entrega
-  createdAt     DateTime  @default(now())
+  id           String    @id @default(uuid())
+  schoolId     String
+  studentId    String
+  guardianId   String // Apoderado titular que delega la custodia hoy
+  pickerName   String // Nombre de quien retira (ej: "Carmen Silva")
+  relationship String // Parentesco / Vínculo (ej: "Vecina / Amiga de la familia")
+  passToken    String    @unique @default(uuid()) // Token para pickme.app/pase/[passToken]
+  pinCode      String // PIN configurable (2, 3 o 6 dígitos)
+  validForDate DateTime // Fecha para la cual es válido (expira al final del día)
+  isRevoked    Boolean   @default(false) // Revocable en tiempo real por el apoderado
+  usedAt       DateTime? // Se sella cuando portería valida la entrega
+  createdAt    DateTime  @default(now())
 
-  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  guardian      Guardian  @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  school   School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
   @@index([studentId])

@@ -20,14 +20,23 @@ PickMe es una plataforma multi-tenant (un **workspace por colegio**) que reempla
 
 | Capa | Tecnología |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | UI | React 19 · CSS Modules (sin Tailwind) |
 | Lenguaje | TypeScript (strict) |
 | Auth | NextAuth v5 · JWT · Google OAuth |
 | ORM | Prisma 7 |
-| Base de datos | PostgreSQL (Neon) |
+| Base de datos | PostgreSQL 16 en Docker local · Neon PostgreSQL para Vercel |
 | Tiempo real | Polling cada 5 s (sin WebSockets) |
-| Deploy | Vercel + Neon |
+| Deploy | Vercel + Neon (remoto) |
+
+### Entornos y datos
+
+- **Desarrollo local:** PostgreSQL del servicio `db` en Docker. `npm run dev` usa `LOCAL_DATABASE_URL`; no usa Neon aunque `DATABASE_URL` esté presente en `.env`.
+- **Vercel:** usa `DATABASE_URL` configurada en Vercel, apuntando a Neon. Production y Preview deben tener destinos separados; no se debe validar con datos de producción.
+- **No se sincronizan automáticamente los datos entre local y Neon.** Antes de importar, restaurar o migrar datos se debe confirmar el origen de verdad y contar con respaldo.
+- Las migraciones Prisma usan la base local por defecto. Para una operación remota hay que indicar explícitamente `PICKME_DATABASE_TARGET=remote`.
+- El seed actual elimina los datos de las tablas antes de crear datos demo. Está bloqueado para destinos remotos y exige `PICKME_SEED_RESET=true`; no ejecutarlo en Vercel ni en una base con datos que se quieran conservar.
+- La arquitectura, estado de configuración y decisiones pendientes se registran en [DECISIONES_ARQUITECTURA.md](docs/DECISIONES_ARQUITECTURA.md).
 
 ---
 
@@ -77,7 +86,7 @@ PickMe es una plataforma multi-tenant (un **workspace por colegio**) que reempla
 | Endpoint | Descripción |
 |---|---|
 | `GET /api/board/[sessionId]` | Estado de sesión para el Board |
-| `POST /api/pickup/lookup` | Busca alumno por nombre/código |
+| `GET /api/pickup/lookup` | Busca alumnos autorizados por teléfono y jornada |
 | `POST /api/pickup/solicitar` | Picker solicita retiro → genera OTP |
 | `POST /api/pickup/verificar-handover` | Staff valida OTP → IN_TRANSIT |
 | `GET /api/staff/queue` | Cola de retiros (polling 5 s) |
@@ -90,7 +99,7 @@ PickMe es una plataforma multi-tenant (un **workspace por colegio**) que reempla
 
 ### Requisitos
 - Node.js ≥ 20
-- PostgreSQL (o cuenta Neon)
+- Docker con PostgreSQL 16 (servicio local de desarrollo)
 - Cuenta Google Cloud con OAuth 2.0 configurado
 
 ### Pasos
@@ -101,17 +110,18 @@ git clone <repo-url>
 cd pickme
 npm install
 
-# 2. Configurar variables de entorno
+# 2. Configurar variables locales
 cp .env.example .env.local
-# Editar .env.local con los valores reales
+# Mantener LOCAL_DATABASE_URL apuntando a localhost:5432.
+# Configurar credenciales OAuth locales si se van a probar en localhost.
 
-# 3. Aplicar schema a la base de datos
-npx prisma db push
+# 3. Iniciar PostgreSQL local
+docker compose up -d db
 
-# 4. (Opcional) Seed inicial
-npx prisma db seed
+# 4. Aplicar migraciones solo a la base local
+npx prisma migrate deploy
 
-# 5. Arrancar en desarrollo
+# 5. Arrancar la aplicación
 npm run dev
 ```
 
@@ -123,7 +133,9 @@ La app queda disponible en `http://localhost:3000`.
 
 | Variable | Descripción |
 |---|---|
-| `DATABASE_URL` | Connection string de PostgreSQL (Neon o local) |
+| `LOCAL_DATABASE_URL` | Connection string del PostgreSQL local Docker |
+| `DATABASE_URL` | Connection string remoto; Vercel la proporciona en sus entornos |
+| `PICKME_DATABASE_TARGET` | `local` por defecto; usar `remote` solo para una operación remota explícita |
 | `NEXTAUTH_SECRET` | Secret para firmar JWTs de NextAuth |
 | `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID de Google Cloud |
 | `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret de Google Cloud |
@@ -133,9 +145,7 @@ La app queda disponible en `http://localhost:3000`.
 
 ## Evaluación / Demo
 
-La cuenta de demostración es **`sofia@sanmartin.edu`** con rol `SCHOOL_ADMIN`, registrada en la base de datos del entorno de staging. No existe ninguna cuenta hardcodeada en el código fuente.
-
-Para acceder en staging, iniciar sesión con Google usando esa dirección de correo.
+Las cuentas demo descritas en planes históricos no están confirmadas como existentes ni deben recrearse en Neon/Production. Confirmar primero el entorno en la matriz del [checklist](docs/CHECKLIST_VALIDACION_MVP.md).
 
 ---
 
@@ -143,3 +153,6 @@ Para acceder en staging, iniciar sesión con Google usando esa dirección de cor
 
 - [PRD — Product Requirements Document](docs/PRD.md)
 - [SDD — Software Design Document](docs/SDD.md)
+- [Checklist operativo de validación del MVP](docs/CHECKLIST_VALIDACION_MVP.md)
+- [Plan de validación y tests](docs/PLAN_DE_VALIDACION_Y_TESTS.md)
+- [Arquitectura de entornos y decisiones pendientes](docs/DECISIONES_ARQUITECTURA.md)

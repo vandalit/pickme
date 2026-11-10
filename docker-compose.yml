@@ -30,8 +30,12 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-pickme_user}:${POSTGRES_PASSWORD:-pickme_password}@db:5432/${POSTGRES_DB:-pickme_db}?schema=public
+      - LOCAL_DATABASE_URL=postgresql://${POSTGRES_USER:-pickme_user}:${POSTGRES_PASSWORD:-pickme_password}@db:5432/${POSTGRES_DB:-pickme_db}?schema=public
+      - PICKME_DATABASE_TARGET=local
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-pickme_super_secret_session_token_32_chars}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       - NEXT_PUBLIC_PUSHER_KEY=${NEXT_PUBLIC_PUSHER_KEY:-mock_pusher_key}
       - NEXT_PUBLIC_PUSHER_CLUSTER=${NEXT_PUBLIC_PUSHER_CLUSTER:-us2}
@@ -48,4 +52,3 @@ volumes:
 networks:
   pickme_net:
     driver: bridge
-

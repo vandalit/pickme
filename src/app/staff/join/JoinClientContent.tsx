@@ -10,6 +10,7 @@ interface SchoolItem {
   name: string;
   address: string | null;
   hasPendingRequest: boolean;
+  isMember: boolean;
 }
 
 interface Props {
@@ -123,7 +124,9 @@ export default function JoinClientContent({
                   <span className={styles.schoolName}>{s.name}</span>
                   {s.address && <span className={styles.schoolAddress}>{s.address}</span>}
                 </div>
-                {s.hasPendingRequest ? (
+                {s.isMember ? (
+                  <span className={styles.requestedBadge}>Miembro activo</span>
+                ) : s.hasPendingRequest ? (
                   <span className={styles.requestedBadge}>Solicitado</span>
                 ) : (
                   <button
@@ -156,4 +159,3 @@ export default function JoinClientContent({
     </div>
   );
 }
-

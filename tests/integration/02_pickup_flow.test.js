@@ -4,7 +4,7 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
-const { TEST_SCHOOL_NAME } = require('./testHelper');
+const { TEST_SCHOOL_NAME, getLocalTestDatabaseUrl } = require('./testHelper');
 
 describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', { concurrency: 1 }, () => {
   let pool;
@@ -14,7 +14,7 @@ describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', { concu
   let guardianPhone = '+56991112233'; // Carolina Herrera (Vicente Toro Morales)
 
   before(async () => {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 20000 });
+    pool = new Pool({ connectionString: getLocalTestDatabaseUrl(), connectionTimeoutMillis: 20000 });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
 
@@ -44,7 +44,10 @@ describe('Flujo de Retiro End-to-End y Validación en Portón (Paso 5)', { concu
   it('1. Búsqueda móvil de apoderado (/api/pickup/lookup)', async () => {
     const cleanPhone = guardianPhone.replace(/[\s-]/g, '');
     const guardian = await prisma.guardian.findFirst({
-      where: { whatsappNumber: cleanPhone },
+      where: {
+        schoolId: session.schoolId,
+        whatsappNumber: cleanPhone,
+      },
       include: {
         students: {
           where: {

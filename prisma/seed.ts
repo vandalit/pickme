@@ -1,6 +1,23 @@
 import { UserRole, CustodyStatus, SessionStatus, AuthorizationType, AuthorizationStatus } from '@prisma/client';
 import { prisma } from '../src/lib/db';
 
+const databaseTarget = process.env.PICKME_DATABASE_TARGET ?? 'local';
+const localDatabaseUrl =
+  process.env.LOCAL_DATABASE_URL ??
+  'postgresql://pickme_user:pickme_password@localhost:5432/pickme_db?schema=public';
+const localDatabaseHost = new URL(localDatabaseUrl).hostname;
+
+if (
+  databaseTarget !== 'local' ||
+  process.env.VERCEL === '1' ||
+  !['localhost', '127.0.0.1', '::1', 'db'].includes(localDatabaseHost) ||
+  process.env.PICKME_SEED_RESET !== 'true'
+) {
+  throw new Error(
+    'Seed detenido: solo se permite contra PostgreSQL local y requiere PICKME_SEED_RESET=true. Nunca usarlo con datos de Vercel/Neon.'
+  );
+}
+
 async function main() {
   console.log('🌱 Starting PickMe database seeding...');
 
@@ -31,22 +48,36 @@ async function main() {
   // 3. Usuarios Administrativos y Personal de Portón
   const sofia = await prisma.user.create({
     data: {
-      schoolId: school.id,
       email: 'sofia@sanmartin.edu',
       name: 'Sofía Valenzuela (Directora)',
-      role: UserRole.SCHOOL_ADMIN,
+      onboardingRole: UserRole.SCHOOL_ADMIN,
+      memberships: {
+        create: {
+          schoolId: school.id,
+          role: UserRole.SCHOOL_ADMIN,
+          status: 'ACTIVE',
+          periods: { create: { role: UserRole.SCHOOL_ADMIN } },
+        },
+      },
     },
   });
 
   const staffCarlos = await prisma.user.create({
     data: {
-      schoolId: school.id,
       email: 'carlos.puertas@sanmartin.edu',
       name: 'Carlos Mendoza (Portón Principal)',
-      role: UserRole.STAFF,
+      onboardingRole: UserRole.STAFF,
+      memberships: {
+        create: {
+          schoolId: school.id,
+          role: UserRole.STAFF,
+          status: 'ACTIVE',
+          periods: { create: { role: UserRole.STAFF } },
+        },
+      },
     },
   });
-  console.log(`✅ Usuarios creados: Sofía (${sofia.role}), Carlos (${staffCarlos.role})`);
+  console.log(`✅ Usuarios creados: Sofía (${sofia.onboardingRole}), Carlos (${staffCarlos.onboardingRole})`);
 
   // 4. Salones / Cursos
   const aula1A = await prisma.classroom.create({
@@ -69,6 +100,7 @@ async function main() {
   // 5. Apoderados Legales (Guardians)
   const apoderado1 = await prisma.guardian.create({
     data: {
+      schoolId: school.id,
       fullName: 'Carolina Herrera',
       whatsappNumber: '+56991112233',
     },
@@ -76,6 +108,7 @@ async function main() {
 
   const apoderado2 = await prisma.guardian.create({
     data: {
+      schoolId: school.id,
       fullName: 'Roberto Gómez',
       whatsappNumber: '+56992223344',
     },
@@ -83,6 +116,7 @@ async function main() {
 
   const apoderado3 = await prisma.guardian.create({
     data: {
+      schoolId: school.id,
       fullName: 'Marcela Silva',
       whatsappNumber: '+56993334455',
     },
@@ -91,6 +125,7 @@ async function main() {
   // 6. Pickers (Personas Autorizadas a Retirar)
   const pickerTio = await prisma.picker.create({
     data: {
+      schoolId: school.id,
       fullName: 'Ignacio Herrera (Tío)',
       whatsappNumber: '+56981112233',
       relationship: 'Tío materno',
@@ -99,6 +134,7 @@ async function main() {
 
   const pickerFurgon = await prisma.picker.create({
     data: {
+      schoolId: school.id,
       fullName: 'Don Pedro (Transporte Escolar)',
       whatsappNumber: '+56984445566',
       relationship: 'Furgón Escolar',

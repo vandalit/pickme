@@ -90,4 +90,3 @@ export default function OnboardingCards({ userEmail }: Props) {
     </div>
   );
 }
-

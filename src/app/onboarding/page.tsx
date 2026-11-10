@@ -20,10 +20,11 @@ export default async function OnboardingPage() {
   // Si ya tiene escuela vinculada, redirigir a su panel correspondiente
   const { needsOnboarding, school, user } = await resolveUserSchool(email);
 
+  if (!needsOnboarding && !school) redirect('/workspaces');
   if (!needsOnboarding && school) {
-    if (user?.role === 'STAFF') redirect('/staff');
-    redirect('/admin');
+    redirect(user?.role === 'STAFF' ? '/staff' : '/admin');
   }
+  if (user?.role === 'STAFF') redirect('/staff/join');
 
   return (
     <main className={styles.main}>
@@ -39,4 +40,3 @@ export default async function OnboardingPage() {
     </main>
   );
 }
-

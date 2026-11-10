@@ -79,7 +79,7 @@ flowchart TD
 ### M1: Onboarding y Autenticación
 - Acceso principal mediante **Google Workspace OAuth** institucional.
 - Si el usuario de Google no existe en la base de datos, se auto-provisiona como `SCHOOL_ADMIN` y se le conduce a `/admin/onboarding`.
-- Opción secundaria de **Credenciales Institucionales** (correo y contraseña).
+- El acceso con contraseña queda diferido hasta contar con almacenamiento de hashes y verificación segura.
 - En `/admin/onboarding`, el director ingresa nombre del colegio, dirección, teléfono de emergencia, zona horaria y largo de PIN de pases (2, 3 o 6 dígitos).
 
 ### M2: Gestión de Nómina y Cursos

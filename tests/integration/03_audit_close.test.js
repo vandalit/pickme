@@ -4,7 +4,12 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
-const { TEST_SCHOOL_NAME, setupTestSchool, cleanupTestSchool } = require('./testHelper');
+const {
+  TEST_SCHOOL_NAME,
+  getLocalTestDatabaseUrl,
+  setupTestSchool,
+  cleanupTestSchool,
+} = require('./testHelper');
 const { generatePlainTextAuditLog } = require('../../dist/lib/auditLogFormatter');
 
 describe('Auditoría Forense y Cierre de Jornada (Paso 6)', { concurrency: 1 }, () => {
@@ -14,7 +19,7 @@ describe('Auditoría Forense y Cierre de Jornada (Paso 6)', { concurrency: 1 }, 
   let openSession;
 
   before(async () => {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 20000 });
+    pool = new Pool({ connectionString: getLocalTestDatabaseUrl(), connectionTimeoutMillis: 20000 });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
 

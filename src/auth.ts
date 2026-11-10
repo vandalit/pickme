@@ -1,11 +1,12 @@
-import NextAuth, { AuthError } from "next-auth"
+import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import Credentials from "next-auth/providers/credentials"
+import { cookies } from "next/headers"
 import { authConfig } from "./auth.config"
 import { prisma } from "@/lib/db"
 
 const googleClientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || ""
 const googleClientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || ""
+const activeSchoolCookie = "pickme_active_school"
 
 const providers = []
 
@@ -18,123 +19,116 @@ if (googleClientId && googleClientSecret) {
   )
 }
 
-providers.push(
-  Credentials({
-    name: "Credenciales Institucionales",
-    credentials: {
-      email: { label: "Correo Institucional", type: "email" },
-      password: { label: "Contraseña", type: "password" },
-    },
-    async authorize(credentials) {
-      const email = (credentials?.email as string | undefined)?.trim().toLowerCase()
-      const password = credentials?.password as string | undefined
-
-      if (!email || !password) return null
-
-      try {
-        let dbUser = await prisma.user.findUnique({
-          where: { email },
-          include: { school: true },
-        })
-
-        // Si es una cuenta nueva, registrarla como SCHOOL_ADMIN pendiente de onboarding
-        if (!dbUser) {
-          const userName = email.split("@")[0].replace(/[._-]/g, " ")
-          dbUser = await prisma.user.create({
-            data: {
-              email,
-              name: userName.charAt(0).toUpperCase() + userName.slice(1),
-              role: "SCHOOL_ADMIN",
-              status: "ACTIVE",
-            },
-            include: { school: true },
-          })
-        }
-
-        return {
-          id: dbUser.id,
-          name: dbUser.name,
-          email: dbUser.email,
-          role: dbUser.role,
-          schoolId: dbUser.schoolId,
-          userStatus: dbUser.status,
-          image: dbUser.avatarUrl ?? undefined,
-        }
-      } catch (err) {
-        console.error("[auth.authorize] Error al verificar o registrar usuario en BD:", err)
-        return null
-      }
-    },
-  })
-)
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "pickme_super_secret_session_token_32_chars_dev",
+  trustHost: true,
   providers,
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id ?? token.sub
-        token.name = user.name
-        token.email = user.email
-        token.picture = user.image
-        if ((user as any).role) {
-          token.role = (user as any).role
+    async jwt({ token, user, account, profile }) {
+      if (account?.provider === "google") {
+        const email = (user?.email || token.email || "").trim().toLowerCase()
+        const googleId = account.providerAccountId
+        if (!email || !googleId || profile?.email_verified !== true) {
+          throw new Error("Google did not provide a stable account ID and verified email.")
         }
-        if ((user as any).schoolId) {
-          token.schoolId = (user as any).schoolId
-        }
-        if ((user as any).userStatus) {
-          token.userStatus = (user as any).userStatus
-        }
-      }
 
-      // Sincronización transparente de cuenta Google en PostgreSQL
-      if (account?.provider === "google" && token.email) {
-        token.googleIdToken = account.id_token
-        try {
-          const normalizedEmail = (token.email as string).trim().toLowerCase()
-          let dbUser = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
+        let dbUser = await prisma.user.findUnique({ where: { googleId } })
+        if (dbUser) {
+          dbUser = await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              email,
+              name: user?.name || dbUser.name,
+              avatarUrl: user?.image || dbUser.avatarUrl,
+            },
           })
-
-          // Si es primer ingreso con Google: crear usuario en BD como SCHOOL_ADMIN
-          if (!dbUser) {
-            const userName = (token.name as string) || normalizedEmail.split("@")[0]
-            dbUser = await prisma.user.create({
-              data: {
-                email: normalizedEmail,
-                name: userName,
-                role: "SCHOOL_ADMIN",
-                status: "ACTIVE",
-                avatarUrl: (token.picture as string) || null,
-              },
-            })
+        } else {
+          const emailUser = await prisma.user.findUnique({ where: { email } })
+          if (emailUser?.googleId && emailUser.googleId !== googleId) {
+            throw new Error("This email is already linked to a different Google identity.")
           }
 
-          token.role = dbUser.role
-          token.sub = dbUser.id
-          token.schoolId = dbUser.schoolId
-          token.userStatus = dbUser.status
-        } catch (err) {
-          console.error("[auth.jwt] Error sincronizando usuario Google en BD:", err)
+          dbUser = emailUser
+            ? await prisma.user.update({
+                where: { id: emailUser.id },
+                data: {
+                  googleId,
+                  name: user?.name || emailUser.name,
+                  avatarUrl: user?.image || emailUser.avatarUrl,
+                },
+              })
+            : await prisma.user.create({
+                data: {
+                  email,
+                  name: user?.name || email.split("@")[0],
+                  googleId,
+                  avatarUrl: user?.image || null,
+                  onboardingRole: "SCHOOL_ADMIN",
+                },
+              })
+        }
+
+        token.sub = dbUser.id
+        token.email = dbUser.email
+        token.name = dbUser.name
+      }
+
+      if (token.sub) {
+        const [dbUser, memberships, cookieStore] = await Promise.all([
+          prisma.user.findUnique({ where: { id: token.sub } }),
+          prisma.schoolMembership.findMany({
+            where: { userId: token.sub, status: "ACTIVE" },
+            select: { id: true, schoolId: true, role: true, status: true },
+          }),
+          cookies(),
+        ])
+
+        if (!dbUser) {
+          throw new Error("The authenticated PickMe user no longer exists.")
+        }
+
+        const selectedSchoolId =
+          cookieStore.get(activeSchoolCookie)?.value || token.schoolId
+        const membership =
+          memberships.find((item) => item.schoolId === selectedSchoolId) ||
+          (memberships.length === 1 ? memberships[0] : null)
+
+        if (membership) {
+          token.schoolId = membership.schoolId
+          token.role = membership.role
+          token.userStatus = membership.status
+          token.workspaceSelectionRequired = false
+        } else {
+          delete token.schoolId
+          delete token.role
+          delete token.userStatus
+          token.workspaceSelectionRequired = memberships.length > 1
+
+          if (memberships.length === 0) {
+            const nonActiveMembership = await prisma.schoolMembership.findFirst({
+              where: { userId: token.sub, status: { in: ["PENDING", "SUSPENDED"] } },
+              orderBy: { updatedAt: "desc" },
+              select: { schoolId: true, role: true, status: true },
+            })
+            const pendingInvitation = await prisma.invitation.findFirst({
+              where: {
+                email: dbUser.email,
+                acceptedAt: null,
+                expiresAt: { gte: new Date() },
+              },
+              orderBy: { createdAt: "desc" },
+              select: { schoolId: true, role: true },
+            })
+            token.role = nonActiveMembership?.role || pendingInvitation?.role || dbUser.onboardingRole
+            token.userStatus = nonActiveMembership?.status || (pendingInvitation ? "PENDING" : undefined)
+            token.schoolId = nonActiveMembership?.schoolId || pendingInvitation?.schoolId
+          }
         }
       }
 
       return token
-    },
-    session({ session, token }) {
-      if (token && session.user) {
-        if (token.sub) session.user.id = token.sub
-        if (token.email) session.user.email = token.email
-        if (token.name) session.user.name = token.name
-        if (token.picture) session.user.image = token.picture as string
-        if (token.role) (session.user as any).role = token.role
-        if (token.schoolId) (session.user as any).schoolId = token.schoolId
-        if (token.userStatus) (session.user as any).userStatus = token.userStatus
-      }
-      return session
     },
   },
 })

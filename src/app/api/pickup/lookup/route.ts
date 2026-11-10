@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+type StudentPickupLookup = {
+  id: string;
+  fullName: string;
+  initials: string;
+  animalId: string;
+  colorId: string;
+  classroomName: string;
+  status: string;
+  eventId: string | null;
+  handoverCode: string | null;
+  handoverExpiry: Date | null;
+};
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -16,11 +29,17 @@ export async function GET(req: NextRequest) {
 
     // Normalizar formato de teléfono (remover espacios y guiones)
     const cleanPhone = phone.replace(/[\s-]/g, '');
+    if (cleanPhone.replace(/\D/g, '').length < 8) {
+      return NextResponse.json(
+        { error: 'Ingresa un número telefónico válido con al menos 8 dígitos.' },
+        { status: 400 }
+      );
+    }
 
     // 1. Buscar la sesión activa correspondiente con estricto aislamiento multi-tenant
     let session = null;
     if (sessionCodeOrId) {
-      session = await prisma.pickupSession.findFirst({
+      const matchingSessions = await prisma.pickupSession.findMany({
         where: {
           OR: [
             { id: sessionCodeOrId },
@@ -31,6 +50,14 @@ export async function GET(req: NextRequest) {
         include: { school: true },
       });
 
+      if (matchingSessions.length > 1) {
+        return NextResponse.json(
+          { error: 'Hay más de una jornada asociada a este código. Contacta al colegio.' },
+          { status: 409 }
+        );
+      }
+      session = matchingSessions[0] ?? null;
+
       if (!session) {
         return NextResponse.json(
           { error: `El código "${sessionCodeOrId}" no corresponde a ninguna jornada escolar abierta.` },
@@ -40,7 +67,7 @@ export async function GET(req: NextRequest) {
     } else {
       // Si no se especificó código, buscar la jornada abierta del colegio al que pertenece este apoderado/picker
       const phoneSuffix = cleanPhone.slice(-8);
-      session = await prisma.pickupSession.findFirst({
+      const matchingSessions = await prisma.pickupSession.findMany({
         where: {
           status: 'OPEN',
           school: {
@@ -72,7 +99,15 @@ export async function GET(req: NextRequest) {
         },
         orderBy: { createdAt: 'desc' },
         include: { school: true },
+        take: 2,
       });
+      if (matchingSessions.length > 1) {
+        return NextResponse.json(
+          { error: 'Hay más de una jornada asociada a este número. Ingresa el código de portón de tu colegio.' },
+          { status: 409 }
+        );
+      }
+      session = matchingSessions[0] ?? null;
     }
 
     if (!session) {
@@ -85,6 +120,7 @@ export async function GET(req: NextRequest) {
     // 2. Buscar si el teléfono pertenece a un Picker o Guardian registrado
     const picker = await prisma.picker.findFirst({
       where: {
+        schoolId: session.schoolId,
         OR: [
           { whatsappNumber: cleanPhone },
           { whatsappNumber: { contains: cleanPhone.slice(-8) } },
@@ -117,6 +153,7 @@ export async function GET(req: NextRequest) {
     // También verificar si el apoderado (Guardian) viene a retirar directamente
     const guardian = await prisma.guardian.findFirst({
       where: {
+        schoolId: session.schoolId,
         OR: [
           { whatsappNumber: cleanPhone },
           { whatsappNumber: { contains: cleanPhone.slice(-8) } },
@@ -156,7 +193,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Unificar lista de alumnos autorizados
-    const studentsMap = new Map<string, any>();
+    const studentsMap = new Map<string, StudentPickupLookup>();
 
     if (picker) {
       for (const auth of picker.authorizations) {
@@ -208,7 +245,7 @@ export async function GET(req: NextRequest) {
       schoolName: session.school.name,
       students,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/pickup/lookup:', error);
     return NextResponse.json(
       { error: 'Error interno al consultar autorización.' },
@@ -216,4 +253,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

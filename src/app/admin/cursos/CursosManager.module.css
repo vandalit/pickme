@@ -349,6 +349,12 @@
   gap: 0.6rem;
 }
 
+.modalDescription {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .modalCloseBtn {
   background: transparent;
   border: none;
@@ -710,4 +716,3 @@
   color: #ef4444;
   transform: translateY(-1px);
 }
-

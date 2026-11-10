@@ -77,11 +77,18 @@ export async function createStudentAction(data: {
   classroomId: string;
   guardianName: string;
   guardianPhone: string;
+  reuseExistingGuardian?: boolean;
   pickerName?: string;
   pickerRelationship?: string;
   pickerPhone?: string;
   status?: 'ACTIVE' | 'ABSENT' | 'WITHDRAWN';
-}): Promise<{ success: boolean; error?: string; student?: any }> {
+}): Promise<{
+  success: boolean;
+  error?: string;
+  student?: any;
+  guardianName?: string;
+  guardianConflict?: { existingName: string };
+}> {
   const session = await auth();
   if (!session?.user?.email) {
     return { success: false, error: 'Sesión no autenticada.' };
@@ -101,6 +108,29 @@ export async function createStudentAction(data: {
   }
 
   try {
+    const classroom = await prisma.classroom.findFirst({
+      where: { id: data.classroomId, schoolId: school.id },
+      select: { id: true },
+    });
+    if (!classroom) {
+      return { success: false, error: 'El curso no pertenece a tu establecimiento.' };
+    }
+
+    const matchingGuardian = await prisma.guardian.findUnique({
+      where: {
+        schoolId_whatsappNumber: {
+          schoolId: school.id,
+          whatsappNumber: cleanGuardianPhone,
+        },
+      },
+    });
+    if (matchingGuardian && !data.reuseExistingGuardian) {
+      return {
+        success: false,
+        guardianConflict: { existingName: matchingGuardian.fullName },
+      };
+    }
+
     // 1. Obtener los avatares ya utilizados en esta sala para garantizar cero colisiones
     const existingStudentsInClass = await prisma.student.findMany({
       where: { classroomId: data.classroomId },
@@ -111,18 +141,13 @@ export async function createStudentAction(data: {
     const initials = extractInitials(cleanFullName);
 
     // 2. Buscar o crear el apoderado titular
-    let guardian = await prisma.guardian.findUnique({
-      where: { whatsappNumber: cleanGuardianPhone },
+    const guardian = matchingGuardian ?? await prisma.guardian.create({
+      data: {
+        schoolId: school.id,
+        fullName: cleanGuardianName,
+        whatsappNumber: cleanGuardianPhone,
+      },
     });
-
-    if (!guardian) {
-      guardian = await prisma.guardian.create({
-        data: {
-          fullName: cleanGuardianName,
-          whatsappNumber: cleanGuardianPhone,
-        },
-      });
-    }
 
     // 3. Crear el alumno con su avatar asignado
     const student = await prisma.student.create({
@@ -149,12 +174,18 @@ export async function createStudentAction(data: {
       const cleanPickerPhone = (data.pickerPhone || cleanGuardianPhone).trim().replace(/\s+/g, '');
 
       let picker = await prisma.picker.findUnique({
-        where: { whatsappNumber: cleanPickerPhone },
+        where: {
+          schoolId_whatsappNumber: {
+            schoolId: school.id,
+            whatsappNumber: cleanPickerPhone,
+          },
+        },
       });
 
       if (!picker) {
         picker = await prisma.picker.create({
           data: {
+            schoolId: school.id,
             fullName: cleanPickerName,
             relationship: cleanRelationship,
             whatsappNumber: cleanPickerPhone,
@@ -174,7 +205,7 @@ export async function createStudentAction(data: {
     }
 
     revalidatePath('/admin/cursos');
-    return { success: true, student };
+    return { success: true, student, guardianName: guardian.fullName };
   } catch (err: any) {
     console.error('[createStudentAction] Error al registrar alumno:', err);
     return { success: false, error: 'Error al registrar el alumno en la base de datos.' };
@@ -188,10 +219,16 @@ export async function updateStudentAction(data: {
   classroomId: string;
   guardianName: string;
   guardianPhone: string;
+  reuseExistingGuardian?: boolean;
   pickerName?: string;
   pickerRelationship?: string;
   pickerPhone?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{
+  success: boolean;
+  error?: string;
+  guardianName?: string;
+  guardianConflict?: { existingName: string };
+}> {
   const session = await auth();
   if (!session?.user?.email) {
     return { success: false, error: 'Sesión no autenticada.' };
@@ -226,6 +263,31 @@ export async function updateStudentAction(data: {
       return { success: false, error: 'Alumno no encontrado en este establecimiento.' };
     }
 
+    const targetClassroom = await prisma.classroom.findFirst({
+      where: { id: data.classroomId, schoolId: school.id },
+      select: { id: true },
+    });
+    if (!targetClassroom) {
+      return { success: false, error: 'El curso no pertenece a tu establecimiento.' };
+    }
+
+    const currentGuardian = existingStudent.guardians[0]?.guardian;
+    const matchingGuardian = await prisma.guardian.findUnique({
+      where: {
+        schoolId_whatsappNumber: {
+          schoolId: school.id,
+          whatsappNumber: cleanGuardianPhone,
+        },
+      },
+    });
+    const isCurrentGuardian = currentGuardian?.id === matchingGuardian?.id;
+    if (matchingGuardian && !isCurrentGuardian && !data.reuseExistingGuardian) {
+      return {
+        success: false,
+        guardianConflict: { existingName: matchingGuardian.fullName },
+      };
+    }
+
     // Si cambia de curso, verificar avatar en el nuevo curso para evitar colisiones
     let animalId = existingStudent.animalId;
     let colorId = existingStudent.colorId;
@@ -254,30 +316,21 @@ export async function updateStudentAction(data: {
     const initials = extractInitials(cleanFullName);
 
     // 1. Actualizar o asociar apoderado titular
-    let primaryGuardianRecord = existingStudent.guardians[0]?.guardian;
+    let primaryGuardianRecord = currentGuardian;
     if (primaryGuardianRecord) {
-      if (primaryGuardianRecord.whatsappNumber === cleanGuardianPhone) {
+      if (isCurrentGuardian) {
         await prisma.guardian.update({
           where: { id: primaryGuardianRecord.id },
           data: { fullName: cleanGuardianName },
         });
       } else {
-        let newGuardian = await prisma.guardian.findUnique({
-          where: { whatsappNumber: cleanGuardianPhone },
+        const newGuardian = matchingGuardian ?? await prisma.guardian.create({
+          data: {
+            schoolId: school.id,
+            fullName: cleanGuardianName,
+            whatsappNumber: cleanGuardianPhone,
+          },
         });
-        if (!newGuardian) {
-          newGuardian = await prisma.guardian.create({
-            data: {
-              fullName: cleanGuardianName,
-              whatsappNumber: cleanGuardianPhone,
-            },
-          });
-        } else {
-          await prisma.guardian.update({
-            where: { id: newGuardian.id },
-            data: { fullName: cleanGuardianName },
-          });
-        }
 
         await prisma.studentGuardian.deleteMany({
           where: { studentId: data.studentId, isPrimary: true },
@@ -292,17 +345,13 @@ export async function updateStudentAction(data: {
         primaryGuardianRecord = newGuardian;
       }
     } else {
-      let newGuardian = await prisma.guardian.findUnique({
-        where: { whatsappNumber: cleanGuardianPhone },
+      const newGuardian = matchingGuardian ?? await prisma.guardian.create({
+        data: {
+          schoolId: school.id,
+          fullName: cleanGuardianName,
+          whatsappNumber: cleanGuardianPhone,
+        },
       });
-      if (!newGuardian) {
-        newGuardian = await prisma.guardian.create({
-          data: {
-            fullName: cleanGuardianName,
-            whatsappNumber: cleanGuardianPhone,
-          },
-        });
-      }
       await prisma.studentGuardian.create({
         data: {
           studentId: data.studentId,
@@ -334,12 +383,18 @@ export async function updateStudentAction(data: {
     if (cleanPickerName && (cleanPickerPhone || cleanGuardianPhone)) {
       const pickerTargetPhone = cleanPickerPhone || cleanGuardianPhone;
       let picker = await prisma.picker.findUnique({
-        where: { whatsappNumber: pickerTargetPhone },
+        where: {
+          schoolId_whatsappNumber: {
+            schoolId: school.id,
+            whatsappNumber: pickerTargetPhone,
+          },
+        },
       });
 
       if (!picker) {
         picker = await prisma.picker.create({
           data: {
+            schoolId: school.id,
             fullName: cleanPickerName,
             relationship: cleanPickerRel,
             whatsappNumber: pickerTargetPhone,
@@ -347,7 +402,7 @@ export async function updateStudentAction(data: {
         });
       } else {
         await prisma.picker.update({
-          where: { id: picker.id },
+          where: { id: picker.id, schoolId: school.id },
           data: {
             fullName: cleanPickerName,
             relationship: cleanPickerRel,
@@ -382,7 +437,7 @@ export async function updateStudentAction(data: {
     }
 
     revalidatePath('/admin/cursos');
-    return { success: true };
+    return { success: true, guardianName: primaryGuardianRecord.fullName };
   } catch (err: any) {
     console.error('[updateStudentAction] Error al actualizar alumno:', err);
     return { success: false, error: err.message || 'Error al actualizar el alumno en la base de datos.' };
@@ -494,7 +549,7 @@ export async function adminBypassDeliverStudentAction(
     return { success: false, error: 'Sesión no autenticada.' };
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return { success: false, error: 'Solo Dirección puede ejecutar un bypass manual de custodia.' };
   }
@@ -670,6 +725,10 @@ export async function importStudentsCsvAction(
 
       if (res.success) {
         importedCount++;
+      } else if (res.guardianConflict) {
+        executionErrors.push(
+          `Alumno "${row.fullName}": el WhatsApp del apoderado ya está registrado en este colegio; revisa y confirma la asociación desde el formulario individual.`
+        );
       } else {
         executionErrors.push(`Alumno "${row.fullName}": ${res.error}`);
       }
@@ -685,4 +744,3 @@ export async function importStudentsCsvAction(
     errors: executionErrors,
   };
 }
-

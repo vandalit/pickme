@@ -4,6 +4,8 @@
 **Estado:** En desarrollo activo y preparación de QA  
 **Documento de producto relacionado:** [PRD.md](PRD.md)
 
+> **Estado documental:** contiene decisiones y modelos históricos que no reflejan por completo el código actual. Para entornos y base de datos, usar [DECISIONES_ARQUITECTURA.md](DECISIONES_ARQUITECTURA.md) y README. Resolver las discrepancias pendientes una por una.
+
 ---
 
 ## 1. Arquitectura del Sistema
@@ -44,7 +46,7 @@ Actores externos y canales:
 
 ### Decisiones de Arquitectura Clave
 1. **Separación de `auth.config.ts` y `auth.ts`**: El middleware de Next.js corre sobre `auth.config.ts` (liviano, sin dependencias nativas de Node ni Prisma), evitando errores de Edge Runtime y garantizando que el routing hacia rutas públicas (como `/simulador`) nunca se bloquee.
-2. **0% Mocks en Flujo Central**: Toda persistencia reside en PostgreSQL Neon con Prisma 7 y `@prisma/adapter-pg`. Los mocks se restringen exclusivamente al simulador estático comercial (`/simulador`).
+2. **Persistencia por entorno**: Vercel usa el PostgreSQL remoto configurado en `DATABASE_URL` (Neon); desarrollo local usa PostgreSQL Docker mediante `LOCAL_DATABASE_URL`. Los mocks del simulador son independientes de ambas bases.
 3. **Multi-tenant Estricto**: Todo modelo escolar (`Classroom`, `Student`, `PickupSession`, `Invitation`, `TransportService`) contiene clave foránea obligatoria `schoolId`. Las consultas siempre filtran por el `schoolId` verificado del JWT del usuario.
 4. **Cadena de Custodia con Verificación Cruzada**: El personal de portón no puede entregar un alumno sin que exista un match previo entre la identidad autorizada (pase o furgón) y el `sessionCode` activo proyectado en el patio.
 
@@ -183,7 +185,7 @@ enum EventStatus {
    - `signIn("google", { redirectTo: "/admin" })` redirige al servidor de Google Cloud Console.
 2. **Callback e Identificación (`jwt` callback):**
    - Al retornar a `/api/auth/callback/google`, NextAuth valida los tokens de Google.
-   - El sistema consulta la tabla `User` de PostgreSQL Neon por `email`.
+   - El sistema consulta `User` en la base del entorno actual: PostgreSQL Docker local o Neon configurado en Vercel.
    - **Si el usuario no existe en la base de datos:** se ejecuta `prisma.user.create()` con `role = "SCHOOL_ADMIN"`, `status = "ACTIVE"`, `schoolId = null`.
    - Se inyecta `role`, `schoolId` y `status` en el token JWT y la sesión.
 3. **Resolución de Establecimiento (`resolveUserSchool`):**

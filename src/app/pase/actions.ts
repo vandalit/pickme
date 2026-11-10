@@ -22,22 +22,42 @@ export async function createDailyPassAction(
   relationship: string
 ): Promise<DailyPassResult> {
   const cleanPhone = guardianPhone.trim().replace(/[\s-]/g, '');
-
-  // 1. Buscar apoderado registrado por su teléfono
-  const guardian = await prisma.guardian.findFirst({
-    where: {
-      OR: [
-        { whatsappNumber: cleanPhone },
-        { whatsappNumber: { contains: cleanPhone.slice(-8) } },
-      ],
-    },
-  });
-
-  if (!guardian) {
-    return { success: false, error: 'No se encontró un apoderado titular con este número telefónico.' };
+  if (cleanPhone.replace(/\D/g, '').length < 8) {
+    return { success: false, error: 'Ingresa un número telefónico válido.' };
   }
 
-  // 2. Verificar que el alumno pertenezca al apoderado
+  // 1. Resolve the student first so guardian lookup is scoped to that school.
+  const student = await prisma.student.findFirst({
+    where: { id: studentId },
+    include: { classroom: { select: { schoolId: true } } },
+  });
+  if (!student) {
+    return { success: false, error: 'No se encontró el alumno indicado.' };
+  }
+  const schoolId = student.classroom.schoolId;
+
+  // Exact match wins; suffix matching is only a fallback for formatted legacy numbers.
+  let guardian = await prisma.guardian.findUnique({
+    where: { schoolId_whatsappNumber: { schoolId, whatsappNumber: cleanPhone } },
+  });
+  if (!guardian) {
+    const matches = await prisma.guardian.findMany({
+      where: {
+        schoolId,
+        whatsappNumber: { contains: cleanPhone.slice(-8) },
+      },
+      take: 2,
+    });
+    if (matches.length > 1) {
+      return { success: false, error: 'Hay más de un apoderado con un número coincidente. Usa el número completo.' };
+    }
+    guardian = matches[0] ?? null;
+  }
+  if (!guardian) {
+    return { success: false, error: 'No se encontró un apoderado titular con este número en el colegio del alumno.' };
+  }
+
+  // 2. Verify the guardian is linked to this student.
   const link = await prisma.studentGuardian.findFirst({
     where: { studentId, guardianId: guardian.id },
     include: {
@@ -110,4 +130,3 @@ export async function revokeDailyPassAction(passToken: string): Promise<{ succes
     return { success: false, error: 'No se pudo revocar el pase.' };
   }
 }
-

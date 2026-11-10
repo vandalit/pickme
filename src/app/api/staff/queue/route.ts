@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
+import { resolveUserSchool } from '@/lib/userSchool';
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,21 +17,22 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const email = userSession.user.email.toLowerCase().trim();
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { school: true },
-    });
-
-    if (!user || !user.schoolId || user.status !== 'ACTIVE') {
+    const { school, membership, user: resolvedUser } = await resolveUserSchool(userSession.user.email);
+    if (
+      !school ||
+      !membership ||
+      membership.status !== 'ACTIVE' ||
+      !resolvedUser ||
+      !['STAFF', 'SCHOOL_ADMIN'].includes(membership.role)
+    ) {
       return NextResponse.json(
         { error: 'Tu cuenta no tiene permisos activos para operar en portería.' },
         { status: 403 }
       );
     }
 
-    const userSchoolId = user.schoolId;
-    const staffName = user.name;
+    const userSchoolId = school.id;
+    const staffName = resolvedUser.name;
 
     // 2. Obtener la sesión activa con aislamiento estricto
     let session = null;
@@ -138,4 +140,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

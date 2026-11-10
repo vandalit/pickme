@@ -11,6 +11,7 @@ interface Props {
   searchParams: Promise<{
     token?: string;
     pending?: string;
+    add?: string;
   }>;
 }
 
@@ -20,18 +21,19 @@ export default async function StaffJoinPage({ searchParams }: Props) {
     redirect('/auth/login?callbackUrl=/staff/join');
   }
 
-  const { token, pending } = await searchParams;
+  const { token, pending, add } = await searchParams;
   const email = session.user.email.toLowerCase().trim();
 
-  // Si el usuario ya está activo y vinculado a un colegio, va directo a /staff
   const dbUser = await prisma.user.findUnique({
     where: { email },
-    include: { school: true },
+    select: { id: true },
   });
+  if (!dbUser) redirect('/auth/login');
 
-  if (dbUser?.schoolId && dbUser.status === 'ACTIVE') {
-    redirect('/staff');
-  }
+  const activeMembership = await prisma.schoolMembership.findFirst({
+    where: { userId: dbUser.id, status: 'ACTIVE' },
+  });
+  if (activeMembership && !token && add !== '1') redirect('/workspaces');
 
   // Si trae token, verificar validez preliminar
   let tokenInvite = null;
@@ -83,12 +85,21 @@ export default async function StaffJoinPage({ searchParams }: Props) {
   });
 
   const pendingSchoolIds = new Set(pendingRequests.map((r) => r.schoolId));
+  const activeSchoolIds = new Set(
+    (
+      await prisma.schoolMembership.findMany({
+        where: { userId: dbUser.id, status: 'ACTIVE' },
+        select: { schoolId: true },
+      })
+    ).map((membership) => membership.schoolId)
+  );
 
   const schoolsData = allSchools.map((s) => ({
     id: s.id,
     name: s.name,
     address: s.address,
     hasPendingRequest: pendingSchoolIds.has(s.id),
+    isMember: activeSchoolIds.has(s.id),
   }));
 
   async function handleSignOut() {
@@ -115,4 +126,3 @@ export default async function StaffJoinPage({ searchParams }: Props) {
     </main>
   );
 }
-

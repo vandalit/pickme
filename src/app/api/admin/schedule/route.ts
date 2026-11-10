@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
   }
 
-  const callerRole = (session.user as any).role as string | undefined;
+  const callerRole = session.user.role;
   if (callerRole !== 'SCHOOL_ADMIN') {
     return NextResponse.json({ error: 'Solo un Director puede configurar horarios.' }, { status: 403 });
   }
@@ -67,4 +67,3 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ success: true, defaultExitTime: defaultExitTime ?? null });
 }
-

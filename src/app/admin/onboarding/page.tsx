@@ -1,5 +1,6 @@
 import React from 'react';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { resolveUserSchool } from '@/lib/userSchool';
 import { OnboardingForm } from './OnboardingForm';
@@ -7,7 +8,11 @@ import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user?.email) {
@@ -15,9 +20,28 @@ export default async function OnboardingPage() {
   }
 
   // Si el usuario ya tiene un colegio asignado, no requiere onboarding
-  const { needsOnboarding } = await resolveUserSchool(session.user.email);
-  if (!needsOnboarding) {
-    redirect('/admin');
+  const { new: newSchool } = await searchParams;
+  if (newSchool === '1') {
+    const canCreateSchool = await prisma.schoolMembership.findFirst({
+      where: {
+        userId: session.user.id,
+        status: 'ACTIVE',
+        role: { in: ['SCHOOL_ADMIN', 'SUPERADMIN'] },
+      },
+      select: { id: true },
+    });
+    if (!canCreateSchool) {
+      redirect('/workspaces');
+    }
+  } else {
+    const {
+      needsOnboarding,
+      needsWorkspaceSelection,
+      user,
+    } = await resolveUserSchool(session.user.email);
+    if (needsWorkspaceSelection) redirect('/workspaces');
+    if (!needsOnboarding) redirect('/admin');
+    if (user?.role !== 'SCHOOL_ADMIN') redirect('/onboarding');
   }
 
   const initialAdminName = session.user.name || 'Director(a)';
@@ -57,4 +81,3 @@ export default async function OnboardingPage() {
     </main>
   );
 }
-

@@ -29,6 +29,9 @@ export default async function AdminLayout({
 
   // Resolver colegio con memoria caché ultra-rápida (0ms tras cold start)
   const { needsOnboarding, school } = await resolveUserSchool(session.user.email);
+  if (!needsOnboarding && !school) {
+    return <>{children}</>;
+  }
   if (needsOnboarding || !school) {
     // Si necesita onboarding, no montamos el AdminNav para no interferir con el onboarding card
     return <>{children}</>;
@@ -62,6 +65,9 @@ export default async function AdminLayout({
         activeSessionCode={activeSessionCode}
         onSignOut={handleSignOut}
       />
+      <a href="/workspaces" style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 10 }}>
+        Cambiar colegio
+      </a>
       <main className={styles.main}>
         {children}
       </main>
